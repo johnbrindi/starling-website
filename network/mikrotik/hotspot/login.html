@@ -1,10 +1,13 @@
 <!doctype html>
 <!--
-  Starling Wi-Fi - MikroTik HotSpot login page (RouterOS v6 template variables).
-  Upload to the router as hotspot/login.html in the "starling" html-directory (see docs/mikrotik-integration.md).
-  It sends unauthenticated devices to the online portal, passing the router's login URL and the
-  device's MAC/IP. If the portal cannot be reached, a manual code form is shown as a fallback.
-  Replace PORTAL_URL below with your APP_URL (e.g. https://wifi.example.cm).
+  Starling Wi-Fi - MikroTik HotSpot captive portal (RouterOS v6/v7 template variables).
+  Served by the router itself, so customers always see it, even if the internet or the server is down.
+  Two ways in:
+    • "Access code" - one code (bought online or on a voucher card): used as username AND password.
+    • "Username & password" - logins created at the counter (Console → Sell a pass), cyber-café style.
+  "Buy a pass online" opens the web portal (must be in the walled garden).
+  Before uploading: replace https://wifi.example.cm (3 places) with your APP_URL.
+  Requires the hotspot profile login-by to include http-pap (see network/mikrotik/scripts/02-hotspot.rsc).
 -->
 <html lang="en">
 <head>
@@ -12,45 +15,115 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="pragma" content="no-cache">
 <meta http-equiv="expires" content="-1">
-<title>Starling Wi-Fi</title>
+<title>Starling Wi-Fi - Log in</title>
 <style>
-  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#16181d;background:#fff}
-  .w{max-width:380px;margin:0 auto;padding:32px 20px}
-  h1{font-size:20px;margin:0 0 6px}p{color:#6b7180;font-size:14px;line-height:1.5}
-  a.b,button{display:block;width:100%;box-sizing:border-box;height:46px;border:0;border-radius:6px;background:#1d5bd8;color:#fff;font-size:16px;font-weight:600;text-align:center;line-height:46px;text-decoration:none}
-  input{width:100%;box-sizing:border-box;height:46px;border:1px solid #e3e6ec;border-radius:6px;padding:0 12px;font-size:18px;letter-spacing:2px;text-transform:uppercase;margin:8px 0 12px}
-  .err{background:#fdecea;color:#b42318;padding:10px 12px;border-radius:6px;font-size:14px}
-  .muted{font-size:12px;color:#6b7180;margin-top:20px}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#16181d;background:#f6f7f9;-webkit-text-size-adjust:100%}
+  .top{background:#1d5bd8;color:#fff;padding:22px 20px 56px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
+  .logo{width:36px;height:36px;border-radius:9px;background:#fff;color:#1d5bd8;display:flex;align-items:center;justify-content:center}
+  .top p{margin:14px 0 0;font-size:15px;opacity:.92;line-height:1.45}
+  .wrap{max-width:420px;margin:-40px auto 0;padding:0 16px 32px}
+  .card{background:#fff;border:1px solid #e3e6ec;border-radius:14px;padding:18px}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;background:#f1f3f6;border-radius:10px;padding:4px;margin-bottom:16px}
+  .tabs button{border:0;background:none;height:40px;border-radius:8px;font-size:14px;font-weight:600;color:#6b7180}
+  .tabs button.on{background:#fff;color:#1748b0;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  label{display:block;font-size:14px;font-weight:600;margin:0 0 6px}
+  input{width:100%;height:50px;border:1px solid #d5d9e0;border-radius:10px;padding:0 14px;font-size:18px;margin:0 0 14px;background:#fff;color:#16181d}
+  input:focus{outline:2px solid #1d5bd8;outline-offset:0;border-color:#1d5bd8}
+  .code{text-transform:uppercase;letter-spacing:3px;font-family:ui-monospace,Menlo,monospace;text-align:center}
+  .btn{display:block;width:100%;height:52px;border:0;border-radius:10px;background:#1d5bd8;color:#fff;font-size:16px;font-weight:700;text-align:center;line-height:52px;text-decoration:none;cursor:pointer}
+  .btn.alt{background:#fff;color:#1748b0;border:1px solid #bfd5fe;margin-top:12px}
+  .err{background:#fdecea;color:#b42318;padding:12px 14px;border-radius:10px;font-size:14px;margin:0 0 14px;line-height:1.4}
+  .hint{font-size:12px;color:#6b7180;margin:-8px 0 14px}
+  .or{display:flex;align-items:center;gap:10px;color:#6b7180;font-size:13px;margin:18px 0 6px}
+  .or:before,.or:after{content:"";flex:1;height:1px;background:#e3e6ec}
+  .prices{margin-top:16px;font-size:14px;color:#3d4250}
+  .prices div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #e3e6ec}
+  .prices b{color:#16181d}
+  .foot{text-align:center;font-size:12px;color:#6b7180;margin-top:18px;line-height:1.5}
+  .hide{display:none}
 </style>
 </head>
 <body>
-<div class="w">
-  <h1>Starling Wi-Fi</h1>
-  $(if error)<p class="err">$(error)</p>$(endif)
-  <p id="msg">Opening the Wi-Fi portal&hellip;</p>
-  <p><a class="b" id="go" href="#">Buy a pass / My access</a></p>
-
-  <form name="login" action="$(link-login-only)" method="post" onsubmit="return doLogin()">
-    <input type="hidden" name="dst" value="$(link-orig)">
-    <input type="hidden" name="popup" value="false">
-    <input type="hidden" name="password" value="">
-    <p style="margin-top:28px">Already have an access code?</p>
-    <input name="username" autocomplete="off" autocapitalize="characters" placeholder="ABCD-EFGH" aria-label="Access code">
-    <button type="submit">Connect</button>
-  </form>
-  <p class="muted">Need help? Ask at the counter.</p>
+<div class="top">
+  <div class="brand">
+    <span class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 8.5a15 15 0 0 1 20 0"/><path d="M5.5 12a10 10 0 0 1 13 0"/><path d="M9 15.5a5 5 0 0 1 6 0"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></span>
+    Starling Wi-Fi
+  </div>
+  <p>Fast satellite internet. Log in with your code, or buy a pass with MTN MoMo or Orange Money.</p>
 </div>
+
+<div class="wrap">
+  <div class="card">
+    $(if error)<p class="err" role="alert">$(error)</p>$(endif)
+
+    <div class="tabs" role="tablist">
+      <button type="button" id="t-code" class="on" onclick="tab('code')">Access code</button>
+      <button type="button" id="t-user" onclick="tab('user')">Username &amp; password</button>
+    </div>
+
+    <form name="login" action="$(link-login-only)" method="post" onsubmit="return go()">
+      <input type="hidden" name="dst" value="$(link-orig)">
+      <input type="hidden" name="popup" value="false">
+      <input type="hidden" name="username" value="">
+      <input type="hidden" name="password" value="">
+
+      <div id="p-code">
+        <label for="code">Access code</label>
+        <input id="code" class="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH" value="">
+        <p class="hint">From your online purchase or voucher card.</p>
+      </div>
+      <div id="p-user" class="hide">
+        <label for="u">Username</label>
+        <input id="u" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. awa482" value="$(username)">
+        <label for="p">Password</label>
+        <input id="p" type="password" autocomplete="current-password" inputmode="numeric" placeholder="6 digits">
+      </div>
+      <button type="submit" class="btn">Connect</button>
+    </form>
+
+    <div class="or">No code yet?</div>
+    <a class="btn alt" id="buy" href="https://wifi.example.cm/portal">Buy a pass online</a>
+
+    <div class="prices" aria-label="Prices">
+      <div><span>1 hour</span><b>100 FCFA</b></div>
+      <div><span>12 hours</span><b>150 FCFA</b></div>
+      <div><span>24 hours</span><b>200 FCFA</b></div>
+      <div><span>1 week</span><b>1 350 FCFA</b></div>
+      <div><span>1 month</span><b>4 500 FCFA</b></div>
+    </div>
+  </div>
+  <p class="foot">Your time counts down from activation. You are logged out automatically when it ends.<br>Need help? Ask at the counter.</p>
+</div>
+
 <script>
   var PORTAL_URL = "https://wifi.example.cm"; // <-- set to your APP_URL
-  function q(v){return encodeURIComponent(v)}
-  var target = PORTAL_URL + "/portal?login=" + q("$(link-login-only)") + "&mac=" + q("$(mac)") + "&ip=" + q("$(ip)") +
-    "&dst=" + q("$(link-orig)") + ("$(error)" ? "&error=" + q("$(error)") : "");
-  document.getElementById("go").href = target;
-  // Errors (wrong/expired code) are shown on the portal too; without an error, go straight there.
-  setTimeout(function(){ window.location.replace(target); }, "$(error)" ? 2500 : 200);
-  function doLogin(){
-    var f = document.login, code = f.username.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    f.username.value = code; f.password.value = code; // the access code is both username and password
+  var mode = "code";
+  function q(v){ return encodeURIComponent(v); }
+  document.getElementById("buy").href = PORTAL_URL + "/portal?login=" + q("$(link-login-only)") +
+    "&mac=" + q("$(mac)") + "&ip=" + q("$(ip)") + "&dst=" + q("$(link-orig)") + ("$(error)" ? "&error=" + q("$(error)") : "");
+  function tab(m){
+    mode = m;
+    document.getElementById("t-code").className = m === "code" ? "on" : "";
+    document.getElementById("t-user").className = m === "user" ? "on" : "";
+    document.getElementById("p-code").className = m === "code" ? "" : "hide";
+    document.getElementById("p-user").className = m === "user" ? "" : "hide";
+    document.getElementById(m === "code" ? "code" : "u").focus();
+  }
+  // Coming back after a failed username/password login: reopen that tab.
+  if ("$(username)" && /[a-z]/.test("$(username)")) tab("user");
+  function go(){
+    var f = document.login;
+    if (mode === "code") {
+      var c = document.getElementById("code").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (c.length < 6) { document.getElementById("code").focus(); return false; }
+      f.username.value = c; f.password.value = c; // one code = username and password
+    } else {
+      var u = document.getElementById("u").value.trim().toLowerCase(), p = document.getElementById("p").value.trim();
+      if (!u || !p) { document.getElementById(u ? "p" : "u").focus(); return false; }
+      f.username.value = u; f.password.value = p;
+    }
     return true;
   }
 </script>

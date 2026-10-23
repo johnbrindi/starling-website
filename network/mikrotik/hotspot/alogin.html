@@ -1,11 +1,20 @@
 <!doctype html>
-<!-- Shown right after a successful hotspot login. Sends the customer back to their access page. -->
+<!-- Shown right after a successful login. Goes to the live status page (time left), or back to the
+     web portal when the login came from its "Connect this device" button. Replace wifi.example.cm. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Connected</title>
-<meta http-equiv="refresh" content="2; url=https://wifi.example.cm/account">
-<style>body{font-family:system-ui,Arial,sans-serif;max-width:380px;margin:40px auto;padding:0 20px;color:#16181d}a{color:#1d5bd8}</style>
-</head><body>
-<h1 style="font-size:20px">You are connected</h1>
-<p>Welcome, $(username). Opening your access page&hellip;</p>
-<p><a href="https://wifi.example.cm/account">See remaining time</a> &middot; <a href="$(link-orig)">Continue</a></p>
+<style>body{margin:0;font-family:system-ui,-apple-system,Arial,sans-serif;background:#1d5bd8;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center}
+.c{padding:24px}.ok{width:64px;height:64px;border-radius:50%;background:#fff;color:#137a43;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+h1{font-size:22px;margin:0 0 6px}p{opacity:.9;margin:0}a{color:#fff}</style>
+</head><body><div class="c">
+<div class="ok"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg></div>
+<h1>You are connected</h1>
+<p>Welcome, $(username). Enjoy browsing.</p>
+<p style="margin-top:14px"><a href="$(link-status)">See time left</a></p>
+</div>
+<script>
+  var PORTAL_HOST = "wifi.example.cm"; // <-- your APP_URL host
+  var r = "$(link-redirect)";
+  setTimeout(function(){ location.replace(r.indexOf(PORTAL_HOST) > -1 ? r : "$(link-status)"); }, 1500);
+</script>
 </body></html>

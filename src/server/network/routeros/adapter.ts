@@ -71,7 +71,7 @@ export class RouterOsAdapter implements NetworkAdapter {
   async provisionUser(input: ProvisionInput): Promise<void> {
     const username = scriptSafe(input.username);
     await this.run(async (c) => {
-      const attrs = {
+      const attrs: Record<string, string | number | boolean> = {
         name: username,
         password: input.password,
         server: this.hotspotServer,
@@ -81,8 +81,11 @@ export class RouterOsAdapter implements NetworkAdapter {
         comment: `${MANAGED_COMMENT_PREFIX}${input.credentialId}`,
         disabled: false,
       };
-      const existing = await c.exec("/ip/hotspot/user/print", { ".proplist": ".id" }, [`?name=${username}`]);
+      const existing = await c.exec("/ip/hotspot/user/print", { ".proplist": ".id,uptime" }, [`?name=${username}`]);
       if (existing[0]?.[".id"]) {
+        // limit-uptime is compared with time ALREADY used, so add it (otherwise a renewal would cut off early).
+        const used = parseDuration(existing[0].uptime) + (await this.activeUptime(c, username));
+        attrs["limit-uptime"] = formatDuration(used + input.limitUptimeSeconds);
         await c.exec("/ip/hotspot/user/set", { ".id": existing[0][".id"], ...attrs });
       } else {
         await c.exec("/ip/hotspot/user/add", attrs);
@@ -116,6 +119,35 @@ export class RouterOsAdapter implements NetworkAdapter {
     const existing = await c.exec("/system/scheduler/print", { ".proplist": ".id" }, [`?name=${name}`]);
     if (existing[0]?.[".id"]) await c.exec("/system/scheduler/set", { ".id": existing[0][".id"], ...attrs });
     else await c.exec("/system/scheduler/add", { name, ...attrs });
+  }
+
+  /** Longest uptime among the user's live sessions (the user's own counter only grows at logout). */
+  private async activeUptime(c: RouterOsClient, username: string): Promise<number> {
+    const active = await c.exec("/ip/hotspot/active/print", { ".proplist": "uptime" }, [`?user=${username}`]);
+    return active.reduce((m, a) => Math.max(m, parseDuration(a.uptime)), 0);
+  }
+
+  async alignTimeLeft(items: { username: string; validUntil: Date }[]): Promise<number> {
+    if (items.length === 0) return 0;
+    const want = new Map(items.map((i) => [i.username, i.validUntil]));
+    return this.run(async (c) => {
+      const users = await c.exec("/ip/hotspot/user/print", { ".proplist": ".id,name,uptime,limit-uptime,comment" });
+      const active = await c.exec("/ip/hotspot/active/print", { ".proplist": "user,uptime" });
+      const live = new Map<string, number>();
+      for (const a of active) if (a.user) live.set(a.user, Math.max(live.get(a.user) ?? 0, parseDuration(a.uptime)));
+      let changed = 0;
+      for (const u of users) {
+        const until = u.name ? want.get(u.name) : undefined;
+        if (!until || !u[".id"] || !u.comment?.startsWith(MANAGED_COMMENT_PREFIX)) continue;
+        const remaining = Math.max(1, Math.ceil((until.getTime() - Date.now()) / 1000));
+        const desired = parseDuration(u.uptime) + (live.get(u.name!) ?? 0) + remaining;
+        if (Math.abs(desired - parseDuration(u["limit-uptime"])) > 30) {
+          await c.exec("/ip/hotspot/user/set", { ".id": u[".id"], "limit-uptime": formatDuration(desired) });
+          changed++;
+        }
+      }
+      return changed;
+    });
   }
 
   async removeUser(username: string): Promise<void> {

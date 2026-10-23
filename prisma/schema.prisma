@@ -166,6 +166,7 @@ model NetworkProfile {
 enum PaymentProvider {
   SIMULATOR
   NOTCHPAY
+  CASH // recorded by staff at the counter ("Sell a pass")
 }
 
 enum PaymentStatus {
@@ -195,6 +196,8 @@ model Payment {
   payerPhone        String
   status            PaymentStatus   @default(PENDING)
   isSimulated       Boolean         @default(false)
+  /// Staff member who recorded a cash sale.
+  recordedById      String?
   failureReason     String?
   providerStatus    String?
   /// Captive-portal context captured at checkout (MAC/IP of the device), if any.

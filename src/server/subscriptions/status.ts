@@ -34,12 +34,15 @@ export async function getAccessStatus(customerId: string): Promise<AccessStatusD
     }
   }
   const showCode = credential && credential.status !== "REVOKED";
+  const password = showCode ? credentialPassword(credential) : "";
   return {
     serverTime: now.toISOString(),
     state,
     credential: credential
       ? {
-          code: showCode ? credentialPassword(credential) : "",
+          username: showCode ? credential.username : "",
+          password,
+          style: credential.username === password ? "code" : "userpass",
           validFrom: credential.validFrom.toISOString(),
           validUntil: credential.validUntil.toISOString(),
           status: credential.status,

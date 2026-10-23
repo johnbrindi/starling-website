@@ -70,10 +70,10 @@ export function storedLoginUrl(): string {
   return loadHotspotContext()?.loginUrl ?? "";
 }
 
-export function hotspotLoginHref(code: string, loginUrl: string, returnTo: string) {
+export function hotspotLoginHref(username: string, password: string, loginUrl: string, returnTo: string) {
   const u = new URL(loginUrl);
-  u.searchParams.set("username", code);
-  u.searchParams.set("password", code);
+  u.searchParams.set("username", username);
+  u.searchParams.set("password", password);
   u.searchParams.set("dst", returnTo);
   return u.toString();
 }

@@ -32,6 +32,17 @@ export function formatRemaining(ms: number): string {
   return `${m} min ${pad(s)} s`;
 }
 
+/**
+ * MikroTik rate-limit "rx/tx" is from the router's point of view: rx = customer upload, tx = download.
+ * "2M/4M" -> { upload: "2 Mbps", download: "4 Mbps" }.
+ */
+export function parseRateLimit(rate: string | null | undefined): { upload: string; download: string } | null {
+  const m = rate?.trim().match(/^([\d.]+)([kKmMgG]?)\/([\d.]+)([kKmMgG]?)/);
+  if (!m) return null;
+  const unit = (u: string) => (u.toLowerCase() === "g" ? "Gbps" : u.toLowerCase() === "m" ? "Mbps" : u.toLowerCase() === "k" ? "kbps" : "bps");
+  return { upload: `${m[1]} ${unit(m[2]!)}`, download: `${m[3]} ${unit(m[4]!)}` };
+}
+
 export function formatBytes(bytes: number | bigint | null | undefined): string {
   const n = Number(bytes ?? 0);
   if (n < 1024) return `${n} B`;

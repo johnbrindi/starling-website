@@ -12,6 +12,9 @@ export interface PackageDto {
   dataLimitMb: number | null;
   rateLimit: string | null;
   maxDevices: number;
+  /** From the MikroTik rate limit ("upload/download"), e.g. "4 Mbps"; null = no per-user cap. */
+  downloadSpeed: string | null;
+  uploadSpeed: string | null;
   usagePolicy: string;
   isFeatured: boolean;
 }
@@ -38,7 +41,10 @@ export interface AccessStatusDto {
   serverTime: string;
   state: AccessState;
   credential: {
-    code: string;
+    /** Hotspot username. For "code" style it equals the password (one code to type). */
+    username: string;
+    password: string;
+    style: "code" | "userpass";
     validFrom: string;
     validUntil: string;
     status: "ACTIVE" | "EXPIRED" | "REVOKED";

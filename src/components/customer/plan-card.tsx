@@ -22,6 +22,7 @@ export function PlanCard({ plan }: { plan: PackageDto }) {
         <li className="flex items-center gap-1.5">
           <DevicesIcon className="h-3.5 w-3.5" /> {plan.maxDevices} device{plan.maxDevices > 1 ? "s" : ""} at a time
         </li>
+        {plan.downloadSpeed ? <li>Up to {plan.downloadSpeed} download</li> : null}
         <li>{plan.dataLimitMb ? `${(plan.dataLimitMb / 1024).toFixed(plan.dataLimitMb % 1024 ? 1 : 0)} GB data` : "No data cap (fair use)"}</li>
       </ul>
       <span className="mt-4 text-sm font-medium text-brand-700 group-hover:underline">Buy this pass</span>

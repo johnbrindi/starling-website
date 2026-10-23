@@ -66,10 +66,10 @@ The Tenda must act as a **transparent wireless bridge (AP mode)**. If it routes 
 
 ## 6. HotSpot pages and HotSpot  **[DISRUPTIVE for customers]**
 
-1. Edit `network/mikrotik/hotspot/login.html`, `alogin.html` and `status.html`: replace `https://wifi.example.cm` with your `APP_URL`.
+1. Edit `network/mikrotik/hotspot/login.html`, `alogin.html` and `status.html`: replace `wifi.example.cm` with your `APP_URL` host, and update the price list in `login.html`. Preview them first at `http://localhost:3000/api/dev/hotspot-preview?page=login`.
 2. Upload the four HTML files to a router folder named **`starling`** (Winbox → *Files*, drag and drop; create the folder by first running `/ip hotspot profile` setup or uploading as `starling/login.html`).
 3. Edit `02-hotspot.rsc` (portal host), then paste it.
-4. Check from a phone on the Wi-Fi: opening `http://neverssl.com` shows the Starling login page, which jumps to `https://wifi.example.cm/portal?...`. Android/iOS should also pop up the "Sign in to network" sheet automatically.
+4. Check from a phone on the Wi-Fi: opening `http://neverssl.com` shows the blue Starling login page (Access code / Username & password tabs). *Buy a pass online* opens `https://wifi.example.cm/portal?...`. Android/iOS should also pop up the "Sign in to network" sheet automatically.
 
 ## 7. API user, VPN, firewall
 
@@ -104,7 +104,8 @@ All checks should be OK. Then in **Console → Network**: *Push profiles* (creat
 2. Approve the USSD prompt. The page shows *Payment confirmed*, then your code, and within seconds the badge turns **Active**. Console → Customers shows the code as `router: provisioned`. On the router, `/ip hotspot user print where comment~"starling"` lists it, and `/system scheduler print` shows `starling-exp-<CODE>`.
 3. Tap **Connect this device**. The router logs you in and redirects to your access page, which shows **Online**. Browse.
 4. Expiry test, with no money needed: in Console → Packages create an **inactive** 5-minute package, generate one voucher card for it (Console → Vouchers), redeem it on the phone (`/redeem`), and wait. Warnings appear at 5 and 1 minutes. At the end, the device is disconnected, the next page load shows the login page and then the portal with *Your Wi-Fi time has ended*.
-5. Renewal test: buy again before expiry. The same code gets the extra time, with no disconnection.
+5. Counter sale test: Console → **Sell a pass** → 1 Hour, a phone number and a name → print the slip. On a second phone, open any site, tap *Username & password*, and enter the slip's details. After login the **Time left** page appears.
+6. Renewal test: buy again before expiry. The same code gets the extra time, with no disconnection.
 
 ## 10. Go live
 

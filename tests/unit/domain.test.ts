@@ -139,3 +139,12 @@ describe("post-login redirects", async () => {
     expect(safeNext(null)).toBe("/account");
   });
 });
+
+describe("speed display", async () => {
+  const { parseRateLimit } = await import("@/lib/format");
+  it("reads MikroTik rx/tx as upload/download", () => {
+    expect(parseRateLimit("2M/4M")).toEqual({ upload: "2 Mbps", download: "4 Mbps" });
+    expect(parseRateLimit("512k/1M")).toEqual({ upload: "512 kbps", download: "1 Mbps" });
+    expect(parseRateLimit(null)).toBeNull();
+  });
+});

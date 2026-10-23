@@ -1,17 +1,71 @@
 <!doctype html>
-<!-- Router-side status page (http://<hotspot>/status). Time remaining is authoritative on the portal. -->
+<!--
+  Router status page (http://<hotspot>/status): live time left, data used, log out.
+  $(session-time-left) is kept equal to the real expiry by the platform (limit-uptime alignment), and the
+  page re-syncs with the router every minute. Replace wifi.example.cm with your APP_URL.
+-->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Wi-Fi status</title>
-<style>body{font-family:system-ui,Arial,sans-serif;max-width:380px;margin:40px auto;padding:0 20px;color:#16181d}a{color:#1d5bd8}td{padding:4px 8px 4px 0}</style>
+<meta http-equiv="pragma" content="no-cache"><meta http-equiv="expires" content="-1">
+<title>Starling Wi-Fi - Time left</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#16181d;background:#f6f7f9}
+  .top{background:#1d5bd8;color:#fff;padding:20px 20px 70px;text-align:center}
+  .top small{opacity:.85;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+  .left{font-family:ui-monospace,Menlo,monospace;font-size:42px;font-weight:700;margin:8px 0 4px}
+  .wrap{max-width:420px;margin:-50px auto 0;padding:0 16px 28px}
+  .card{background:#fff;border:1px solid #e3e6ec;border-radius:14px;padding:6px 18px}
+  .row{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid #eef0f3;font-size:15px}
+  .row:last-child{border-bottom:0}.row span{color:#6b7180}.row b{font-weight:600}
+  .warn{background:#fdf4e1;color:#8a5a00;border-radius:10px;padding:12px 14px;font-size:14px;margin:14px 0 0}
+  .btn{display:block;width:100%;height:50px;border-radius:10px;font-size:16px;font-weight:700;text-align:center;line-height:50px;text-decoration:none;margin-top:12px;border:0;cursor:pointer}
+  .pri{background:#1d5bd8;color:#fff}.sec{background:#fff;color:#b42318;border:1px solid #f3c7c2}
+  .hide{display:none}
+</style>
 </head><body>
-<h1 style="font-size:20px">Starling Wi-Fi</h1>
-<table>
-<tr><td>Code</td><td><b>$(username)</b></td></tr>
-<tr><td>Device</td><td>$(ip) / $(mac)</td></tr>
-<tr><td>Connected for</td><td>$(uptime)</td></tr>
-$(if session-time-left)<tr><td>Time left</td><td>$(session-time-left)</td></tr>$(endif)
-<tr><td>Data</td><td>&darr; $(bytes-out-nice) &uarr; $(bytes-in-nice)</td></tr>
-</table>
-<p><a href="https://wifi.example.cm/account">My access &amp; renew</a></p>
-<form action="$(link-logout)" method="post"><input type="hidden" name="erase-cookie" value="on"><button type="submit">Log out this device</button></form>
+<div class="top">
+  <small>Time left</small>
+  <div class="left" id="left">$(session-time-left)</div>
+  <div>Logged in as <b>$(username)</b></div>
+</div>
+<div class="wrap">
+  <div class="card">
+    <div class="row"><span>Connected for</span><b>$(uptime)</b></div>
+    <div class="row"><span>Downloaded</span><b>$(bytes-out-nice)</b></div>
+    <div class="row"><span>Uploaded</span><b>$(bytes-in-nice)</b></div>
+    $(if remain-bytes-total)<div class="row"><span>Data left</span><b>$(remain-bytes-total-nice)</b></div>$(endif)
+    <div class="row"><span>Device</span><b>$(ip)</b></div>
+  </div>
+  <p class="warn hide" id="warn">Your time is almost up. Buy more time now to stay connected (the same login keeps working).</p>
+  <a class="btn pri" href="https://wifi.example.cm/account">Buy more time / my account</a>
+  <form action="$(link-logout)" method="post" onsubmit="return confirm('Log out this device? Your time keeps running.')">
+    <input type="hidden" name="erase-cookie" value="on">
+    <button class="btn sec" type="submit">Log out this device</button>
+  </form>
+</div>
+<script>
+  // Parse RouterOS durations: "1d02:03:04", "02:03:04", "1h2m3s", "59m48s".
+  function secs(v){
+    if (!v) return -1; var t = 0, m;
+    if ((m = v.match(/(\d+):(\d+):(\d+)$/))) { t += +m[1]*3600 + +m[2]*60 + +m[3]; v = v.slice(0, m.index); }
+    var u = {w:604800,d:86400,h:3600,m:60,s:1}, r = /(\d+)([wdhms])/g;
+    while ((m = r.exec(v))) t += +m[1] * u[m[2]];
+    return t;
+  }
+  function fmt(s){
+    var d = Math.floor(s/86400), h = Math.floor(s%86400/3600), m = Math.floor(s%3600/60), x = s%60;
+    function p(n){ return (n < 10 ? "0" : "") + n; }
+    return d > 0 ? d + "d " + p(h) + "h " + p(m) + "m" : h > 0 ? h + "h " + p(m) + "m " + p(x) + "s" : m + "m " + p(x) + "s";
+  }
+  var left = secs("$(session-time-left)"), el = document.getElementById("left");
+  if (left >= 0) {
+    var tick = function(){
+      el.textContent = left > 0 ? fmt(left) : "Time is up";
+      if (left <= 900) document.getElementById("warn").className = "warn";
+      if (left > 0) left--; else setTimeout(function(){ location.reload(); }, 3000);
+    };
+    tick(); setInterval(tick, 1000);
+  } else { el.textContent = "Connected"; }
+  setTimeout(function(){ location.reload(); }, 60000); // re-sync with the router every minute
+</script>
 </body></html>

@@ -56,7 +56,7 @@ export default async function AccountPage(props: PageProps<"/account">) {
 
       <AccessPanel initial={status} networkSimulated={getNetworkAdapter().simulated} />
 
-      {hasLiveCode ? <HowToUse code={status.credential!.code} maxDevices={status.credential!.maxDevices} networkName={settings.businessName} /> : null}
+      {hasLiveCode ? <HowToUse username={status.credential!.username} password={status.credential!.password} maxDevices={status.credential!.maxDevices} networkName={settings.businessName} /> : null}
 
       <div className="grid grid-cols-2 gap-3">
         {LINKS.map((l) => (

@@ -8,6 +8,7 @@ import { assertSameOrigin, handler, json, readJson } from "@/server/http";
 import { getNetworkAdapter } from "@/server/network";
 import { FakeNetworkAdapter } from "@/server/network/fake";
 import { syncSessions } from "@/server/network/sync";
+import { credentialPassword } from "@/server/subscriptions/service";
 
 /**
  * DEVELOPMENT ONLY — simulates this device logging in on the (fake) MikroTik hotspot with its code,
@@ -20,14 +21,14 @@ export const POST = handler(async (req) => {
   assertSameOrigin(req);
   const { customer } = await requireCustomer();
   const { code } = await readJson(req, z.object({ code: z.string().min(6).max(12) }));
-  const username = code.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const cred = await db.accessCredential.findUnique({ where: { username } });
-  if (!cred || cred.customerId !== customer.id) throw new AppError("NOT_FOUND", "Unknown code.");
+  const raw = code.replace(/[^A-Za-z0-9]/g, "");
+  const cred = await db.accessCredential.findFirst({ where: { username: { in: [raw, raw.toUpperCase()] }, customerId: customer.id } });
+  if (!cred) throw new AppError("NOT_FOUND", "Unknown code.");
   // Stable pseudo-MAC per browser so repeated clicks count as the same device.
   const ua = req.headers.get("user-agent") ?? "";
   const h = createHash("sha256").update(customer.id + ua).digest("hex");
   const mac = `02:${h.slice(0, 10).match(/../g)!.join(":")}`.toUpperCase();
-  const res = await adapter.simulateLogin(username, username, mac, "10.5.50.100");
+  const res = await adapter.simulateLogin(cred.username, credentialPassword(cred), mac, "10.5.50.100");
   if (res.ok) await syncSessions();
   return json(res, { status: res.ok ? 200 : 403 });
 });

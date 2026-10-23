@@ -122,7 +122,7 @@ export async function verifyPayment(paymentId: string): Promise<Payment> {
     await fulfilPayment(payment.id); // idempotent: repairs a crash between verification and fulfilment
     return (await db.payment.findUnique({ where: { id: paymentId } }))!;
   }
-  if (payment.status !== "PENDING") return payment;
+  if (payment.status !== "PENDING" || payment.provider === "CASH") return payment;
 
   const provider = getProvider(payment.provider);
   let result: StatusResult;
@@ -242,6 +242,7 @@ export async function reconcilePayments(now = new Date()) {
   let checked = 0;
   for (const p of pending) {
     try {
+      if (p.provider === "CASH") continue;
       if (p.status === "EXPIRED") {
         const r = await getProvider(p.provider).fetchStatus(p);
         await db.payment.update({ where: { id: p.id }, data: { lastCheckedAt: new Date(), checkCount: { increment: 1 } } });

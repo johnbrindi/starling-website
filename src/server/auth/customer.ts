@@ -109,8 +109,8 @@ export async function resetCustomerPassword(input: z.infer<typeof resetSchema>, 
     ok = customer.resetCodeHash === sha256(`reset:${customer.id}:${proof}`);
   }
   if (!ok) {
-    const cred = await db.accessCredential.findUnique({ where: { username: proof }, select: { customerId: true } });
-    ok = cred?.customerId === customer.id;
+    const cred = await db.accessCredential.findFirst({ where: { username: { in: [proof, proof.toLowerCase()] }, customerId: customer.id }, select: { id: true } });
+    ok = !!cred;
   }
   if (!ok) {
     await audit({ actorType: "CUSTOMER", actorId: customer.id, action: "customer.reset_failed", ipAddress: meta.ip });

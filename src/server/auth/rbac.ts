@@ -5,6 +5,7 @@ export const PERMISSIONS = [
   "packages:manage",
   "customers:view",
   "customers:revoke",
+  "sales:create",
   "payments:view",
   "payments:reconcile",
   "network:view",
@@ -17,7 +18,7 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 const VIEWER: Permission[] = ["dashboard:view", "customers:view", "payments:view", "network:view"];
-const SUPPORT: Permission[] = [...VIEWER, "customers:revoke", "audit:view"];
+const SUPPORT: Permission[] = [...VIEWER, "customers:revoke", "sales:create", "audit:view"];
 const ADMIN: Permission[] = PERMISSIONS.filter((p) => p !== "staff:manage");
 
 /** Deny-by-default: a role has only the permissions listed here. */

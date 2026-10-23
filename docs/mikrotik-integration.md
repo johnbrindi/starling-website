@@ -28,12 +28,25 @@ The platform **never** resets the router, changes interfaces, addresses, firewal
 
 Usernames are restricted to `[A-Za-z0-9_-]` before use in any router script (`scriptSafe`), so nothing can be injected through a code.
 
+## Two kinds of logins
+
+| Style | Username / password | Created by | Typed on the login page |
+|---|---|---|---|
+| Access code | `K7M4QX2P` / same code | Online purchase, voucher card | *Access code* tab (one field) |
+| Username + password | `awa482` / `568230` (6 digits) | Staff, Console → **Sell a pass** (cash, cyber-café style) | *Username & password* tab |
+
+Both are ordinary hotspot users with the same profile, limits and expiry handling. Usernames are unique (DB constraint). In RADIUS mode, counter sales always use access codes, because the RADIUS view uses the username as the password.
+
+## Time left shown by the router
+
+`status.html` displays `$(session-time-left)`, which RouterOS computes as `limit-uptime` minus time already used. The platform sets `limit-uptime = time already used + time remaining until the real expiry`, both when provisioning and on every session sync (`alignTimeLeft`). The router's own countdown therefore matches the expiry in the database to within one sync interval (60 s by default). This also fixes renewals: adding time to an existing user never shortens it.
+
 ## Defence in depth on expiry
 
 1. The worker expires the credential in the DB on time and removes the user and its sessions (every 10 s check).
 2. The session sync kicks any active session whose credential isn't entitled (every 60 s, configurable).
 3. The **router scheduler** removes the user at the exact end time, even if the server or VPN is down. This needs the router clock to be right (NTP enabled), and it can be turned off in Settings.
-4. `limit-uptime` is set to the remaining time as a last resort. It counts connected time only, so it never cuts anyone off early.
+4. `limit-uptime` (time used + remaining, kept aligned) makes the router itself end a connected session at the expiry time.
 
 ## Prerequisites on the router
 

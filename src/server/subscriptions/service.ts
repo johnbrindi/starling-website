@@ -12,13 +12,32 @@ import { notify } from "../notifications/service";
 
 const MB = 1024n * 1024n;
 
-/** Generates a unique 8-character access code (31^8 ≈ 8.5e11 combinations). */
-async function newUsername(tx: Tx): Promise<string> {
-  for (let i = 0; i < 5; i++) {
-    const code = randomCode(8);
-    if (!(await tx.accessCredential.findUnique({ where: { username: code } }))) return code;
+/**
+ * How the customer logs in on the hotspot:
+ * - "code": one 8-character access code used as both username and password (31^8 ≈ 8.5e11 combinations);
+ * - "userpass": cyber-café style, a readable username (e.g. "awa482") plus a separate 6-digit password,
+ *   typically created by staff for a walk-in customer.
+ */
+export type CredentialStyle = "code" | "userpass";
+
+/** Generates unique hotspot credentials. Uniqueness is also enforced by the database. */
+async function newCredentials(tx: Tx, style: CredentialStyle, nameHint?: string | null): Promise<{ username: string; password: string }> {
+  for (let i = 0; i < 8; i++) {
+    let username: string;
+    let password: string;
+    if (style === "userpass") {
+      // First name only, ASCII letters (e.g. "Awa Bello" -> "awa"), so it is short to type.
+      const first = (nameHint ?? "").trim().split(/\s+/)[0] ?? "";
+      const base = first.normalize("NFKD").toLowerCase().replace(/[^a-z]/g, "").slice(0, 8) || "guest";
+      username = `${base}${randomCode(3, "0123456789")}`;
+      password = randomCode(6, "0123456789");
+    } else {
+      username = randomCode(8);
+      password = username;
+    }
+    if (!(await tx.accessCredential.findUnique({ where: { username } }))) return { username, password };
   }
-  throw new Error("Could not allocate a unique access code");
+  throw new Error("Could not allocate unique credentials");
 }
 
 /** The authoritative entitlement rule. The UI countdown is display only; this decides access. */
@@ -44,6 +63,8 @@ interface GrantInput {
   voucherId?: string;
   settings: Settings;
   now: Date;
+  style?: CredentialStyle;
+  nameHint?: string | null;
 }
 
 /**
@@ -84,12 +105,12 @@ async function grantEntitlement(tx: Tx, g: GrantInput) {
     });
   } else {
     startsAt = now;
-    const username = await newUsername(tx);
+    const { username, password } = await newCredentials(tx, g.style ?? "code", g.nameHint);
     credential = await tx.accessCredential.create({
       data: {
         customerId: g.customerId,
         username,
-        passwordEnc: encrypt(username),
+        passwordEnc: encrypt(password),
         validFrom: now,
         validUntil: new Date(now.getTime() + durationMs),
         dataLimitBytes: addBytes,
@@ -135,7 +156,10 @@ async function grantEntitlement(tx: Tx, g: GrantInput) {
  * Must only be called after the provider confirmed success server-side.
  * Idempotent: a second call for the same payment returns the existing subscription.
  */
-export async function fulfilPayment(paymentId: string, opts: { settings?: Settings; now?: Date } = {}): Promise<FulfilResult> {
+export async function fulfilPayment(
+  paymentId: string,
+  opts: { settings?: Settings; now?: Date; style?: CredentialStyle; nameHint?: string | null } = {},
+): Promise<FulfilResult> {
   const settings = opts.settings ?? (await getSettings());
   const result = await db.$transaction(async (tx) => {
     const payment = await tx.payment.findUnique({ where: { id: paymentId }, include: { package: true, subscription: true } });
@@ -158,6 +182,8 @@ export async function fulfilPayment(paymentId: string, opts: { settings?: Settin
       paymentId: payment.id,
       settings,
       now: opts.now ?? new Date(),
+      style: opts.style,
+      nameHint: opts.nameHint,
     });
     return { subscriptionId: subscription.id, credentialId: credential.id, created: true, customerId: payment.customerId, pkgName: payment.package.name };
   });

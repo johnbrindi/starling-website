@@ -127,3 +127,46 @@ describe("RouterOS adapter against a fake router", () => {
     expect((await down.health()).ok).toBe(false);
   });
 });
+
+describe("router time-left stays exact", () => {
+  const router = new FakeRouterOsServer();
+  let adapter: RouterOsAdapter;
+  beforeAll(async () => {
+    const port = await router.listen();
+    adapter = new RouterOsAdapter({ host: "127.0.0.1", port, username: "api", password: router.password, tls: false, tlsInsecure: false, timeoutMs: 3000 }, "hotspot1");
+  });
+  afterAll(() => router.close());
+
+  const base = { credentialId: "c9", password: "123456", profile: null, limitBytesTotal: null, maxDevices: 1, rateLimit: null, routerSideExpiry: false };
+
+  it("a renewal adds time already used, so the customer is not cut off early", async () => {
+    await adapter.provisionUser({ ...base, username: "awa482", validUntil: new Date(Date.now() + 3600_000), limitUptimeSeconds: 3600 });
+    const user = router.tables["/ip/hotspot/user"]!.find((u) => u.name === "awa482")!;
+    user.uptime = "50m"; // 50 minutes used in finished sessions
+    router.tables["/ip/hotspot/active"]!.push({ ".id": "*B1", user: "awa482", uptime: "5m", address: "10.5.50.30", "mac-address": "AA:AA:AA:AA:AA:01" });
+    // Renewed: 1 h 10 min of wall-clock time remain.
+    await adapter.provisionUser({ ...base, username: "awa482", validUntil: new Date(Date.now() + 4200_000), limitUptimeSeconds: 4200 });
+    expect(parseDuration(user["limit-uptime"])).toBe(50 * 60 + 5 * 60 + 4200);
+  });
+
+  it("alignTimeLeft sets limit-uptime = used + remaining for managed users only", async () => {
+    const user = router.tables["/ip/hotspot/user"]!.find((u) => u.name === "awa482")!;
+    user["limit-uptime"] = "01:00:00";
+    const changed = await adapter.alignTimeLeft([
+      { username: "awa482", validUntil: new Date(Date.now() + 1800_000) },
+      { username: "admin-user", validUntil: new Date(Date.now() + 1800_000) },
+    ]);
+    expect(changed).toBe(1);
+    expect(Math.abs(parseDuration(user["limit-uptime"]) - (50 * 60 + 5 * 60 + 1800))).toBeLessThanOrEqual(2);
+    expect(router.tables["/ip/hotspot/user"]!.find((u) => u.name === "admin-user")!["limit-uptime"]).toBeUndefined();
+  });
+});
+
+describe("hotspot template preview renderer", async () => {
+  const { renderHotspotTemplate } = await import("@/server/network/hotspot-template");
+  it("substitutes variables (escaped) and evaluates if/else blocks like the router", () => {
+    const t = "Hi $(username)! $(if error)<p>$(error)</p>$(else)no error$(endif)";
+    expect(renderHotspotTemplate(t, { username: "<b>x</b>", error: "" })).toBe("Hi &lt;b&gt;x&lt;/b&gt;! no error");
+    expect(renderHotspotTemplate(t, { username: "awa", error: "bad password" })).toBe("Hi awa! <p>bad password</p>");
+  });
+});

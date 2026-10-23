@@ -79,6 +79,12 @@ export async function syncSessions(now = new Date()) {
     }
   }
 
+  // Keep the router's own countdown (hotspot status page) equal to the real expiry.
+  if (adapter.alignTimeLeft) {
+    const live = creds.filter((c) => isEntitled(c, now)).map((c) => ({ username: c.username, validUntil: c.validUntil }));
+    await adapter.alignTimeLeft(live).catch((err) => log.warn("Could not align router time-left", { error: errorMessage(err) }));
+  }
+
   // Usage accounting per credential (sum over its sessions).
   for (const c of creds) {
     const agg = await db.networkSession.aggregate({ where: { credentialId: c.id }, _sum: { bytesIn: true, bytesOut: true } });

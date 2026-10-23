@@ -80,6 +80,11 @@ export interface NetworkAdapter {
   listActiveSessions(): Promise<ActiveSession[]>;
   listManagedUsers(): Promise<ManagedUser[]>;
   syncProfile(profile: ProfileInput): Promise<void>;
+  /**
+   * Optional: keep the router's own "time left" equal to the real expiry (so the hotspot status page
+   * shows the right countdown). Returns how many users were adjusted.
+   */
+  alignTimeLeft?(items: { username: string; validUntil: Date }[]): Promise<number>;
   validateConfiguration(expected: { profiles: string[]; portalHost: string }): Promise<ValidationCheck[]>;
 }
 

@@ -39,6 +39,7 @@ export default async function PlanPage(props: PageProps<"/plans/[slug]">) {
             {[
               `${formatDuration(plan.durationMinutes)} of internet from activation`,
               `${plan.maxDevices} device${plan.maxDevices > 1 ? "s" : ""} connected at the same time`,
+              ...(plan.downloadSpeed ? [`Up to ${plan.downloadSpeed} download / ${plan.uploadSpeed} upload, so everyone gets a fair share`] : []),
               plan.dataLimitMb ? `${(plan.dataLimitMb / 1024).toFixed(1)} GB data allowance` : "No data cap (fair use applies)",
               "Personal access code right after payment",
             ].map((t) => (

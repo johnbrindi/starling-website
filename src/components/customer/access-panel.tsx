@@ -83,7 +83,9 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
     warnInit.current = true;
   }, [active, cred, remainingMs, status.warningMinutes]);
 
-  const code = cred?.code ?? "";
+  const code = cred?.username ?? "";
+  const password = cred?.password ?? "";
+  const userpass = cred?.style === "userpass";
 
   async function simulateConnect() {
     setConnectMsg(null);
@@ -98,7 +100,7 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(code);
+      await navigator.clipboard.writeText(userpass ? `${code} / ${password}` : code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -145,13 +147,30 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">Access code</p>
-              <div className="mt-1 flex items-center gap-3">
-                <p className="font-mono text-3xl font-semibold tracking-wider text-brand-700">{formatAccessCode(code)}</p>
-                <button onClick={copy} className="text-sm font-medium text-brand-700 hover:underline">
-                  {copied ? "Copied" : "Copy"}
-                </button>
-              </div>
+              {userpass ? (
+                <>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Wi-Fi login</p>
+                  <dl className="mt-1 grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1">
+                    <dt className="text-sm text-muted">Username</dt>
+                    <dd className="font-mono text-2xl font-semibold text-brand-700">{code}</dd>
+                    <dt className="text-sm text-muted">Password</dt>
+                    <dd className="font-mono text-2xl font-semibold tracking-wider text-brand-700">{password}</dd>
+                  </dl>
+                  <button onClick={copy} className="mt-1 text-sm font-medium text-brand-700 hover:underline">
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Access code</p>
+                  <div className="mt-1 flex items-center gap-3">
+                    <p className="font-mono text-3xl font-semibold tracking-wider text-brand-700">{formatAccessCode(code)}</p>
+                    <button onClick={copy} className="text-sm font-medium text-brand-700 hover:underline">
+                      {copied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                </>
+              )}
               <p className="mt-1 text-sm text-muted">
                 Works on {cred.maxDevices} device{cred.maxDevices > 1 ? "s" : ""} at a time.
               </p>
@@ -171,7 +190,7 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
               </p>
             ) : (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <a href={hotspotLoginHref(code, login.url, login.returnTo)} className="inline-flex h-12 items-center justify-center rounded-md bg-brand-600 px-5 font-medium text-white hover:bg-brand-700">
+                <a href={hotspotLoginHref(code, password, login.url, login.returnTo)} className="inline-flex h-12 items-center justify-center rounded-md bg-brand-600 px-5 font-medium text-white hover:bg-brand-700">
                   Connect this device
                 </a>
                 {networkSimulated ? (
@@ -179,7 +198,7 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
                     Simulate connect (test router)
                   </Button>
                 ) : null}
-                <p className="text-xs text-muted sm:ml-2">You must be connected to the Starling Wi-Fi network. Or type the code on the login page.</p>
+                <p className="text-xs text-muted sm:ml-2">You must be connected to the Starling Wi-Fi network. Or type it on the Wi-Fi login page.</p>
               </div>
             )}
             {connectMsg ? <p className="mt-2 text-sm text-ink-soft">{connectMsg}</p> : null}

@@ -61,3 +61,31 @@ test.describe("admin access control", () => {
     await expect(page.getByText(/"simulated": true/)).toBeVisible();
   });
 });
+
+test.describe("counter sales (cyber-café style)", () => {
+  test("support staff sell a pass and get a username + password slip", async ({ page }) => {
+    await login(page, "support@starling.local", "starling-dev-support-1");
+    await page.getByRole("link", { name: "Sell a pass" }).click();
+    await page.getByLabel("Customer phone").fill("670777000");
+    await page.getByLabel("Customer name (optional)").fill("Awa Bello");
+    page.once("dialog", (d) => d.accept());
+    await page.getByRole("button", { name: /Record cash sale/ }).click();
+    await expect(page.locator("#slip")).toBeVisible();
+    await expect(page.locator("#slip")).toContainText(/awa\d{3}/);
+    await expect(page.locator("#slip dd").nth(1)).toHaveText(/^\d{6}$/);
+    await expect(page.getByText(/Cash sales today: 1/)).toBeVisible();
+  });
+});
+
+test.describe("router captive-portal pages (preview)", () => {
+  test("login page has code and username/password tabs; status page counts down", async ({ page }) => {
+    await page.goto("/api/dev/hotspot-preview?page=login&error=invalid+username+or+password");
+    await expect(page.getByRole("alert")).toHaveText("invalid username or password");
+    await expect(page.getByRole("button", { name: "Access code" })).toBeVisible();
+    await page.getByRole("button", { name: "Username & password" }).click();
+    await expect(page.getByLabel("Username")).toHaveValue("awa482");
+    await expect(page.getByRole("link", { name: "Buy a pass online" })).toHaveAttribute("href", /\/portal\?login=http%3A%2F%2F10\.5\.50\.1%2Flogin/);
+    await page.goto("/api/dev/hotspot-preview?page=status");
+    await expect(page.locator("#left")).toHaveText(/^1h 12m \d\ds$/);
+  });
+});

@@ -30,7 +30,7 @@ Deny by default (`src/server/auth/rbac.ts`). Every admin page calls `requireStaf
 | Permission | Viewer | Support | Admin | Super admin |
 |---|:-:|:-:|:-:|:-:|
 | dashboard:view, customers:view, payments:view, network:view | ✓ | ✓ | ✓ | ✓ |
-| customers:revoke (revoke/block/disconnect), audit:view | | ✓ | ✓ | ✓ |
+| customers:revoke (revoke/block/disconnect), sales:create (Sell a pass), audit:view | | ✓ | ✓ | ✓ |
 | packages:manage, payments:reconcile, network:manage, settings:manage | | | ✓ | ✓ |
 | staff:manage | | | | ✓ |
 

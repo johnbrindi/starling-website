@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- Router-side status page (http://<hotspot>/status). Time remaining is authoritative on the portal. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wi-Fi status</title>
+<style>body{font-family:system-ui,Arial,sans-serif;max-width:380px;margin:40px auto;padding:0 20px;color:#16181d}a{color:#1d5bd8}td{padding:4px 8px 4px 0}</style>
+</head><body>
+<h1 style="font-size:20px">Starling Wi-Fi</h1>
+<table>
+<tr><td>Code</td><td><b>$(username)</b></td></tr>
+<tr><td>Device</td><td>$(ip) / $(mac)</td></tr>
+<tr><td>Connected for</td><td>$(uptime)</td></tr>
+$(if session-time-left)<tr><td>Time left</td><td>$(session-time-left)</td></tr>$(endif)
+<tr><td>Data</td><td>&darr; $(bytes-out-nice) &uarr; $(bytes-in-nice)</td></tr>
+</table>
+<p><a href="https://wifi.example.cm/account">My access &amp; renew</a></p>
+<form action="$(link-logout)" method="post"><input type="hidden" name="erase-cookie" value="on"><button type="submit">Log out this device</button></form>
+</body></html>

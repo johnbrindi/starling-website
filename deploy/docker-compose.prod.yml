@@ -1,0 +1,23 @@
+# Production on a small VPS (see docs/deployment.md). Database: Supabase (DATABASE_URL in .env.production).
+# Caddy terminates TLS; OpenVPN carries the management tunnel to the MikroTik.
+services:
+  web:
+    build: ..
+    env_file: ../.env.production
+    restart: unless-stopped
+    expose: ["3000"]
+  worker:
+    build: ..
+    env_file: ../.env.production
+    command: ["npm", "run", "worker"]
+    restart: unless-stopped
+    network_mode: host # reaches the router over the VPN interface (tun0) on the host
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+volumes:
+  caddy_data:

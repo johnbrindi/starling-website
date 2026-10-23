@@ -1,0 +1,19 @@
+# Local development / test infrastructure. Production uses managed Postgres (Supabase) - see docs/deployment.md.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: starling
+      POSTGRES_PASSWORD: starling_dev_only
+      POSTGRES_DB: starling
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U starling"]
+      interval: 3s
+      retries: 20
+
+volumes:
+  pgdata:

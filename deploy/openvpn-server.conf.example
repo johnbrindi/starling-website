@@ -1,0 +1,24 @@
+# OpenVPN server on the VPS for the MikroTik management tunnel (RouterOS v6 compatible).
+# RouterOS v6 OVPN client: TCP only, no compression, AES-CBC ciphers, SHA1 auth.
+port 1194
+proto tcp-server
+dev tun
+topology subnet
+server 10.99.0.0 255.255.255.0
+ifconfig-pool-persist /etc/openvpn/ipp.txt
+client-config-dir /etc/openvpn/ccd          # ccd/starling-router: "ifconfig-push 10.99.0.2 255.255.255.0"
+ca /etc/openvpn/pki/ca.crt
+cert /etc/openvpn/pki/issued/server.crt
+key /etc/openvpn/pki/private/server.key
+dh /etc/openvpn/pki/dh.pem
+data-ciphers AES-256-CBC
+data-ciphers-fallback AES-256-CBC
+auth SHA1
+tls-version-min 1.2
+keepalive 10 60
+persist-key
+persist-tun
+user nobody
+group nogroup
+# Do NOT push routes or redirect-gateway: only the router management traffic uses this tunnel.
+verb 3

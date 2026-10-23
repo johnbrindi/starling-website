@@ -1,0 +1,6 @@
+# Replace with your domain. Caddy obtains and renews the TLS certificate automatically.
+wifi.example.cm {
+	encode gzip
+	reverse_proxy web:3000
+	header -Server
+}

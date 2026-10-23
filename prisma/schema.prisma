@@ -1,0 +1,503 @@
+// Starling Wi-Fi database schema.
+// All timestamps are stored in UTC. All money is integer XAF (no minor unit).
+// See docs/database.md for the entity relationships and state machines.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Staff accounts ─────────────────────────────
+
+enum StaffRole {
+  SUPER_ADMIN // everything, including staff management
+  ADMIN // packages, customers, payments, network, settings
+  SUPPORT // view customers, revoke access, resend notices
+  VIEWER // read-only dashboards
+}
+
+model StaffUser {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  passwordHash      String
+  role              StaffRole @default(VIEWER)
+  isActive          Boolean   @default(true)
+  failedLoginCount  Int       @default(0)
+  lockedUntil       DateTime?
+  lastLoginAt       DateTime?
+  passwordChangedAt DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sessions       Session[]
+  resetTokens    PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  staffId   String
+  staff     StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([staffId])
+}
+
+// ───────────────────────────── Customers ─────────────────────────────
+
+model Customer {
+  id                  String    @id @default(cuid())
+  /// E.164 phone number, e.g. +237670000000. Used for Mobile Money and recovery.
+  phone               String    @unique
+  name                String?
+  notificationConsent Boolean   @default(false)
+  isBlocked           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  lastSeenAt          DateTime?
+
+  sessions          Session[]
+  payments          Payment[]
+  subscriptions     Subscription[]
+  credentials       AccessCredential[]
+  vouchers          Voucher[]
+  notifications     Notification[]
+  pushSubscriptions PushSubscription[]
+}
+
+enum SessionKind {
+  STAFF
+  CUSTOMER
+}
+
+/// Server-side sessions. The cookie holds a random token; only its SHA-256 hash is stored.
+model Session {
+  id         String      @id @default(cuid())
+  tokenHash  String      @unique
+  kind       SessionKind
+  staffId    String?
+  staff      StaffUser?  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  customerId String?
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  csrfToken  String
+  ipAddress  String?
+  userAgent  String?
+  expiresAt  DateTime
+  createdAt  DateTime    @default(now())
+  lastUsedAt DateTime    @default(now())
+
+  @@index([staffId])
+  @@index([customerId])
+  @@index([expiresAt])
+}
+
+// ───────────────────────────── Catalogue ─────────────────────────────
+
+enum PackageStatus {
+  ACTIVE // purchasable
+  INACTIVE // hidden, can be re-activated
+  ARCHIVED // retired permanently; kept for history
+}
+
+model Package {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String
+  description     String
+  priceXaf        Int
+  promoPriceXaf   Int?
+  promoEndsAt     DateTime?
+  durationMinutes Int
+  dataLimitMb     Int?
+  /// Stored as MikroTik rate-limit syntax "rx/tx" from the router's view, e.g. "2M/5M".
+  rateLimit       String?
+  maxDevices      Int           @default(1)
+  usagePolicy     String        @default("")
+  status          PackageStatus @default(ACTIVE)
+  sortOrder       Int           @default(0)
+  isFeatured      Boolean       @default(false)
+  networkProfileId String?
+  networkProfile  NetworkProfile? @relation(fields: [networkProfileId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  payments      Payment[]
+  subscriptions Subscription[]
+  vouchers      Voucher[]
+
+  @@index([status, sortOrder])
+}
+
+/// Maps to a MikroTik "/ip hotspot user profile" (or a RADIUS reply set).
+model NetworkProfile {
+  id          String    @id @default(cuid())
+  /// Profile name on the router. Must exist (or be created by profile sync).
+  routerName  String    @unique
+  description String    @default("")
+  rateLimit   String?
+  sharedUsers Int       @default(1)
+  idleTimeout String?   @default("10m")
+  lastSyncedAt DateTime?
+  lastSyncError String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  packages Package[]
+}
+
+// ───────────────────────────── Payments ─────────────────────────────
+
+enum PaymentProvider {
+  SIMULATOR
+  NOTCHPAY
+}
+
+enum PaymentStatus {
+  PENDING // created, waiting for customer approval on their phone
+  SUCCEEDED // verified with the provider (server-side)
+  FAILED
+  CANCELLED
+  EXPIRED // never completed within the allowed window
+  REFUNDED
+}
+
+model Payment {
+  id                String          @id @default(cuid())
+  /// Our reference, sent to the provider. Unique and unguessable.
+  reference         String          @unique
+  idempotencyKey    String          @unique
+  customerId        String
+  customer          Customer        @relation(fields: [customerId], references: [id])
+  packageId         String
+  package           Package         @relation(fields: [packageId], references: [id])
+  amountXaf         Int
+  currency          String          @default("XAF")
+  provider          PaymentProvider
+  providerReference String?
+  /// Mobile Money operator channel, e.g. cm.mtn / cm.orange.
+  channel           String?
+  payerPhone        String
+  status            PaymentStatus   @default(PENDING)
+  isSimulated       Boolean         @default(false)
+  failureReason     String?
+  providerStatus    String?
+  /// Captive-portal context captured at checkout (MAC/IP of the device), if any.
+  clientMac         String?
+  clientIp          String?
+  verifiedAt        DateTime?
+  lastCheckedAt     DateTime?
+  checkCount        Int             @default(0)
+  expiresAt         DateTime
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  subscription Subscription?
+
+  @@unique([provider, providerReference])
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
+}
+
+model WebhookEvent {
+  id             String          @id @default(cuid())
+  provider       PaymentProvider
+  /// Provider event id (or a hash of the body when the provider has none).
+  eventKey       String
+  eventType      String?
+  signatureValid Boolean
+  payload        Json
+  paymentRef     String?
+  processedAt    DateTime?
+  error          String?
+  receivedAt     DateTime        @default(now())
+
+  @@unique([provider, eventKey])
+  @@index([paymentRef])
+}
+
+// ───────────────────────────── Prepaid vouchers ─────────────────────────────
+
+enum VoucherStatus {
+  UNUSED
+  REDEEMED
+  VOID
+}
+
+/// Prepaid codes sold for cash (printed cards). Redeeming one grants its package exactly once.
+model Voucher {
+  id           String        @id @default(cuid())
+  /// SHA-256 of the normalised code; the plain code is shown once at generation time.
+  codeHash     String        @unique
+  /// Last 3 characters, to help staff identify a card without storing the code.
+  codeHint     String
+  batch        String
+  packageId    String
+  package      Package       @relation(fields: [packageId], references: [id])
+  status       VoucherStatus @default(UNUSED)
+  expiresAt    DateTime?
+  createdById  String?
+  redeemedById String?
+  redeemedBy   Customer?     @relation(fields: [redeemedById], references: [id])
+  redeemedAt   DateTime?
+  createdAt    DateTime      @default(now())
+
+  subscription Subscription?
+
+  @@index([batch])
+  @@index([status])
+}
+
+// ───────────────────────────── Entitlements ─────────────────────────────
+
+enum SubscriptionStatus {
+  SCHEDULED // paid, starts later (stacked renewal)
+  ACTIVE // within its validity window
+  EXPIRED
+  REVOKED // cancelled by staff
+}
+
+/// One paid period of access. Exactly one subscription per successful payment (paymentId is unique).
+model Subscription {
+  id              String             @id @default(cuid())
+  customerId      String
+  customer        Customer           @relation(fields: [customerId], references: [id])
+  packageId       String
+  package         Package            @relation(fields: [packageId], references: [id])
+  paymentId       String?            @unique
+  payment         Payment?           @relation(fields: [paymentId], references: [id])
+  /// Set when the period came from a prepaid voucher instead of an online payment.
+  voucherId       String?            @unique
+  voucher         Voucher?           @relation(fields: [voucherId], references: [id])
+  credentialId    String
+  credential      AccessCredential   @relation(fields: [credentialId], references: [id])
+  status          SubscriptionStatus
+  // Snapshot of the package at purchase time (packages may change later).
+  priceXaf        Int
+  durationMinutes Int
+  dataLimitMb     Int?
+  startsAt        DateTime
+  endsAt          DateTime
+  revokedAt       DateTime?
+  revokedReason   String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([customerId, endsAt])
+  @@index([status, endsAt])
+  @@index([credentialId])
+}
+
+enum CredentialStatus {
+  ACTIVE // entitled now (validFrom <= now < validUntil)
+  EXPIRED
+  REVOKED
+}
+
+enum ProvisionState {
+  PENDING // must be pushed to the network
+  PROVISIONED // the network adapter confirmed the user exists with the right limits
+  FAILED // last attempt failed; a retry job is queued
+  DEPROVISION_PENDING // must be removed / disabled on the network
+  REMOVED // confirmed removed from the network
+}
+
+/// The login code a customer types on the hotspot. Maps 1:1 to a router hotspot user / RADIUS user.
+model AccessCredential {
+  id                String           @id @default(cuid())
+  customerId        String
+  customer          Customer         @relation(fields: [customerId], references: [id])
+  /// Hotspot username (the access code without separators). Not secret on its own.
+  username          String           @unique
+  /// AES-256-GCM encrypted password (must be recoverable to push to the router and show the customer).
+  passwordEnc       String
+  status            CredentialStatus @default(ACTIVE)
+  validFrom         DateTime
+  validUntil        DateTime
+  dataLimitBytes    BigInt?
+  rateLimit         String?
+  maxDevices        Int              @default(1)
+  networkProfileName String?
+  provisionState    ProvisionState   @default(PENDING)
+  provisionedAt     DateTime?
+  provisionedUntil  DateTime?
+  lastSyncError     String?
+  /// Usage counters reported by the network (accounting).
+  bytesIn           BigInt           @default(0)
+  bytesOut          BigInt           @default(0)
+  lastUsageAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  subscriptions Subscription[]
+  sessions      NetworkSession[]
+
+  @@index([customerId])
+  @@index([status, validUntil])
+  @@index([provisionState])
+}
+
+/// A device session actually seen on the router (/ip hotspot active) or in RADIUS accounting.
+model NetworkSession {
+  id              String           @id @default(cuid())
+  credentialId    String?
+  credential      AccessCredential? @relation(fields: [credentialId], references: [id])
+  username        String
+  /// Router-side id (e.g. "*1A") or RADIUS Acct-Session-Id.
+  externalId      String
+  macAddress      String?
+  ipAddress       String?
+  startedAt       DateTime
+  lastSeenAt      DateTime
+  endedAt         DateTime?
+  endReason       String?
+  bytesIn         BigInt           @default(0)
+  bytesOut        BigInt           @default(0)
+  uptimeSeconds   Int              @default(0)
+
+  @@unique([externalId, startedAt])
+  @@index([username, endedAt])
+  @@index([credentialId])
+}
+
+// ───────────────────────────── Notifications ─────────────────────────────
+
+enum NotificationType {
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  ACCESS_READY
+  EXPIRY_WARNING
+  EXPIRED
+  REVOKED
+}
+
+enum NotificationChannel {
+  IN_APP
+  WEB_PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Notification {
+  id         String              @id @default(cuid())
+  customerId String
+  customer   Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  channel    NotificationChannel
+  title      String
+  body       String
+  /// Prevents duplicates, e.g. "warn:<credentialId>:<validUntil>:15".
+  dedupeKey  String              @unique
+  status     NotificationStatus  @default(PENDING)
+  error      String?
+  readAt     DateTime?
+  sentAt     DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@index([customerId, createdAt])
+  @@index([status])
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  failures   Int      @default(0)
+
+  @@index([customerId])
+}
+
+// ───────────────────────────── Operations ─────────────────────────────
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED // will be retried at runAt
+  DEAD // gave up after maxAttempts; needs a human
+}
+
+/// Durable background job queue (Postgres, FOR UPDATE SKIP LOCKED).
+model Job {
+  id          String    @id @default(cuid())
+  type        String
+  payload     Json      @default("{}")
+  status      JobStatus @default(PENDING)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(8)
+  runAt       DateTime  @default(now())
+  lockedAt    DateTime?
+  lockedBy    String?
+  lastError   String?
+  /// While a job with this key is PENDING/RUNNING/FAILED, no duplicate is enqueued.
+  dedupeKey   String?   @unique
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, runAt])
+  @@index([type])
+}
+
+enum ActorType {
+  STAFF
+  CUSTOMER
+  SYSTEM
+  PROVIDER
+}
+
+model AuditEvent {
+  id         String    @id @default(cuid())
+  actorType  ActorType
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  ipAddress  String?
+  metadata   Json      @default("{}")
+  createdAt  DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@index([action])
+}
+
+/// Router / integration health snapshots shown on the admin dashboard.
+model IntegrationStatus {
+  key        String   @id // e.g. "network", "payments"
+  ok         Boolean
+  mode       String // e.g. "fake", "routeros", "simulator", "notchpay"
+  detail     Json     @default("{}")
+  error      String?
+  checkedAt  DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int
+  resetAt   DateTime
+}

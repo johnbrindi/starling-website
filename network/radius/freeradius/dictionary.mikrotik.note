@@ -1,0 +1,3 @@
+FreeRADIUS ships the MikroTik vendor dictionary (dictionary.mikrotik, vendor 14988), which defines
+Mikrotik-Rate-Limit, Mikrotik-Total-Limit and Mikrotik-Total-Limit-Gigawords used by radreply.
+It is included by default in /usr/share/freeradius/dictionary. Nothing to add.

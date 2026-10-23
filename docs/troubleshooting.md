@@ -4,6 +4,10 @@
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| Customers browse without logging in | A FastTrack firewall rule (default config) bypasses the hotspot: `/ip firewall filter disable [find action=fasttrack-connection]`; or the port/AP is not in `bridge-hotspot` |
+| Asked to log in again and again / "no more sessions" on the same phone | Private (random) MAC is on: Android → Use device MAC; iPhone → Private Wi-Fi Address off |
+| RouterOS 7: hotspot inactive "not allowed by device-mode" | `/system/device-mode/update hotspot=yes`, then press the reset/mode button within 5 minutes |
+| Ticket "wrong password" | Extra space or capital letters (the login page trims and lower-cases usernames; passwords are 6 digits) |
 | Phone joins Wi-Fi but no login page | HotSpot off, or the device is using cached DNS/HTTPS | Open `http://neverssl.com`; check `/ip hotspot print` (enabled, interface `bridge-hotspot`); don't whitelist captive-check domains |
 | Login page shows but the portal doesn't load | Portal host missing from the walled garden, or its IP changed | `/ip hotspot walled-garden ip print`; add/refresh `dst-host=<APP_URL host>`; Console → Network → Validate |
 | Portal loads without styling | Assets come from the same host, so this is a partial walled-garden match | Make sure the exact host (not just a subdomain) is in the walled garden |

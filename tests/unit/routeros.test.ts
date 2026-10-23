@@ -109,7 +109,8 @@ describe("RouterOS adapter against a fake router", () => {
   });
 
   it("syncs profiles and validates configuration read-only", async () => {
-    await adapter.syncProfile({ name: "starling-1h", rateLimit: "2M/5M", sharedUsers: 1, idleTimeout: "10m" });
+    await adapter.syncProfile({ name: "starling-1h", rateLimit: "2M/5M", sharedUsers: 1, idleTimeout: "none", keepaliveTimeout: "3h", statusAutorefresh: "1m" });
+    expect(router.tables["/ip/hotspot/user/profile"]!.find((p) => p.name === "starling-1h")).toMatchObject({ "keepalive-timeout": "3h", "idle-timeout": "none", "add-mac-cookie": "yes" });
     const before = JSON.stringify(router.tables);
     const checks = await adapter.validateConfiguration({ profiles: ["starling-1h", "missing"], portalHost: "wifi.example.cm" });
     expect(JSON.stringify(router.tables)).toBe(before);
@@ -119,6 +120,12 @@ describe("RouterOS adapter against a fake router", () => {
     expect(byName['User profile "starling-1h"']).toBe(true);
     expect(byName['User profile "missing"']).toBe(false);
     expect(byName["Walled garden allows the portal"]).toBe(true);
+    // Pitfalls from the video walkthrough are detected.
+    expect(byName["No FastTrack rule"]).toBe(false);
+    expect(byName["One IP per device (addresses-per-mac=1)"]).toBe(true);
+    expect(byName["Login methods"]).toBe(true);
+    expect(byName["Custom login page (starling/login.html)"]).toBe(true);
+    expect(byName["No self-logout page"]).toBe(false);
   });
 
   it("surfaces an unreachable router as NetworkUnavailableError", async () => {

@@ -32,6 +32,12 @@ export async function getDashboard() {
       db.integrationStatus.findUnique({ where: { key: "network" } }),
       db.auditEvent.findMany({ orderBy: { createdAt: "desc" }, take: 12 }),
     ]);
+  const ticketsWeek = await db.accessCredential.aggregate({
+    where: { ticketBatch: { not: null }, firstLoginAt: { gte: weekAgo } },
+    _sum: { priceXaf: true },
+    _count: true,
+  });
+  const ticketsUnused = await db.accessCredential.count({ where: { ticketBatch: { not: null }, firstLoginAt: null, status: "ACTIVE", validUntil: { gt: now } } });
 
   const adapter = getNetworkAdapter();
   let paymentMode = env().PAYMENT_PROVIDER as string;
@@ -55,6 +61,7 @@ export async function getDashboard() {
       simulated: { amount: simulatedRevenue._sum.amountXaf ?? 0, count: simulatedRevenue._count },
     },
     failedPaymentsDay: failedDay,
+    tickets: { usedWeek: { amount: ticketsWeek._sum.priceXaf ?? 0, count: ticketsWeek._count }, unused: ticketsUnused },
     expiringSoon,
     deadJobs,
     provisionFailed,

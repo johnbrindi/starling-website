@@ -7,6 +7,8 @@ import { PortalCapture } from "@/components/customer/portal-capture";
 import { PlanCard } from "@/components/customer/plan-card";
 import { Alert } from "@/components/ui/primitives";
 import { LinkButton } from "@/components/ui/button";
+import { DeviceMacHelp } from "@/components/customer/device-mac-help";
+import { getSettings } from "@/server/settings";
 
 export const metadata: Metadata = { title: "Welcome" };
 
@@ -24,7 +26,7 @@ export default async function PortalPage(props: PageProps<"/portal">) {
     const status = await getAccessStatus(ctx.customer.id);
     if (status.state === "READY" || status.state === "PROVISIONING" || status.state === "ONLINE") redirect("/account");
   }
-  const plans = await listActivePackages();
+  const [plans, settings] = await Promise.all([listActivePackages(), getSettings()]);
   const expired = ctx ? (await getAccessStatus(ctx.customer.id)).state === "EXPIRED" : false;
   return (
     <div className="space-y-6">
@@ -45,6 +47,7 @@ export default async function PortalPage(props: PageProps<"/portal">) {
           <PlanCard key={p.id} plan={p} />
         ))}
       </div>
+      <DeviceMacHelp networkName={settings.businessName} open={!!routerError} />
       {ctx ? (
         <div className="flex flex-wrap gap-2">
           <LinkButton href="/account" variant="secondary">My Wi-Fi</LinkButton>

@@ -74,5 +74,7 @@ export const profileInputSchema = z.object({
   description: z.string().trim().max(200).default(""),
   rateLimit: z.string().trim().regex(rateLimitRe, 'Use MikroTik format "upload/download", e.g. 2M/5M.').nullable().default(null),
   sharedUsers: z.number().int().min(1).max(10),
-  idleTimeout: z.string().trim().regex(/^(none|\d+[smhd])$/).nullable().default("10m"),
+  idleTimeout: z.string().trim().regex(/^(none|\d+[smhd])$/, 'Use "none" or e.g. 10m.').nullable().default("none"),
+  keepaliveTimeout: z.string().trim().regex(/^(none|\d+[smhd])$/, 'Use "none" or e.g. 3h.').nullable().default("3h"),
+  statusAutorefresh: z.string().trim().regex(/^\d+[smh]$/, "e.g. 1m").nullable().default("1m"),
 });

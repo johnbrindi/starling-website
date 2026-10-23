@@ -45,6 +45,9 @@ export interface ProfileInput {
   rateLimit: string | null;
   sharedUsers: number;
   idleTimeout: string | null;
+  /** Long keepalive (e.g. "3h") keeps a silent device's slot so one login cannot hop between phones. */
+  keepaliveTimeout: string | null;
+  statusAutorefresh: string | null;
 }
 
 export interface HealthResult {

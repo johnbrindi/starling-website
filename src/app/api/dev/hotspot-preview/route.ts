@@ -3,11 +3,11 @@ import path from "node:path";
 import { env } from "@/server/env";
 import { renderHotspotTemplate, sampleHotspotVars } from "@/server/network/hotspot-template";
 
-const PAGES = new Set(["login", "alogin", "status", "logout"]);
+const PAGES = new Set(["login", "alogin", "status"]);
 
 /**
  * DEVELOPMENT ONLY — preview the MikroTik hotspot pages in network/mikrotik/hotspot with sample values:
- *   /api/dev/hotspot-preview?page=login            (also: status, alogin, logout)
+ *   /api/dev/hotspot-preview?page=login            (also: status, alogin)
  *   /api/dev/hotspot-preview?page=login&error=invalid+username+or+password
  */
 export async function GET(req: Request) {

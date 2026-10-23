@@ -1,6 +1,8 @@
 <!doctype html>
 <!--
-  Router status page (http://<hotspot>/status): live time left, data used, log out.
+  Router status page (http://<hotspot>/status): live time left, data used, renew, WhatsApp help.
+  There is deliberately no logout button: one login stays on one device until its time ends
+  (staff can disconnect a device from the console).
   $(session-time-left) is kept equal to the real expiry by the platform (limit-uptime alignment), and the
   page re-syncs with the router every minute. Replace wifi.example.cm with your APP_URL.
 -->
@@ -19,7 +21,7 @@
   .row:last-child{border-bottom:0}.row span{color:#6b7180}.row b{font-weight:600}
   .warn{background:#fdf4e1;color:#8a5a00;border-radius:10px;padding:12px 14px;font-size:14px;margin:14px 0 0}
   .btn{display:block;width:100%;height:50px;border-radius:10px;font-size:16px;font-weight:700;text-align:center;line-height:50px;text-decoration:none;margin-top:12px;border:0;cursor:pointer}
-  .pri{background:#1d5bd8;color:#fff}.sec{background:#fff;color:#b42318;border:1px solid #f3c7c2}
+  .pri{background:#1d5bd8;color:#fff}.sec{background:#fff;color:#16181d;border:1px solid #e3e6ec}
   .hide{display:none}
 </style>
 </head><body>
@@ -38,10 +40,8 @@
   </div>
   <p class="warn hide" id="warn">Your time is almost up. Buy more time now to stay connected (the same login keeps working).</p>
   <a class="btn pri" href="https://wifi.example.cm/account">Buy more time / my account</a>
-  <form action="$(link-logout)" method="post" onsubmit="return confirm('Log out this device? Your time keeps running.')">
-    <input type="hidden" name="erase-cookie" value="on">
-    <button class="btn sec" type="submit">Log out this device</button>
-  </form>
+  <a class="btn sec" href="https://wa.me/237600000000">Need help? WhatsApp us</a>
+  <p style="text-align:center;font-size:12px;color:#6b7180;margin-top:14px">Your login works on this device until your time ends.</p>
 </div>
 <script>
   // Parse RouterOS durations: "1d02:03:04", "02:03:04", "1h2m3s", "59m48s".

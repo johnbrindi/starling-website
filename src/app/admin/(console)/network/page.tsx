@@ -7,7 +7,7 @@ import { getNetworkAdapter } from "@/server/network";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { Alert, Badge, Card, CardHeader, Empty, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { ActionButton } from "@/components/admin/admin-context";
-import { ProfileForm } from "@/components/admin/forms";
+import { ProfileEditButton, ProfileForm } from "@/components/admin/forms";
 
 export default async function NetworkPage() {
   const { staff } = await requireStaffPage("network:view");
@@ -89,21 +89,42 @@ export default async function NetworkPage() {
       </Card>
 
       <Card className="mt-6">
-        <CardHeader title="Speed profiles" description="Each maps to a RouterOS /ip hotspot user profile." />
+        <CardHeader
+          title="User profiles (speed, devices, timeouts)"
+          description="Each maps to a RouterOS /ip hotspot user profile. After changes, press “Push profiles”. A long keepalive (3h) stops one ticket being passed from phone to phone."
+        />
         {manage ? <div className="border-b border-line p-4"><ProfileForm /></div> : null}
         {profiles.length === 0 ? <Empty>No profiles. Packages use the router&apos;s default profile.</Empty> : (
           <Table>
-            <thead><tr><Th>Name</Th><Th>Speed</Th><Th>Shared users</Th><Th>Idle timeout</Th><Th>Packages</Th><Th>Last pushed</Th><Th /></tr></thead>
+            <thead><tr><Th>Name</Th><Th>Speed (up/down)</Th><Th>Devices</Th><Th>Idle / keepalive</Th><Th>Packages</Th><Th>Last pushed</Th><Th /></tr></thead>
             <tbody>
               {profiles.map((p) => (
                 <tr key={p.id}>
                   <Td className="font-mono">{p.routerName}</Td>
                   <Td>{p.rateLimit ?? "unlimited"}</Td>
                   <Td>{p.sharedUsers}</Td>
-                  <Td>{p.idleTimeout ?? "none"}</Td>
+                  <Td>{p.idleTimeout ?? "none"} / {p.keepaliveTimeout ?? "2m"}</Td>
                   <Td>{p._count.packages}</Td>
                   <Td>{p.lastSyncedAt ? formatDateTime(p.lastSyncedAt) : "never"}{p.lastSyncError ? <div className="text-xs text-bad">{p.lastSyncError}</div> : null}</Td>
-                  <Td>{manage && p._count.packages === 0 ? <ActionButton method="DELETE" path={`/api/admin/profiles/${p.id}`} label="Delete" confirm="Delete this profile mapping?" /> : null}</Td>
+                  <Td>
+                    {manage ? (
+                      <span className="flex flex-wrap gap-2">
+                        <ProfileEditButton
+                          value={{
+                            id: p.id,
+                            routerName: p.routerName,
+                            description: p.description,
+                            rateLimit: p.rateLimit ?? "",
+                            sharedUsers: p.sharedUsers,
+                            idleTimeout: p.idleTimeout ?? "none",
+                            keepaliveTimeout: p.keepaliveTimeout ?? "3h",
+                            statusAutorefresh: p.statusAutorefresh ?? "1m",
+                          }}
+                        />
+                        {p._count.packages === 0 ? <ActionButton method="DELETE" path={`/api/admin/profiles/${p.id}`} label="Delete" confirm="Delete this profile mapping?" /> : null}
+                      </span>
+                    ) : null}
+                  </Td>
                 </tr>
               ))}
             </tbody>

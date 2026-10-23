@@ -32,25 +32,61 @@ function useSubmit() {
   return { submit, busy, error, ok };
 }
 
-export function ProfileForm() {
+export interface ProfileValue {
+  id?: string;
+  routerName: string;
+  description: string;
+  rateLimit: string;
+  sharedUsers: number;
+  idleTimeout: string;
+  keepaliveTimeout: string;
+  statusAutorefresh: string;
+}
+
+const EMPTY_PROFILE: ProfileValue = { routerName: "", description: "", rateLimit: "", sharedUsers: 1, idleTimeout: "none", keepaliveTimeout: "3h", statusAutorefresh: "1m" };
+
+/** Create or edit a router user profile (speed, devices, timeouts). Push to the router with "Push profiles". */
+export function ProfileForm({ initial, onDone }: { initial?: ProfileValue; onDone?: () => void }) {
   const { submit, busy, error } = useSubmit();
-  const [v, setV] = useState({ routerName: "", description: "", rateLimit: "", sharedUsers: 1, idleTimeout: "10m" });
+  const [v, setV] = useState<ProfileValue>(initial ?? EMPTY_PROFILE);
+  const set = <K extends keyof ProfileValue>(k: K, val: ProfileValue[K]) => setV((s) => ({ ...s, [k]: val }));
   return (
     <form
-      className="grid gap-3 sm:grid-cols-5"
+      className="grid gap-3 sm:grid-cols-4"
       onSubmit={async (e) => {
         e.preventDefault();
-        const res = await submit("/api/admin/profiles", "POST", { ...v, rateLimit: v.rateLimit || null, idleTimeout: v.idleTimeout || null });
-        if (res) setV({ routerName: "", description: "", rateLimit: "", sharedUsers: 1, idleTimeout: "10m" });
+        const { id, ...body } = v;
+        const payload = { ...body, rateLimit: v.rateLimit || null, idleTimeout: v.idleTimeout || null, keepaliveTimeout: v.keepaliveTimeout || null, statusAutorefresh: v.statusAutorefresh || null };
+        const res = await submit(id ? `/api/admin/profiles/${id}` : "/api/admin/profiles", id ? "PUT" : "POST", payload);
+        if (res) {
+          if (!id) setV(EMPTY_PROFILE);
+          onDone?.();
+        }
       }}
     >
-      <Field label="Router profile name" htmlFor="pn"><Input id="pn" value={v.routerName} onChange={(e) => setV({ ...v, routerName: e.target.value })} placeholder="starling-2m" /></Field>
-      <Field label="Speed (up/down)" htmlFor="pr"><Input id="pr" value={v.rateLimit} onChange={(e) => setV({ ...v, rateLimit: e.target.value })} placeholder="1M/3M" /></Field>
-      <Field label="Shared users" htmlFor="ps"><Input id="ps" type="number" min={1} max={10} value={v.sharedUsers} onChange={(e) => setV({ ...v, sharedUsers: Number(e.target.value) })} /></Field>
-      <Field label="Idle timeout" htmlFor="pi"><Input id="pi" value={v.idleTimeout} onChange={(e) => setV({ ...v, idleTimeout: e.target.value })} placeholder="10m or none" /></Field>
-      <div className="flex items-end"><Button type="submit" loading={busy} className="w-full">Add profile</Button></div>
-      {error ? <div className="sm:col-span-5"><Alert tone="bad">{error}</Alert></div> : null}
+      <Field label="Router profile name" htmlFor={`pn-${v.id ?? "new"}`}><Input id={`pn-${v.id ?? "new"}`} value={v.routerName} onChange={(e) => set("routerName", e.target.value)} placeholder="starling-weekly" /></Field>
+      <Field label="Speed (upload/download)" htmlFor={`pr-${v.id ?? "new"}`} hint="e.g. 5M/10M"><Input id={`pr-${v.id ?? "new"}`} value={v.rateLimit} onChange={(e) => set("rateLimit", e.target.value)} placeholder="5M/10M" /></Field>
+      <Field label="Devices at once (shared users)" htmlFor={`ps-${v.id ?? "new"}`}><Input id={`ps-${v.id ?? "new"}`} type="number" min={1} max={10} value={v.sharedUsers} onChange={(e) => set("sharedUsers", Number(e.target.value))} /></Field>
+      <Field label="Description" htmlFor={`pd-${v.id ?? "new"}`}><Input id={`pd-${v.id ?? "new"}`} value={v.description} onChange={(e) => set("description", e.target.value)} /></Field>
+      <Field label="Idle timeout" htmlFor={`pi-${v.id ?? "new"}`} hint="none = never log out an idle user"><Input id={`pi-${v.id ?? "new"}`} value={v.idleTimeout} onChange={(e) => set("idleTimeout", e.target.value)} /></Field>
+      <Field label="Keepalive timeout" htmlFor={`pk-${v.id ?? "new"}`} hint="3h stops one login hopping between phones"><Input id={`pk-${v.id ?? "new"}`} value={v.keepaliveTimeout} onChange={(e) => set("keepaliveTimeout", e.target.value)} /></Field>
+      <Field label="Status page refresh" htmlFor={`pa-${v.id ?? "new"}`}><Input id={`pa-${v.id ?? "new"}`} value={v.statusAutorefresh} onChange={(e) => set("statusAutorefresh", e.target.value)} /></Field>
+      <div className="flex items-end gap-2">
+        <Button type="submit" loading={busy} className="w-full">{v.id ? "Save" : "Add profile"}</Button>
+        {onDone && v.id ? <Button type="button" variant="secondary" onClick={onDone}>Cancel</Button> : null}
+      </div>
+      {error ? <div className="sm:col-span-4"><Alert tone="bad">{error}</Alert></div> : null}
     </form>
+  );
+}
+
+export function ProfileEditButton({ value }: { value: ProfileValue }) {
+  const [open, setOpen] = useState(false);
+  if (!open) return <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>Edit</Button>;
+  return (
+    <div className="mt-2 rounded-md border border-line bg-white p-3">
+      <ProfileForm initial={value} onDone={() => setOpen(false)} />
+    </div>
   );
 }
 

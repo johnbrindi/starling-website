@@ -11,10 +11,10 @@ Built with Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind CSS 
 | Customer portal | Customer accounts (name, phone, password; sign-in, password reset), mobile-first plans page, Mobile Money checkout (USSD push), live payment status, access code + **Connect** button, server-authoritative countdown, expiry warnings (in-app, local and Web Push), renewal, purchase history, voucher-card redemption, recovery with phone + code, help/terms/privacy |
 | Payments | Provider interface; **Notch Pay** direct charge (Cameroon MTN/Orange); clearly labelled **simulator** for development (refused in production). Server-side verification only, HMAC-verified idempotent webhooks, idempotency keys, amount/currency/reference matching, reconciliation of delayed/missing webhooks and crash recovery |
 | Entitlements | One subscription per verified payment (DB-enforced), configurable renewal (stack on same code or new code), expiry state machine, revocation, prepaid vouchers (exactly-once) |
-| Captive portal on the router | Branded `login.html` served by the MikroTik (works even when the internet is down) with *Access code* and *Username & password* tabs, live *Time left* status page, after-login page. Preview them without a router at `/api/dev/hotspot-preview?page=login` |
+| Captive portal on the router | Branded `login.html` served by the MikroTik (works even when the internet is down) with *Access code* and *Username & password* tabs, WhatsApp button, private-MAC help, live *Time left* status page, and no self-logout (one login per device). Preview them without a router at `/api/dev/hotspot-preview?page=login` |
 | MikroTik | Native **RouterOS v6 API** client (no v7 REST dependency) for the hAP lite on 6.48/6.49: provisioning hotspot users with limits, profile sync, active-session sync, disconnects, reconciliation, read-only config validation, optional router-side expiry scheduler. Optional **RADIUS** mode (FreeRADIUS SQL views + RFC 5176 disconnects). **Fake router** for development |
 | Enforcement | Background worker expires access on time, removes users and kicks sessions; session sync disconnects anyone not entitled regardless of what a browser shows |
-| Admin console | Role-based (super admin, admin, support, viewer), **Sell a pass** (cash counter sales that create a username + password, with a printable slip), dashboard (live vs simulated clearly separated), packages, customers, payments, vouchers, network health/actions/profiles/sessions/sync errors, settings, staff, audit log |
+| Admin console | Role-based (super admin, admin, support, viewer), **Sell a pass** (cash counter sales that create a username + password, with a printable slip), **Printed tickets** (batches of username/password tickets whose time starts at first login, Mikhmon-style), dashboard (live vs simulated clearly separated), packages, customers, payments, vouchers, network health/actions/profiles/sessions/sync errors, settings, staff, audit log |
 | Security | Argon2id, server-side sessions (`__Host-` cookies), CSRF (origin + token), rate limits, account lockout, strict CSP and security headers, AES-256-GCM for stored codes, redacted structured logs, deny-by-default RBAC, production guards against fake payments/routers |
 
 ## Quick start (development)
@@ -50,7 +50,7 @@ npm run build
 | [database](docs/database.md) | Schema, state machines, migrations, seed, backups |
 | [payments](docs/payments.md) | Notch Pay setup, webhooks, testing, reconciliation |
 | [mikrotik-integration](docs/mikrotik-integration.md) | RouterOS API method and prerequisites |
-| [network-integration-guide](docs/network-integration-guide.md) | **Step-by-step: Starlink + hAP lite + Tenda + this app** |
+| [network-integration-guide](docs/network-integration-guide.md) | **Complete system guide: Starlink → hAP lite (Winbox, reset, update, bridge, HotSpot wizard, FastTrack, pages, profiles) → Tenda AP → platform, tests, daily operation** |
 | [access-control](docs/access-control.md) | Roles, ACL policy, walled garden, firewall boundaries |
 | [radius](docs/radius.md) | Optional FreeRADIUS mode |
 | [deployment](docs/deployment.md) | VPS, TLS, DNS, VPN, backups, monitoring, updates |

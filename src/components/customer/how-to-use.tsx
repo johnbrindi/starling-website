@@ -21,12 +21,12 @@ export function HowToUse({
     <strong className="font-mono text-ink">{formatAccessCode(username)}</strong>
   );
   const steps: [string, React.ReactNode][] = [
-    ["Stay on the Wi-Fi", <>Make sure your phone is connected to the <strong className="text-ink">{networkName}</strong> network (not mobile data).</>],
+    ["Stay on the Wi-Fi", <>Make sure your phone is connected to the <strong className="text-ink">{networkName}</strong> network (not mobile data), with “private Wi-Fi address” turned off (see above).</>],
     ["Tap “Connect this device”", <>Use the blue button above. The Wi-Fi logs you in and you can browse straight away.</>],
     [
       "On another phone or laptop",
       <>
-        Join <strong className="text-ink">{networkName}</strong>, open any website (for example <span className="font-mono">neverssl.com</span>). On the login page, type {shown} and tap Connect. Your pass allows {maxDevices} device{maxDevices > 1 ? "s" : ""} at the same time.
+        Join <strong className="text-ink">{networkName}</strong>, open any website (for example <span className="font-mono">neverssl.com</span>). On the login page, type {shown} and tap Connect. Your pass allows {maxDevices} device{maxDevices > 1 ? "s" : ""} at the same time; a device keeps its place until your time ends.
       </>,
     ],
     ["Watch your time", <>The countdown runs even when you are not browsing. We remind you before it ends; buy more time to keep the same code.</>],

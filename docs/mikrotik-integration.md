@@ -34,6 +34,7 @@ Usernames are restricted to `[A-Za-z0-9_-]` before use in any router script (`sc
 |---|---|---|---|
 | Access code | `K7M4QX2P` / same code | Online purchase, voucher card | *Access code* tab (one field) |
 | Username + password | `awa482` / `568230` (6 digits) | Staff, Console → **Sell a pass** (cash, cyber-café style) | *Username & password* tab |
+| Printed ticket | `k7m4qx` / `849489` | Staff, Console → **Printed tickets** (batch) | *Username & password* tab; **time starts at first login** (detected from `/ip hotspot active`), unused tickets expire after the activation window |
 
 Both are ordinary hotspot users with the same profile, limits and expiry handling. Usernames are unique (DB constraint). In RADIUS mode, counter sales always use access codes, because the RADIUS view uses the username as the password.
 

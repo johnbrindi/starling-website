@@ -3,6 +3,7 @@ import { getCustomer } from "@/server/auth/session";
 import { getSettings } from "@/server/settings";
 import { WifiIcon } from "@/components/ui/icons";
 import { BottomNav } from "@/components/customer/bottom-nav";
+import { WhatsAppButton } from "@/components/customer/whatsapp-button";
 
 export default async function SiteLayout({ children }: LayoutProps<"/">) {
   const [settings, ctx] = await Promise.all([getSettings(), getCustomer()]);
@@ -69,6 +70,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
       </footer>
+      <WhatsAppButton number={settings.supportWhatsapp} businessName={settings.businessName} />
       <BottomNav />
     </div>
   );

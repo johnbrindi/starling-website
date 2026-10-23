@@ -21,15 +21,16 @@ const MB = 1024n * 1024n;
 export type CredentialStyle = "code" | "userpass";
 
 /** Generates unique hotspot credentials. Uniqueness is also enforced by the database. */
-async function newCredentials(tx: Tx, style: CredentialStyle, nameHint?: string | null): Promise<{ username: string; password: string }> {
+export async function newCredentials(tx: Tx, style: CredentialStyle, nameHint?: string | null): Promise<{ username: string; password: string }> {
   for (let i = 0; i < 8; i++) {
     let username: string;
     let password: string;
     if (style === "userpass") {
-      // First name only, ASCII letters (e.g. "Awa Bello" -> "awa"), so it is short to type.
+      // With a name: first name + digits (e.g. "Awa Bello" -> "awa482"), easy to type and remember.
+      // Without: 6 random lowercase characters (31^6 ≈ 8.9e8), unambiguous on printed tickets.
       const first = (nameHint ?? "").trim().split(/\s+/)[0] ?? "";
-      const base = first.normalize("NFKD").toLowerCase().replace(/[^a-z]/g, "").slice(0, 8) || "guest";
-      username = `${base}${randomCode(3, "0123456789")}`;
+      const base = first.normalize("NFKD").toLowerCase().replace(/[^a-z]/g, "").slice(0, 8);
+      username = base ? `${base}${randomCode(i < 5 ? 3 : 5, "0123456789")}` : randomCode(6, "abcdefghjkmnpqrstuvwxyz23456789");
       password = randomCode(6, "0123456789");
     } else {
       username = randomCode(8);
@@ -283,7 +284,12 @@ export async function provisionCredentialJob(job: Job) {
       password: credentialPassword(c),
       profile: c.networkProfileName,
       validUntil: c.validUntil,
-      limitUptimeSeconds: Math.ceil((c.validUntil.getTime() - now.getTime()) / 1000),
+      // An unused ticket may be used for its paid duration (router-side bound until the first login is seen);
+      // the scheduler removes it at the activation deadline if nobody ever logs in.
+      limitUptimeSeconds:
+        c.startsOnFirstLogin && !c.firstLoginAt && c.durationMinutes
+          ? c.durationMinutes * 60
+          : Math.ceil((c.validUntil.getTime() - now.getTime()) / 1000),
       limitBytesTotal: c.dataLimitBytes,
       maxDevices: c.maxDevices,
       rateLimit: c.rateLimit,

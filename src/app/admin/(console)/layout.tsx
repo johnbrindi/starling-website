@@ -18,10 +18,11 @@ export default async function ConsoleLayout({ children }: LayoutProps<"/admin">)
   const items = [
     { href: "/admin", label: "Dashboard", show: true },
     { href: "/admin/sell", label: "Sell a pass", show: can(role, "sales:create") },
+    { href: "/admin/tickets", label: "Printed tickets", show: can(role, "sales:create") },
     { href: "/admin/customers", label: "Customers", show: can(role, "customers:view") },
     { href: "/admin/payments", label: "Payments", show: can(role, "payments:view") },
     { href: "/admin/packages", label: "Packages", show: can(role, "dashboard:view") },
-    { href: "/admin/vouchers", label: "Vouchers", show: can(role, "payments:view") },
+    { href: "/admin/vouchers", label: "Online vouchers", show: can(role, "payments:view") },
     { href: "/admin/network", label: "Network", show: can(role, "network:view") },
     { href: "/admin/audit", label: "Audit log", show: can(role, "audit:view") },
     { href: "/admin/staff", label: "Staff", show: can(role, "staff:manage") },

@@ -17,8 +17,8 @@ npm run lint && npm run typecheck && npm run build
 |---|---|
 | `npm run lint` | clean |
 | `npm run typecheck` | clean |
-| `npm test` | 7 files, **93 tests passed** |
-| `npm run test:e2e` | **14 passed** (mobile Chrome) |
+| `npm test` | 8 files, **97 tests passed** |
+| `npm run test:e2e` | **15 passed** (mobile Chrome) |
 | `npm run build` | success (all routes dynamic, manifest static) |
 | `prisma migrate deploy` on Supabase | 2 migrations applied, `migrate status` up to date |
 
@@ -49,6 +49,8 @@ npm run lint && npm run typecheck && npm run build
 | Production guards | simulator, `ALLOW_SIMULATED_PAYMENTS`, fake router, http URL, missing router creds all refused in production |
 | RBAC | role matrix, deny-by-default; e2e: anonymous → login/401, support → 403 on staff/packages |
 | PWA | manifest fields, maskable icons, `sw.js` no-cache, API never cached, offline page |
+| Printed tickets | unique random usernames + 6-digit passwords pushed to the router, clock starts at first login seen in sessions (and only once), unused tickets expire at the deadline and are removed, reprint shows only unused, revoke disables only unused |
+| Router pitfalls | FastTrack enabled, addresses-per-mac, login-by (http-pap, mac-cookie), custom login page present, logout.html present: all detected by validation; profiles push keepalive/idle/status-refresh/mac-cookie |
 | Counter sales | unique `name###` usernames + 6-digit passwords, router accepts only the right password, CASH payment recorded with staff id, double click = one sale; e2e slip |
 | Router time-left | renewal adds used time (no early cut-off); `alignTimeLeft` only touches managed users; template preview renders `$(if)`/`$(var)` like the router |
 | Customer accounts | register/validate/duplicate/legacy-number protection, login + lockout, no account enumeration, reset with own access code only, single-use expiring support codes, password change signs out other devices, safe post-login redirects |

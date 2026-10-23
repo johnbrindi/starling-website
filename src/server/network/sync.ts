@@ -5,6 +5,7 @@ import { env } from "../env";
 import { enqueue } from "../jobs/queue";
 import { errorMessage, log } from "../logger";
 import { isEntitled } from "../subscriptions/service";
+import { activateTicketsOnFirstLogin } from "../tickets";
 import { getNetworkAdapter } from "./index";
 
 async function recordStatus(ok: boolean, detail: Record<string, unknown>, error?: string) {
@@ -35,7 +36,17 @@ export async function syncSessions(now = new Date()) {
     throw err;
   }
   const usernames = [...new Set(sessions.map((s) => s.username))];
-  const creds = await db.accessCredential.findMany({ where: { username: { in: usernames } } });
+  let creds = await db.accessCredential.findMany({ where: { username: { in: usernames } } });
+  // Printed tickets start their clock at the first login seen on the router.
+  const firstSeen = new Map<string, Date>();
+  for (const s of sessions) {
+    const started = new Date(now.getTime() - s.uptimeSeconds * 1000);
+    const prev = firstSeen.get(s.username);
+    if (!prev || started < prev) firstSeen.set(s.username, started);
+  }
+  if (await activateTicketsOnFirstLogin(creds, firstSeen)) {
+    creds = await db.accessCredential.findMany({ where: { username: { in: usernames } } });
+  }
   const byName = new Map(creds.map((c) => [c.username, c]));
   let kicked = 0;
 
@@ -81,7 +92,7 @@ export async function syncSessions(now = new Date()) {
 
   // Keep the router's own countdown (hotspot status page) equal to the real expiry.
   if (adapter.alignTimeLeft) {
-    const live = creds.filter((c) => isEntitled(c, now)).map((c) => ({ username: c.username, validUntil: c.validUntil }));
+    const live = creds.filter((c) => isEntitled(c, now) && !(c.startsOnFirstLogin && !c.firstLoginAt)).map((c) => ({ username: c.username, validUntil: c.validUntil }));
     await adapter.alignTimeLeft(live).catch((err) => log.warn("Could not align router time-left", { error: errorMessage(err) }));
   }
 
@@ -145,7 +156,14 @@ export async function syncProfiles() {
   const results: { name: string; ok: boolean; error?: string }[] = [];
   for (const p of profiles) {
     try {
-      await adapter.syncProfile({ name: p.routerName, rateLimit: p.rateLimit, sharedUsers: p.sharedUsers, idleTimeout: p.idleTimeout });
+      await adapter.syncProfile({
+        name: p.routerName,
+        rateLimit: p.rateLimit,
+        sharedUsers: p.sharedUsers,
+        idleTimeout: p.idleTimeout,
+        keepaliveTimeout: p.keepaliveTimeout,
+        statusAutorefresh: p.statusAutorefresh,
+      });
       await db.networkProfile.update({ where: { id: p.id }, data: { lastSyncedAt: new Date(), lastSyncError: null } });
       results.push({ name: p.routerName, ok: true });
     } catch (err) {

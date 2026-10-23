@@ -89,3 +89,17 @@ test.describe("router captive-portal pages (preview)", () => {
     await expect(page.locator("#left")).toHaveText(/^1h 12m \d\ds$/);
   });
 });
+
+test.describe("printed tickets", () => {
+  test("support staff generate a batch and get a printable sheet", async ({ page }) => {
+    await login(page, "support@starling.local", "starling-dev-support-1");
+    await page.getByRole("link", { name: "Printed tickets" }).click();
+    await page.getByLabel("How many tickets").fill("4");
+    await page.getByLabel("Batch name").fill("E2E-WEEK");
+    await page.getByRole("button", { name: /Generate 4 tickets/ }).click();
+    await expect(page.locator("#ticket-sheet > div")).toHaveCount(4);
+    await expect(page.locator("#ticket-sheet")).toContainText("from first login");
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByText("E2E-WEEK")).toBeVisible();
+  });
+});

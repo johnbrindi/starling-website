@@ -224,6 +224,9 @@ export class RouterOsAdapter implements NetworkAdapter {
         "rate-limit": p.rateLimit ?? "",
         "shared-users": p.sharedUsers,
         "idle-timeout": p.idleTimeout ?? "none",
+        "keepalive-timeout": p.keepaliveTimeout ?? "2m",
+        "status-autorefresh": p.statusAutorefresh ?? "1m",
+        "add-mac-cookie": true,
       };
       const existing = await c.exec("/ip/hotspot/user/profile/print", { ".proplist": ".id" }, [`?name=${name}`]);
       if (existing[0]?.[".id"]) await c.exec("/ip/hotspot/user/profile/set", { ".id": existing[0][".id"], ...attrs });
@@ -268,6 +271,56 @@ export class RouterOsAdapter implements NetworkAdapter {
         severity: "error",
         detail: portalAllowed ? `${expected.portalHost} is allowed before login` : `Add ${expected.portalHost} to /ip hotspot walled-garden ip`,
       });
+      // Pitfalls from real-world setups (default config / RouterOS 7 / file uploads).
+      const fasttrack = await c.exec("/ip/firewall/filter/print", { ".proplist": ".id,action,disabled,comment" }, ["?action=fasttrack-connection"]);
+      const activeFt = fasttrack.filter((f) => f.disabled !== "true");
+      checks.push({
+        name: "No FastTrack rule",
+        ok: activeFt.length === 0,
+        severity: "error",
+        detail: activeFt.length
+          ? `${activeFt.length} enabled fasttrack rule(s): customers can bypass the hotspot. Disable it: /ip firewall filter disable [find action=fasttrack-connection]`
+          : "OK (FastTrack would let traffic bypass the captive portal)",
+      });
+      if (major >= 7) {
+        const dm = (await c.exec("/system/device-mode/print").catch(() => [] as Record<string, string>[]))[0] ?? {};
+        const allowed = dm.hotspot === "yes" || dm.hotspot === "true";
+        checks.push({
+          name: "Device-mode allows HotSpot (RouterOS 7)",
+          ok: allowed,
+          severity: "error",
+          detail: allowed ? "hotspot=yes" : "Run /system/device-mode/update hotspot=yes, then press the reset/mode button (or power-cycle) within 5 minutes to confirm",
+        });
+      }
+      if (server) {
+        const full = (await c.exec("/ip/hotspot/print", { ".proplist": "name,addresses-per-mac,profile" }, [`?name=${this.hotspotServer}`]))[0] ?? {};
+        checks.push({
+          name: "One IP per device (addresses-per-mac=1)",
+          ok: full["addresses-per-mac"] === "1",
+          severity: "warning",
+          detail: `addresses-per-mac=${full["addresses-per-mac"] ?? "?"}`,
+        });
+        const prof = (await c.exec("/ip/hotspot/profile/print", { ".proplist": "name,login-by,html-directory,dns-name" }, [`?name=${full.profile ?? server.profile}`]))[0] ?? {};
+        const loginBy = (prof["login-by"] ?? "").split(",");
+        checks.push({
+          name: "Login methods",
+          ok: loginBy.includes("http-pap") && loginBy.includes("mac-cookie"),
+          severity: loginBy.includes("http-pap") ? "warning" : "error",
+          detail: `login-by=${prof["login-by"] ?? "?"} (needs http-pap for the portal's Connect button; mac-cookie re-logs returning phones)`,
+        });
+        const dir = prof["html-directory"] ?? "hotspot";
+        const files = await c.exec("/file/print", { ".proplist": "name" });
+        const names = new Set(files.map((f) => f.name));
+        const hasLogin = names.has(`${dir}/login.html`) || names.has(`flash/${dir}/login.html`);
+        checks.push({ name: `Custom login page (${dir}/login.html)`, ok: hasLogin, severity: "error", detail: hasLogin ? "Present" : "Upload network/mikrotik/hotspot/login.html into this folder (exact name)" });
+        const hasLogout = names.has(`${dir}/logout.html`) || names.has(`flash/${dir}/logout.html`);
+        checks.push({
+          name: "No self-logout page",
+          ok: !hasLogout,
+          severity: "warning",
+          detail: hasLogout ? `Delete ${dir}/logout.html so one login cannot be moved to another phone` : "OK",
+        });
+      }
       const ntp = (await c.exec("/system/ntp/client/print"))[0] ?? {};
       checks.push({
         name: "Router clock (NTP)",

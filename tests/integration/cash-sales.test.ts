@@ -46,7 +46,7 @@ describe("counter (cash) sales with username + password", () => {
     expect(a.paymentId).toBe(b.paymentId);
     expect(await db.payment.count()).toBe(1);
     expect(await db.subscription.count()).toBe(1);
-    expect(a.username).toMatch(/^guest\d{3}$/);
+    expect(a.username).toMatch(/^[a-z2-9]{6}$/);
   });
 
   it("single access code style still works", async () => {

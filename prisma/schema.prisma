@@ -140,6 +140,7 @@ model Package {
   payments      Payment[]
   subscriptions Subscription[]
   vouchers      Voucher[]
+  tickets       AccessCredential[]
 
   @@index([status, sortOrder])
 }
@@ -152,7 +153,12 @@ model NetworkProfile {
   description String    @default("")
   rateLimit   String?
   sharedUsers Int       @default(1)
-  idleTimeout String?   @default("10m")
+  /// "none" keeps an idle session; customers are logged out only when their time ends.
+  idleTimeout String?   @default("none")
+  /// How long a silent device keeps its slot. Long values (e.g. 3h) stop one login being passed to another phone.
+  keepaliveTimeout String? @default("3h")
+  /// How often the router's status page refreshes.
+  statusAutorefresh String? @default("1m")
   lastSyncedAt DateTime?
   lastSyncError String?
   createdAt   DateTime  @default(now())
@@ -323,8 +329,19 @@ enum ProvisionState {
 /// The login code a customer types on the hotspot. Maps 1:1 to a router hotspot user / RADIUS user.
 model AccessCredential {
   id                String           @id @default(cuid())
-  customerId        String
-  customer          Customer         @relation(fields: [customerId], references: [id])
+  /// Null for printed tickets that nobody has claimed in an online account.
+  customerId        String?
+  customer          Customer?        @relation(fields: [customerId], references: [id])
+  /// Printed ticket batch (username + password sold offline, Mikhmon style).
+  ticketBatch       String?
+  packageId         String?
+  package           Package?         @relation(fields: [packageId], references: [id])
+  /// Ticket clock starts at the first login seen on the router, not at creation.
+  startsOnFirstLogin Boolean         @default(false)
+  firstLoginAt      DateTime?
+  /// Paid duration for tickets (applied from first login).
+  durationMinutes   Int?
+  priceXaf          Int?
   /// Hotspot username (the access code without separators). Not secret on its own.
   username          String           @unique
   /// AES-256-GCM encrypted password (must be recoverable to push to the router and show the customer).
@@ -353,6 +370,7 @@ model AccessCredential {
   @@index([customerId])
   @@index([status, validUntil])
   @@index([provisionState])
+  @@index([ticketBatch])
 }
 
 /// A device session actually seen on the router (/ip hotspot active) or in RADIUS accounting.

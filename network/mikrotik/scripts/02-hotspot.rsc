@@ -5,17 +5,29 @@
 # Upload network/mikrotik/hotspot/*.html to the router folder "starling" first (Files / FTP / Winbox drag-drop).
 # =====================================================================================
 
-/ip hotspot profile add name=hsprof-starling hotspot-address=10.5.50.1 dns-name=login.wifi \
-    html-directory=starling login-by=http-pap,http-chap,cookie http-cookie-lifetime=1d \
-    use-radius=no rate-limit="" split-user-domain=no
+# dns-name is what customers see in the address bar of the login page (use your business name).
+# login-by: http-pap (portal "Connect" button + our login page), http-chap, mac-cookie (a returning
+# phone is logged back in automatically), cookie.
+/ip hotspot profile add name=hsprof-starling hotspot-address=10.5.50.1 dns-name=starling.wifi \
+    html-directory=starling login-by=http-pap,http-chap,mac-cookie,cookie http-cookie-lifetime=1d \
+    mac-cookie-timeout=3d use-radius=no rate-limit="" split-user-domain=no smtp-server=0.0.0.0
 
+# addresses-per-mac=1: each device gets exactly one IP.
 /ip hotspot add name=hotspot1 interface=bridge-hotspot address-pool=pool-hotspot profile=hsprof-starling \
-    idle-timeout=5m keepalive-timeout=2m addresses-per-mac=2 disabled=no
+    addresses-per-mac=1 disabled=no
 
-# User profiles referenced by packages (also creatable from the console: Network > Push profiles).
+# User profiles referenced by packages (also editable in the console: Network > User profiles > Push profiles).
+#   shared-users      = devices that may use one login at the same time
+#   idle-timeout=none = an idle customer is not logged out; they leave when their time ends
+#   keepalive-timeout = how long a device that switched Wi-Fi off keeps its slot. 3h stops one login being
+#                       passed to a friend's phone (customers must disable "private/random MAC", see guide)
+#   status-autorefresh= how often the router's "time left" page refreshes
 /ip hotspot user profile
-add name=starling-default rate-limit=2M/4M shared-users=1 idle-timeout=10m keepalive-timeout=2m add-mac-cookie=yes
-add name=starling-2dev rate-limit=2M/4M shared-users=2 idle-timeout=10m keepalive-timeout=2m add-mac-cookie=yes
+add name=starling-default rate-limit=2M/4M shared-users=1 idle-timeout=none keepalive-timeout=3h status-autorefresh=1m add-mac-cookie=yes
+add name=starling-2dev rate-limit=2M/4M shared-users=2 idle-timeout=none keepalive-timeout=3h status-autorefresh=1m add-mac-cookie=yes
+
+# If you kept MikroTik's default configuration: FastTrack lets traffic skip the hotspot. Disable it.
+:foreach r in=[/ip firewall filter find action=fasttrack-connection] do={ /ip firewall filter disable $r }
 
 # ---- Walled garden: what unauthenticated devices may reach --------------------------
 # Only the portal. Payments use Notch Pay "direct charge" (server-to-server + USSD prompt on the

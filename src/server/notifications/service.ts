@@ -23,7 +23,8 @@ export function webPushConfigured() {
  * Records an in-app notice (always) and queues a Web Push message when the customer has
  * subscribed a device. Duplicate keys are ignored, so callers can retry freely.
  */
-export async function notify(customerId: string, n: NotifyInput) {
+export async function notify(customerId: string | null, n: NotifyInput) {
+  if (!customerId) return; // printed tickets have no online account to notify
   try {
     await db.notification.createMany({
       data: [{ customerId, type: n.type, channel: "IN_APP", title: n.title, body: n.body, dedupeKey: `${n.dedupeKey}:app`, status: "SENT", sentAt: new Date() }],

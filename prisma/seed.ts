@@ -26,12 +26,12 @@ async function main() {
 
   const profile = await db.networkProfile.upsert({
     where: { routerName: "starling-default" },
-    create: { routerName: "starling-default", description: "Default customer speed", rateLimit: "2M/4M", sharedUsers: 1, idleTimeout: "10m" },
+    create: { routerName: "starling-default", description: "Default customer speed, 1 device", rateLimit: "2M/4M", sharedUsers: 1, idleTimeout: "none", keepaliveTimeout: "3h", statusAutorefresh: "1m" },
     update: {},
   });
   const profile2 = await db.networkProfile.upsert({
     where: { routerName: "starling-2dev" },
-    create: { routerName: "starling-2dev", description: "Two devices", rateLimit: "2M/4M", sharedUsers: 2, idleTimeout: "10m" },
+    create: { routerName: "starling-2dev", description: "Two devices", rateLimit: "2M/4M", sharedUsers: 2, idleTimeout: "none", keepaliveTimeout: "3h", statusAutorefresh: "1m" },
     update: {},
   });
 

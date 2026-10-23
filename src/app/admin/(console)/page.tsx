@@ -21,7 +21,7 @@ export default async function DashboardPage(props: PageProps<"/admin">) {
           </Alert>
         </div>
       ) : null}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
         <Stat label="Active passes" value={d.activeSubscriptions} sub="entitled right now" />
         <Stat label="Online sessions" value={d.onlineSessions} sub={d.network.simulated ? "simulated router" : "from router"} />
         <Stat label="Revenue today" value={formatXaf(d.revenue.day.amount)} sub={`${d.revenue.day.count} payments, last 24 h`} />
@@ -29,6 +29,7 @@ export default async function DashboardPage(props: PageProps<"/admin">) {
         <Stat label="Customers" value={d.customers} />
         <Stat label="Failed payments" value={d.failedPaymentsDay} sub="last 24 h" />
         <Stat label="All-time revenue" value={formatXaf(d.revenue.all.amount)} sub={`${d.revenue.all.count} payments`} />
+        <Stat label="Tickets used, 7 days" value={formatXaf(d.tickets.usedWeek.amount)} sub={`${d.tickets.usedWeek.count} used · ${d.tickets.unused} unused in stock`} />
         <Stat label="Simulated (test)" value={formatXaf(d.revenue.simulated.amount)} sub={`${d.revenue.simulated.count} test payments, not revenue`} />
       </div>
 
@@ -59,7 +60,7 @@ export default async function DashboardPage(props: PageProps<"/admin">) {
             <ul className="divide-y divide-line text-sm">
               {d.expiringSoon.map((c) => (
                 <li key={c.id} className="flex justify-between px-4 py-2.5">
-                  <span>{formatPhone(c.customer.phone)}</span>
+                  <span>{c.customer ? formatPhone(c.customer.phone) : `Ticket ${c.username}`}</span>
                   <span className="text-muted">{formatDateTime(c.validUntil)}</span>
                 </li>
               ))}

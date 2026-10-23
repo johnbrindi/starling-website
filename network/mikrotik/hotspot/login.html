@@ -6,7 +6,8 @@
     • "Access code" - one code (bought online or on a voucher card): used as username AND password.
     • "Username & password" - logins created at the counter (Console → Sell a pass), cyber-café style.
   "Buy a pass online" opens the web portal (must be in the walled garden).
-  Before uploading: replace https://wifi.example.cm (3 places) with your APP_URL.
+  Before uploading: replace https://wifi.example.cm with your APP_URL, 237600000000 with your WhatsApp
+  number (international format, digits only), and update the price list.
   Requires the hotspot profile login-by to include http-pap (see network/mikrotik/scripts/02-hotspot.rsc).
 -->
 <html lang="en">
@@ -43,6 +44,10 @@
   .prices b{color:#16181d}
   .foot{text-align:center;font-size:12px;color:#6b7180;margin-top:18px;line-height:1.5}
   .hide{display:none}
+  .wa{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:10px;background:#fff;border:1px solid #e3e6ec;color:#16181d;font-weight:600;text-decoration:none;margin-top:12px;font-size:15px}
+  details{margin-top:14px;background:#fff;border:1px solid #e3e6ec;border-radius:12px;padding:12px 14px;font-size:14px;color:#3d4250}
+  summary{font-weight:600;color:#16181d;cursor:pointer}
+  details ol{margin:10px 0 0;padding-left:18px;line-height:1.55}
 </style>
 </head>
 <body>
@@ -94,11 +99,28 @@
       <div><span>1 month</span><b>4 500 FCFA</b></div>
     </div>
   </div>
-  <p class="foot">Your time counts down from activation. You are logged out automatically when it ends.<br>Need help? Ask at the counter.</p>
+  <a class="wa" id="wa" href="https://wa.me/237600000000">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.2-.7-2.7-1.1-4.4-3.8-4.5-4-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.7-.1l1.8.9c.3.1.5.2.5.3.1.2.1.6-.1 1.2Z"/></svg>
+    Chat with us on WhatsApp
+  </a>
+
+  <details>
+    <summary>Can't connect, or asked to log in again and again?</summary>
+    <p>Turn off the private / random Wi-Fi address for this network, then reconnect:</p>
+    <ol>
+      <li><b>Android:</b> Settings → Wi-Fi → tap the gear next to <b>Starling Wi-Fi</b> → Privacy (MAC address type) → <b>Use device MAC</b>.</li>
+      <li><b>iPhone:</b> Settings → Wi-Fi → tap ⓘ next to <b>Starling Wi-Fi</b> → turn off <b>Private Wi-Fi Address</b>.</li>
+      <li>Type your code or username without spaces. Usernames are lower-case.</li>
+    </ol>
+  </details>
+
+  <p class="foot">Your time counts down from your first login. You are logged out automatically when it ends.</p>
 </div>
 
 <script>
   var PORTAL_URL = "https://wifi.example.cm"; // <-- set to your APP_URL
+  var WHATSAPP = "237600000000";              // <-- your WhatsApp number, digits only
+  document.getElementById("wa").href = "https://wa.me/" + WHATSAPP + "?text=" + q("Hello Starling Wi-Fi, I need help with my connection.");
   var mode = "code";
   function q(v){ return encodeURIComponent(v); }
   document.getElementById("buy").href = PORTAL_URL + "/portal?login=" + q("$(link-login-only)") +

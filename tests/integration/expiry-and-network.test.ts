@@ -44,7 +44,7 @@ describe("expiry and network enforcement", () => {
     expect((await net.adapter.simulateLogin(cred.username, cred.username, "AA:BB:CC:00:00:02", "10.5.50.11")).ok).toBe(false);
 
     await syncSessions();
-    expect((await getAccessStatus(cred.customerId)).state).toBe("ONLINE");
+    expect((await getAccessStatus(cred.customerId!)).state).toBe("ONLINE");
 
     await ageCredential(cred.id);
     expect(await expireDue()).toBe(1);
@@ -57,7 +57,7 @@ describe("expiry and network enforcement", () => {
     expect(net.store.state.users[cred.username]).toBeUndefined();
     expect(Object.keys(net.store.state.active)).toHaveLength(0);
     expect((await net.adapter.simulateLogin(cred.username, cred.username, "AA:BB:CC:00:00:01", "10.5.50.10")).ok).toBe(false);
-    expect((await getAccessStatus(cred.customerId)).state).toBe("EXPIRED");
+    expect((await getAccessStatus(cred.customerId!)).state).toBe("EXPIRED");
     expect(await db.subscription.count({ where: { status: "EXPIRED" } })).toBe(1);
   });
 
@@ -126,14 +126,14 @@ describe("expiry and network enforcement", () => {
     expect(job.status).toBe("FAILED");
     expect(job.runAt.getTime()).toBeGreaterThan(Date.now());
     // Payment is still recorded as paid; the customer is told access is being set up.
-    expect((await getAccessStatus(cred.customerId)).state).toBe("PROVISIONING");
+    expect((await getAccessStatus(cred.customerId!)).state).toBe("PROVISIONING");
 
     await net.adapter.setOnline(true);
     await db.job.update({ where: { id: job.id }, data: { runAt: new Date() } });
     await runDueJobs(JOB_HANDLERS);
     cred = await db.accessCredential.findFirstOrThrow();
     expect(cred.provisionState).toBe("PROVISIONED");
-    expect((await getAccessStatus(cred.customerId)).state).toBe("READY");
+    expect((await getAccessStatus(cred.customerId!)).state).toBe("READY");
   });
 
   it("jobs dead-letter after max attempts", async () => {
@@ -179,7 +179,7 @@ describe("expiry and network enforcement", () => {
     await runDueJobs(JOB_HANDLERS);
     expect(net.store.state.users[cred.username]).toBeUndefined();
     expect(Object.keys(net.store.state.active)).toHaveLength(0);
-    expect((await getAccessStatus(cred.customerId)).state).toBe("REVOKED");
+    expect((await getAccessStatus(cred.customerId!)).state).toBe("REVOKED");
     expect(await db.auditEvent.count({ where: { action: "credential.revoked" } })).toBe(1);
   });
 
@@ -223,7 +223,7 @@ describe("immediate provisioning fast path", () => {
     await buy(pkg.id);
     const cred = await db.accessCredential.findFirstOrThrow();
     expect(cred.provisionState).toBe("PENDING");
-    await provisionNow(cred.customerId);
+    await provisionNow(cred.customerId!);
     expect((await db.accessCredential.findFirstOrThrow()).provisionState).toBe("PROVISIONED");
   });
 });

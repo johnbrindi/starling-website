@@ -31,7 +31,8 @@ npm run worker               # in a second terminal
 |---|---|
 | `/` | Customer home (plans) |
 | `/portal?login=http%3A%2F%2F10.5.50.1%2Flogin&mac=AA:BB:CC:DD:EE:FF&ip=10.5.50.20` | Simulates arriving from the MikroTik login page |
-| `/account` | Access page (sign in with `670000090` / `DEMO-2345`) |
+| `/register`, `/login` | Customer account (demo: `670000090` / `demo-customer-1`) |
+| `/account` | My Wi-Fi: access code, countdown, how-to guide |
 | `/admin` | Console (`admin@starling.local` / `starling-dev-admin-1`) |
 
 ## Simulated integrations (development only)

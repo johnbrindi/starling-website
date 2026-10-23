@@ -128,3 +128,14 @@ describe("RADIUS Disconnect-Request", () => {
     expect(pkt.subarray(4, 20).equals(expected)).toBe(true);
   });
 });
+
+describe("post-login redirects", async () => {
+  const { safeNext } = await import("@/lib/safe-next");
+  it("only allows same-site paths", () => {
+    expect(safeNext("/plans/1-hour")).toBe("/plans/1-hour");
+    expect(safeNext("//evil.example")).toBe("/account");
+    expect(safeNext("/\\evil.example")).toBe("/account");
+    expect(safeNext("https://evil.example")).toBe("/account");
+    expect(safeNext(null)).toBe("/account");
+  });
+});

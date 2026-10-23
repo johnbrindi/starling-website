@@ -15,9 +15,9 @@ import { ProviderError, type MobileMoneyChannel, type StatusResult } from "./typ
 
 export const checkoutSchema = z.object({
   packageId: z.string().min(1).max(40),
+  /** Mobile Money number that pays (may differ from the account's number). */
   phone: z.string().min(9).max(20),
   channel: z.enum(["cm.mtn", "cm.orange"]),
-  name: z.string().trim().max(60).optional(),
   /** Client-generated UUID so double-taps/retries never create two charges. */
   idempotencyKey: z.uuid(),
   clientMac: z
@@ -39,13 +39,16 @@ function newReference() {
   return `SW-${d}-${randomCode(10)}`;
 }
 
-/** Starts a Mobile Money payment. Never grants access by itself. */
-export async function createCheckout(input: CheckoutInput) {
+/** Starts a Mobile Money payment for a signed-in customer. Never grants access by itself. */
+export async function createCheckout(customerId: string, input: CheckoutInput) {
   const phone = normalizeCameroonPhone(input.phone);
   if (!phone) throw new AppError("VALIDATION_FAILED", "Enter a valid Cameroon mobile number (e.g. 6 70 00 00 00).");
 
   const existing = await db.payment.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
-  if (existing) return { payment: existing, instructions: null, reused: true };
+  if (existing) {
+    if (existing.customerId !== customerId) throw new AppError("CONFLICT", "Please reload the page and try again.");
+    return { payment: existing, instructions: null, reused: true };
+  }
 
   const pkg = await db.package.findUnique({ where: { id: input.packageId } });
   if (!pkg || pkg.status !== "ACTIVE") throw new AppError("NOT_FOUND", "This package is not available.");
@@ -53,15 +56,11 @@ export async function createCheckout(input: CheckoutInput) {
   const settings = await getSettings();
   const provider = getActiveProvider();
 
-  const customer = await db.customer.upsert({
-    where: { phone },
-    create: { phone, name: input.name || null },
-    update: { lastSeenAt: new Date(), ...(input.name ? { name: input.name } : {}) },
-  });
+  const customer = await db.customer.update({ where: { id: customerId }, data: { lastSeenAt: new Date() } });
   if (customer.isBlocked) throw new AppError("FORBIDDEN", "This number cannot make purchases. Please contact support.");
 
   const pending = await db.payment.count({
-    where: { payerPhone: phone, status: "PENDING", expiresAt: { gt: new Date() } },
+    where: { OR: [{ payerPhone: phone }, { customerId }], status: "PENDING", expiresAt: { gt: new Date() } },
   });
   if (pending >= settings.maxPendingPaymentsPerPhone) {
     throw new AppError("RATE_LIMITED", "You already have payments waiting for approval. Approve or wait for them to expire.");

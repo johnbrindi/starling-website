@@ -21,6 +21,7 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  devIndicators: false,
   serverExternalPackages: ["@node-rs/argon2", "web-push"],
   turbopack: {
     rules: {

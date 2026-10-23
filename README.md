@@ -8,7 +8,7 @@ Built with Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind CSS 
 
 | Area | Highlights |
 |---|---|
-| Customer portal | Mobile-first plans page, Mobile Money checkout (USSD push), live payment status, access code + **Connect** button, server-authoritative countdown, expiry warnings (in-app, local and Web Push), renewal, purchase history, voucher-card redemption, recovery with phone + code, help/terms/privacy |
+| Customer portal | Customer accounts (name, phone, password; sign-in, password reset), mobile-first plans page, Mobile Money checkout (USSD push), live payment status, access code + **Connect** button, server-authoritative countdown, expiry warnings (in-app, local and Web Push), renewal, purchase history, voucher-card redemption, recovery with phone + code, help/terms/privacy |
 | Payments | Provider interface; **Notch Pay** direct charge (Cameroon MTN/Orange); clearly labelled **simulator** for development (refused in production). Server-side verification only, HMAC-verified idempotent webhooks, idempotency keys, amount/currency/reference matching, reconciliation of delayed/missing webhooks and crash recovery |
 | Entitlements | One subscription per verified payment (DB-enforced), configurable renewal (stack on same code or new code), expiry state machine, revocation, prepaid vouchers (exactly-once) |
 | MikroTik | Native **RouterOS v6 API** client (no v7 REST dependency) for the hAP lite on 6.48/6.49: provisioning hotspot users with limits, profile sync, active-session sync, disconnects, reconciliation, read-only config validation, optional router-side expiry scheduler. Optional **RADIUS** mode (FreeRADIUS SQL views + RFC 5176 disconnects). **Fake router** for development |
@@ -29,7 +29,7 @@ npm run dev                              # http://localhost:3000
 npm run worker                           # second terminal: expiry, provisioning, sync
 ```
 
-Dev logins (development seed only): `admin@starling.local / starling-dev-admin-1`, `support@starling.local / starling-dev-support-1`. Demo customer: phone `670000090`, code `DEMO-2345`. With the simulator, phone numbers ending in **0** succeed, **1** fail, **4** cancel, others wait for the on-screen *Simulate approve/decline* buttons.
+Dev logins (development seed, **local database only**): admin console `admin@starling.local / starling-dev-admin-1`, support `support@starling.local / starling-dev-support-1`; demo customer phone `670000090` / password `demo-customer-1` (code `DEMO-2345`). On Supabase/production no accounts are seeded: create your admin with `npm run admin:create -- you@example.com "Your Name"`. With the simulator, phone numbers ending in **0** succeed, **1** fail, **4** cancel, others wait for the on-screen *Simulate approve/decline* buttons.
 
 ## Checks
 

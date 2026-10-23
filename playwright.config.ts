@@ -1,7 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-
-const PORT = 3100;
-const E2E_DATABASE_URL = process.env.E2E_DATABASE_URL ?? "postgresql://starling:starling_dev_only@127.0.0.1:54329/starling_e2e";
+import { E2E_ENV, E2E_PORT as PORT } from "./tests/e2e/env";
 
 // End-to-end tests run the real app (dev server) against an isolated database, with the payment
 // simulator and fake router. They never touch a production database or a real router.
@@ -24,16 +22,9 @@ export default defineConfig({
   webServer: {
     command: `npx next dev -p ${PORT}`,
     url: `http://localhost:${PORT}/api/health`,
+    stdout: "ignore",
     timeout: 180_000,
     reuseExistingServer: false,
-    env: {
-      DATABASE_URL: E2E_DATABASE_URL,
-      APP_URL: `http://localhost:${PORT}`,
-      NODE_ENV: "development",
-      PAYMENT_PROVIDER: "simulator",
-      ALLOW_SIMULATED_PAYMENTS: "true",
-      NETWORK_ADAPTER: "fake",
-      ALLOW_FAKE_NETWORK: "true",
-    },
+    env: { ...E2E_ENV },
   },
 });

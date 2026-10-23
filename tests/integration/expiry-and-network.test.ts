@@ -8,10 +8,10 @@ import { reconcileNetwork, syncSessions } from "@/server/network/sync";
 import { runDueJobs } from "@/server/jobs/queue";
 import { JOB_HANDLERS, tick } from "@/server/jobs/tick";
 import { warnExpiring } from "@/server/notifications/service";
-import { PHONES, makePackage, resetDb, resetOverrides, setSettings, useFakeNetwork } from "../helpers/fixtures";
+import { PHONES, customerFor, makePackage, resetDb, resetOverrides, setSettings, useFakeNetwork } from "../helpers/fixtures";
 
 async function buy(packageId: string, phone = PHONES.success) {
-  const { payment } = await createCheckout({ packageId, phone, channel: "cm.mtn", idempotencyKey: randomUUID() });
+  const { payment } = await createCheckout((await customerFor(phone)).id, { packageId, phone, channel: "cm.mtn", idempotencyKey: randomUUID() });
   await verifyPayment(payment.id);
   return payment;
 }

@@ -8,11 +8,11 @@ import { NotchPayProvider } from "@/server/payments/providers/notchpay";
 import type { PaymentProviderAdapter, StatusResult } from "@/server/payments/types";
 import { runDueJobs } from "@/server/jobs/queue";
 import { JOB_HANDLERS } from "@/server/jobs/tick";
-import { PHONES, makePackage, resetDb, resetOverrides, useFakeNetwork } from "../helpers/fixtures";
+import { PHONES, customerFor, makePackage, resetDb, resetOverrides, useFakeNetwork } from "../helpers/fixtures";
 import { createHmac } from "node:crypto";
 
-const checkout = (packageId: string, phone: string, key = randomUUID()) =>
-  createCheckout({ packageId, phone, channel: "cm.mtn", idempotencyKey: key });
+const checkout = async (packageId: string, phone: string, key = randomUUID()) =>
+  createCheckout((await customerFor(phone)).id, { packageId, phone, channel: "cm.mtn", idempotencyKey: key });
 
 describe("payment → subscription lifecycle", () => {
   beforeEach(async () => {

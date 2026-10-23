@@ -40,13 +40,14 @@
 ## Request and data flow
 
 1. **Captive portal.** An unauthenticated device opens any HTTP site. The MikroTik serves `login.html`, which redirects to `APP_URL/portal?login=<router login URL>&mac=…&ip=…`. The portal stores the router login URL locally.
-2. **Checkout.** `POST /api/checkout` validates the package and phone, creates a `Payment` (PENDING, idempotency key), and calls Notch Pay: create the payment, then direct charge on `cm.mtn` or `cm.orange`. The customer gets a USSD prompt and approves with their PIN. A customer session cookie is set.
-3. **Verification.** The status page polls `GET /api/payments/:id`, which calls `verifyPayment`. A Notch Pay webhook (HMAC-verified, stored once) also triggers `verifyPayment`, and so does the worker's reconciliation. **Only** the provider's `GET /payments/{ref}` result with status `complete`, amount = expected, currency XAF, and a matching reference moves the payment to SUCCEEDED.
-4. **Fulfilment.** In one DB transaction: payment `PENDING→SUCCEEDED` (conditional update), customer row lock, credential created or extended, `Subscription` created (`paymentId` UNIQUE), and a `PROVISION_CREDENTIAL` job enqueued.
-5. **Provisioning.** The job, run immediately by the web request (fast path) or by the worker, calls `adapter.provisionUser`, which upserts the hotspot user (name/password = code, profile, `limit-uptime`, `limit-bytes-total`, comment `starling:<id>`), reads it back to confirm, and optionally adds a router scheduler that removes the user at expiry. Only then is the credential marked `PROVISIONED`.
-6. **Login.** *Connect this device* navigates to `http://10.5.50.1/login?username=CODE&password=CODE&dst=…/account`. The router authenticates locally.
-7. **Usage.** The worker polls `/ip hotspot active` and records `NetworkSession`s and byte counters. Any session whose credential is not entitled is disconnected immediately.
-8. **Expiry.** `expireDue` moves `ACTIVE→EXPIRED` (conditional, idempotent) and enqueues deprovisioning, which removes the user and kicks the sessions. The customer sees *Your Wi-Fi time has ended* and can renew. Warnings go out at 15/5/1 minutes (configurable).
+2. **Account.** The customer creates an account (name, phone, password) or signs in. Checkout requires it.
+3. **Checkout.** `POST /api/checkout` validates the package and phone, creates a `Payment` (PENDING, idempotency key), and calls Notch Pay: create the payment, then direct charge on `cm.mtn` or `cm.orange`. The customer gets a USSD prompt and approves with their PIN.
+4. **Verification.** The status page polls `GET /api/payments/:id`, which calls `verifyPayment`. A Notch Pay webhook (HMAC-verified, stored once) also triggers `verifyPayment`, and so does the worker's reconciliation. **Only** the provider's `GET /payments/{ref}` result with status `complete`, amount = expected, currency XAF, and a matching reference moves the payment to SUCCEEDED.
+5. **Fulfilment.** In one DB transaction: payment `PENDING→SUCCEEDED` (conditional update), customer row lock, credential created or extended, `Subscription` created (`paymentId` UNIQUE), and a `PROVISION_CREDENTIAL` job enqueued.
+6. **Provisioning.** The job, run immediately by the web request (fast path) or by the worker, calls `adapter.provisionUser`, which upserts the hotspot user (name/password = code, profile, `limit-uptime`, `limit-bytes-total`, comment `starling:<id>`), reads it back to confirm, and optionally adds a router scheduler that removes the user at expiry. Only then is the credential marked `PROVISIONED`.
+7. **Login.** *Connect this device* navigates to `http://10.5.50.1/login?username=CODE&password=CODE&dst=…/account`. The router authenticates locally.
+8. **Usage.** The worker polls `/ip hotspot active` and records `NetworkSession`s and byte counters. Any session whose credential is not entitled is disconnected immediately.
+9. **Expiry.** `expireDue` moves `ACTIVE→EXPIRED` (conditional, idempotent) and enqueues deprovisioning, which removes the user and kicks the sessions. The customer sees *Your Wi-Fi time has ended* and can renew. Warnings go out at 15/5/1 minutes (configurable).
 
 ## State machines
 

@@ -38,21 +38,28 @@ export default async function PortalPage(props: PageProps<"/portal">) {
       ) : null}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Welcome to Starling Wi-Fi</h1>
-        <p className="mt-1 text-sm text-ink-soft">Pick a pass to get online. Pay with MTN MoMo or Orange Money.</p>
+        <p className="mt-1 text-sm text-ink-soft">Choose a pass, pay with MTN MoMo or Orange Money, and connect with your personal code.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {plans.map((p) => (
           <PlanCard key={p.id} plan={p} />
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
-        <LinkButton href="/account" variant="secondary">
-          I already have a code
-        </LinkButton>
-        <LinkButton href="/redeem" variant="secondary">
-          Redeem a voucher card
-        </LinkButton>
-      </div>
+      {ctx ? (
+        <div className="flex flex-wrap gap-2">
+          <LinkButton href="/account" variant="secondary">My Wi-Fi</LinkButton>
+          <LinkButton href="/redeem" variant="secondary">Redeem a voucher card</LinkButton>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-line bg-white p-4">
+          <p className="font-medium">New here? Create a free account first.</p>
+          <p className="mt-1 text-sm text-muted">It takes 30 seconds and keeps your access code safe.</p>
+          <div className="mt-3 flex flex-col gap-2 min-[400px]:flex-row">
+            <LinkButton href="/register?next=/plans" size="lg">Create account</LinkButton>
+            <LinkButton href="/login?next=/account" size="lg" variant="secondary">Sign in</LinkButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

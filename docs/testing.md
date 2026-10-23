@@ -17,8 +17,8 @@ npm run lint && npm run typecheck && npm run build
 |---|---|
 | `npm run lint` | clean |
 | `npm run typecheck` | clean |
-| `npm test` | 5 files, **75 tests passed** |
-| `npm run test:e2e` | **10 passed** (mobile Chrome) |
+| `npm test` | 6 files, **85 tests passed** |
+| `npm run test:e2e` | **12 passed** (mobile Chrome) |
 | `npm run build` | success (all routes dynamic, manifest static) |
 | `prisma migrate deploy` on Supabase | 2 migrations applied, `migrate status` up to date |
 
@@ -49,7 +49,8 @@ npm run lint && npm run typecheck && npm run build
 | Production guards | simulator, `ALLOW_SIMULATED_PAYMENTS`, fake router, http URL, missing router creds all refused in production |
 | RBAC | role matrix, deny-by-default; e2e: anonymous → login/401, support → 403 on staff/packages |
 | PWA | manifest fields, maskable icons, `sw.js` no-cache, API never cached, offline page |
-| Customer UX (e2e) | browse → pay → code → connect → online → countdown survives reload; recovery; captive-portal context stored, foreign login URL ignored |
+| Customer accounts | register/validate/duplicate/legacy-number protection, login + lockout, no account enumeration, reset with own access code only, single-use expiring support codes, password change signs out other devices, safe post-login redirects |
+| Customer UX (e2e) | sign-up → plan → pay → code → connect → online → countdown survives reload; sign-in; forgot password; captive-portal context stored, foreign login URL ignored |
 
 ## Needs real credentials or hardware (not executed)
 

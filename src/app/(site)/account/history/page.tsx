@@ -12,14 +12,14 @@ const tone = { SUCCEEDED: "ok", PENDING: "warn", FAILED: "bad", CANCELLED: "neut
 
 export default async function HistoryPage() {
   const ctx = await getCustomer();
-  if (!ctx) redirect("/account");
+  if (!ctx) redirect("/login?next=/account/history");
   const [payments, subs] = await Promise.all([
     db.payment.findMany({ where: { customerId: ctx.customer.id }, include: { package: true }, orderBy: { createdAt: "desc" }, take: 50 }),
     db.subscription.findMany({ where: { customerId: ctx.customer.id, voucherId: { not: null } }, include: { package: true }, orderBy: { createdAt: "desc" }, take: 50 }),
   ]);
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="Purchase history" action={<Link href="/account" className="text-sm font-medium text-brand-700 hover:underline">← My access</Link>} />
+      <PageHeader title="Purchase history" action={<Link href="/account" className="text-sm font-medium text-brand-700 hover:underline">← My Wi-Fi</Link>} />
       <Card>
         <CardHeader title="Mobile Money payments" />
         {payments.length === 0 ? (

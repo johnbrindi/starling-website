@@ -40,7 +40,10 @@ Nobody, at any role, can mark a payment as paid, or send arbitrary commands to t
 
 ## 3. Customer access
 
-* Customers have no passwords. A session is created after checkout or voucher redemption, or by recovery with **phone + any of their access codes** (rate-limited per IP and per phone, generic error messages).
+* Customers have accounts: **full name, phone number (E.164, unique) and password** (Argon2id, min 8 characters). They sign in with phone + password. Five wrong passwords lock the account for 15 minutes. Error messages don't reveal whether a number is registered.
+* Buying and redeeming vouchers require a signed-in account. The Mobile Money number that pays may differ from the account number.
+* Forgotten password: the customer proves ownership with **any access code previously issued to their account**, or with a **6-digit, single-use, 30-minute reset code** issued by staff (Console → customer → *Password reset code*; verify identity first). A reset signs out all other sessions.
+* Numbers that bought before accounts existed can't be claimed by registering; they must use the reset flow with one of their codes.
 * A customer can only read their own payments, access and notifications. Every query is scoped by `customerId` from the session.
 
 ## 4. API protections
@@ -49,7 +52,7 @@ Nobody, at any role, can mark a payment as paid, or send arbitrary commands to t
 |---|---|
 | Sessions: random 256-bit token in an `HttpOnly`, `Secure`, `__Host-` cookie; only the SHA-256 is stored; staff 12 h absolute / 2 h idle; customers 30 days | `auth/session.ts` |
 | CSRF: `Origin`/`Referer` must equal `APP_URL` on every cookie-authenticated mutation; staff mutations also need the per-session `x-csrf-token`; staff cookie is `SameSite=Strict` | `http.ts`, `admin/route.ts` |
-| Rate limits (Postgres, multi-instance safe): checkout, recovery, voucher, staff login (IP + account), password reset, webhooks | `rate-limit.ts` |
+| Rate limits (Postgres, multi-instance safe): registration, customer login (IP + phone), password reset, checkout, voucher, staff login (IP + account), password reset, webhooks | `rate-limit.ts` |
 | Account lockout: 5 failed logins → 15 min | `auth/staff.ts` |
 | Validation: Zod on every body; consistent `{error:{code,message,details}}`; no stack traces to clients | `http.ts` |
 | Webhooks: HMAC signature, raw-body verification, stored once, then re-verified with the provider | `payments/service.ts` |

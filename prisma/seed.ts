@@ -61,7 +61,9 @@ async function main() {
   const demoPhone = "+237670000090";
   if (!(await db.customer.findUnique({ where: { phone: demoPhone } }))) {
     const pkg = await db.package.findUniqueOrThrow({ where: { slug: "24-hours" } });
-    const customer = await db.customer.create({ data: { phone: demoPhone, name: "Demo Customer" } });
+    const customer = await db.customer.create({
+      data: { phone: demoPhone, name: "Demo Customer", passwordHash: await hashPassword("demo-customer-1"), passwordChangedAt: new Date() },
+    });
     const now = new Date();
     const payment = await db.payment.create({
       data: {
@@ -105,7 +107,7 @@ async function main() {
       },
     });
     await db.job.create({ data: { type: "PROVISION_CREDENTIAL", payload: { credentialId: cred.id }, dedupeKey: `provision:${cred.id}` } });
-    console.log(`Demo customer: phone 670000090, code DEMO-2345 (simulated payment)`);
+    console.log(`Demo customer: phone 670000090 / password demo-customer-1, code DEMO-2345 (simulated payment)`);
   }
 }
 

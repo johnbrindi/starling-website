@@ -55,9 +55,17 @@ model PasswordResetToken {
 
 model Customer {
   id                  String    @id @default(cuid())
-  /// E.164 phone number, e.g. +237670000000. Used for Mobile Money and recovery.
+  /// E.164 phone number, e.g. +237670000000. The account identifier (sign-in with phone + password).
   phone               String    @unique
   name                String?
+  /// Argon2id hash. Null for legacy customers created before accounts existed (they set one via reset).
+  passwordHash        String?
+  passwordChangedAt   DateTime?
+  failedLoginCount    Int       @default(0)
+  lockedUntil         DateTime?
+  /// One-time reset code issued by staff (hash only), for customers who forgot their password.
+  resetCodeHash       String?
+  resetCodeExpiresAt  DateTime?
   notificationConsent Boolean   @default(false)
   isBlocked           Boolean   @default(false)
   createdAt           DateTime  @default(now())

@@ -1,0 +1,8 @@
+<!doctype html>
+<!-- Juthelink - shown after a successful login, then opens the time-left page. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connected</title><meta http-equiv="refresh" content="2; url=$(link-status)">
+<style>body{margin:0;font-family:system-ui,Arial,sans-serif;background:#1d5bd8;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center}
+.ok{width:60px;height:60px;border-radius:50%;background:#fff;color:#137a43;font-size:34px;line-height:60px;margin:0 auto 14px}h1{font-size:21px;margin:0 0 6px}a{color:#fff}</style></head>
+<body><div><div class="ok">&#10003;</div><h1>You are connected</h1><p>Welcome to Juthelink, $(username).</p>
+<p><a href="$(link-status)">See time left</a> · <a href="$(link-orig)">Continue</a></p></div></body></html>

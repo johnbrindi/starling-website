@@ -30,7 +30,7 @@ export default async function PortalPage(props: PageProps<"/portal">) {
   const expired = ctx ? (await getAccessStatus(ctx.customer.id)).state === "EXPIRED" : false;
   return (
     <div className="space-y-6">
-      <PortalCapture loginUrl={str(sp.login)} mac={str(sp.mac)} ip={str(sp.ip)} />
+      <PortalCapture loginUrl={str(sp.login)} mac={str(sp.mac)} ip={str(sp.ip)} plan={str(sp.plan)} />
       {routerError ? (
         <Alert tone="bad" title="The Wi-Fi did not accept the login">
           {routerError}. If your time has ended, buy a new pass below. Otherwise check the code on your access page.
@@ -39,7 +39,7 @@ export default async function PortalPage(props: PageProps<"/portal">) {
         <Alert tone="warn" title="Your Wi-Fi time has ended">Buy a new pass to continue browsing.</Alert>
       ) : null}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome to Starling Wi-Fi</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Welcome to Juthelink</h1>
         <p className="mt-1 text-sm text-ink-soft">Choose a pass, pay with MTN MoMo or Orange Money, and connect with your personal code.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

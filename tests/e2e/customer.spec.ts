@@ -86,7 +86,7 @@ test.describe("customer journey (simulated payment, fake router)", () => {
 
   test("captive portal entry stores the router login URL and invites sign-up", async ({ page }) => {
     await page.goto("/portal?login=http%3A%2F%2F10.5.50.1%2Flogin&mac=AA%3ABB%3ACC%3ADD%3AEE%3AFF&ip=10.5.50.20");
-    await expect(page.getByRole("heading", { name: "Welcome to Starling Wi-Fi" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome to Juthelink" })).toBeVisible();
     await expect(page.getByText("New here? Create a free account first.")).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem("starling.hotspot"))).toContain("10.5.50.1");
   });

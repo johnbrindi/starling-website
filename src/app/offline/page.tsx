@@ -12,7 +12,7 @@ export default function OfflinePage() {
       </span>
       <h1 className="mt-4 text-xl font-semibold">You are offline</h1>
       <p className="mt-2 text-sm text-muted">
-        Connect to the <strong className="text-ink">Starling Wi-Fi</strong> network or turn on mobile data, then try again. Buying a pass and checking your
+        Connect to the <strong className="text-ink">Juthelink</strong> network or turn on mobile data, then try again. Buying a pass and checking your
         remaining time need a live connection.
       </p>
       {/* A full page load (not client navigation) is the right way to retry the network here. */}

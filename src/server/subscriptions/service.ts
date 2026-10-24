@@ -41,6 +41,10 @@ export async function newCredentials(tx: Tx, style: CredentialStyle, nameHint?: 
   throw new Error("Could not allocate unique credentials");
 }
 
+function routerPullMode() {
+  return process.env.NETWORK_ADAPTER === "routerpull";
+}
+
 /** The authoritative entitlement rule. The UI countdown is display only; this decides access. */
 export function isEntitled(c: Pick<AccessCredential, "status" | "validFrom" | "validUntil">, now = new Date()): boolean {
   return c.status === "ACTIVE" && c.validFrom <= now && now < c.validUntil;
@@ -83,7 +87,8 @@ async function grantEntitlement(tx: Tx, g: GrantInput) {
     : null;
 
   let credential: AccessCredential | null = null;
-  if (g.settings.renewalMode === "EXTEND") {
+  // In router-pull mode each login has its own timer on the router, so a renewal gets a new login.
+  if (g.settings.renewalMode === "EXTEND" && !routerPullMode()) {
     credential = await tx.accessCredential.findFirst({
       where: { customerId: g.customerId, status: "ACTIVE", validUntil: { gt: now } },
       orderBy: { validUntil: "desc" },
@@ -106,7 +111,8 @@ async function grantEntitlement(tx: Tx, g: GrantInput) {
     });
   } else {
     startsAt = now;
-    const { username, password } = await newCredentials(tx, g.style ?? "code", g.nameHint);
+    // Router-pull mode: username + 6-digit password, typed on the router's login page (usernames are lower-case there).
+    const { username, password } = await newCredentials(tx, g.style ?? (routerPullMode() ? "userpass" : "code"), g.nameHint);
     credential = await tx.accessCredential.create({
       data: {
         customerId: g.customerId,
@@ -277,6 +283,8 @@ export async function provisionCredentialJob(job: Job) {
     return;
   }
   const adapter = getNetworkAdapter();
+  // Router-pull mode: the credential stays PENDING until the router fetches it from /api/router/pull.
+  if (adapter.deferred) return;
   try {
     await adapter.provisionUser({
       credentialId: c.id,
@@ -328,6 +336,8 @@ export async function deprovisionCredentialJob(job: Job) {
     return;
   }
   const adapter = getNetworkAdapter();
+  // Router-pull mode: stays DEPROVISION_PENDING until the router fetches the delete command.
+  if (adapter.deferred) return;
   // Remove first so the device cannot log straight back in, then end any live sessions.
   await adapter.removeUser(c.username);
   await adapter.disconnectUser(c.username);

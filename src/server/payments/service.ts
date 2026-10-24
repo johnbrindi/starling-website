@@ -11,7 +11,7 @@ import { getSettings } from "../settings";
 import { fulfilPayment } from "../subscriptions/service";
 import { notify } from "../notifications/service";
 import { getActiveProvider, getProvider } from "./registry";
-import { ProviderError, type MobileMoneyChannel, type StatusResult } from "./types";
+import { ProviderError, type MobileMoneyChannel, type ProviderId, type StatusResult } from "./types";
 
 export const checkoutSchema = z.object({
   packageId: z.string().min(1).max(40),
@@ -181,7 +181,7 @@ export async function verifyPayment(paymentId: string): Promise<Payment> {
 }
 
 /** Handles a provider webhook. Signature is checked, event stored once, then status re-verified. */
-export async function handleWebhook(providerId: "NOTCHPAY" | "SIMULATOR", rawBody: string, headers: Headers) {
+export async function handleWebhook(providerId: ProviderId, rawBody: string, headers: Headers) {
   const provider = getProvider(providerId);
   const parsed = provider.parseWebhook(rawBody, headers);
   let event;
@@ -232,7 +232,7 @@ export async function reconcilePayments(now = new Date()) {
   const pending = await db.payment.findMany({
     where: {
       OR: [
-        { status: "PENDING", OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: new Date(now.getTime() - 20_000) } }] },
+        { status: "PENDING", OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: new Date(now.getTime() - 30_000) } }] },
         { status: "EXPIRED", isSimulated: false, updatedAt: { gt: new Date(now.getTime() - 24 * 3600_000) }, checkCount: { lt: 30 }, lastCheckedAt: { lt: new Date(now.getTime() - 10 * 60_000) } },
       ],
     },

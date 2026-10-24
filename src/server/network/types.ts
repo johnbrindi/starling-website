@@ -1,6 +1,6 @@
 // Network adapter contract. Business logic only talks to this interface, never to a router directly.
 
-export type NetworkAdapterKind = "fake" | "routeros" | "radius";
+export type NetworkAdapterKind = "fake" | "routeros" | "radius" | "routerpull";
 
 /** Every user the platform manages on the router carries this comment prefix. */
 export const MANAGED_COMMENT_PREFIX = "starling:";
@@ -73,6 +73,11 @@ export interface ValidationCheck {
 export interface NetworkAdapter {
   readonly kind: NetworkAdapterKind;
   readonly simulated: boolean;
+  /**
+   * True when the server cannot reach the router and the ROUTER collects work instead
+   * (NETWORK_ADAPTER=routerpull): provisioning jobs leave credentials queued for /api/router/pull.
+   */
+  readonly deferred?: boolean;
   health(): Promise<HealthResult>;
   /** Idempotent create-or-update. Must throw if the router did not confirm. */
   provisionUser(input: ProvisionInput): Promise<void>;

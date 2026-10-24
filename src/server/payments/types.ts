@@ -1,5 +1,7 @@
 // Payment provider contract. A provider only reports facts; the payment service decides what to do.
 
+export type ProviderId = "SIMULATOR" | "NOTCHPAY" | "FAPSHI";
+
 export type ProviderStatus = "pending" | "succeeded" | "failed" | "cancelled" | "expired";
 
 export type MobileMoneyChannel = "cm.mtn" | "cm.orange";
@@ -42,7 +44,7 @@ export interface WebhookResult {
 }
 
 export interface PaymentProviderAdapter {
-  readonly id: "SIMULATOR" | "NOTCHPAY";
+  readonly id: ProviderId;
   readonly simulated: boolean;
   initiate(input: InitiateInput): Promise<InitiateResult>;
   fetchStatus(payment: { reference: string; providerReference: string | null }): Promise<StatusResult>;

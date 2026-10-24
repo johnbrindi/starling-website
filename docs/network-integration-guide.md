@@ -55,7 +55,7 @@ Follow the parts in order. Each step shows what to click in **Winbox** and the s
 | Wi-Fi name (SSID) | `Starling Wi-Fi` | |
 | Customer network | `10.5.50.0/24`, router `10.5.50.1` | |
 | Tenda management IP | `10.5.50.2` | |
-| HotSpot DNS name (shows in the address bar) | `starling.wifi` | |
+| HotSpot DNS name (shows in the address bar) | `login.starling` | |
 | Website (APP_URL) | `https://wifi.example.cm` | |
 | WhatsApp support number | `237600000000` | |
 | MikroTik admin password | (strong, keep it safe) | |
@@ -173,7 +173,7 @@ Winbox: **IP → Hotspot → Hotspot Setup** and answer:
 | Select Certificate | `none` |
 | IP Address of SMTP Server | `0.0.0.0` |
 | DNS Servers | `1.1.1.1`, `8.8.8.8` |
-| DNS Name | `starling.wifi` (your business name; shown in the address bar) |
+| DNS Name | `login.starling` (your business name; shown in the address bar) |
 | Name of Local HotSpot User | `admin` + a password (for your own testing only) |
 
 The wizard creates the HotSpot server `hotspot1`, a server profile (`hsprof1`), the DHCP server, the address pool and the NAT rule.
@@ -239,13 +239,13 @@ Phone → open `http://neverssl.com` → the **blue Starling page** appears with
 
 * **IP → Hotspot → Servers → hotspot1** → **Addresses Per MAC = 1** (one IP per phone).
 * **IP → Hotspot → Server Profiles → hsprof1** (or `hsprof-starling`):
-  * General: DNS Name `starling.wifi`, HTML Directory `hotspot` (or `starling`), SMTP `0.0.0.0`.
-  * **Login → Login By**: tick **HTTP CHAP**, **HTTP PAP**, **MAC Cookie**, **Cookie**. HTTP PAP is required by the Starling login page and the website's *Connect* button. MAC Cookie logs a returning phone back in automatically. MAC Cookie Timeout `3d`.
+  * General: DNS Name `login.starling`, HTML Directory `hotspot` (or `starling`), SMTP `0.0.0.0`.
+  * **Login → Login By**: tick **HTTP CHAP**, **HTTP PAP**, **MAC Cookie**, **Cookie**. HTTP PAP is required by the Starling login page and the website's *Connect* button. MAC Cookie logs a returning phone back in automatically (its lifetime, `mac-cookie-timeout`, is a *user profile* setting on RouterOS 6).
 * Terminal:
 
 ```
 /ip hotspot set hotspot1 addresses-per-mac=1
-/ip hotspot profile set [find name~"hsprof"] login-by=http-chap,http-pap,mac-cookie,cookie mac-cookie-timeout=3d dns-name=starling.wifi
+/ip hotspot profile set [find name~"hsprof"] login-by=http-chap,http-pap,mac-cookie,cookie dns-name=login.starling
 ```
 
 ### 6.2 User profiles (speed, devices, anti-sharing)
@@ -399,7 +399,7 @@ Tick each line. Use a phone with **private Wi-Fi address turned off** (see Part 
 | 4 | Console → **Sell a pass** → name + phone → print slip; on a second phone use *Username & password* | Logged in; the **Time left** page appears |
 | 5 | Console → **Printed tickets** → 2 tickets; log in with one | Batch shows *In use 1*; that ticket's time started at the login |
 | 6 | Try the same login on another phone at the same time | Refused ("no more sessions are allowed") |
-| 7 | Router: `http://starling.wifi/status` | Time left counts down and matches the website |
+| 7 | Router: `http://login.starling/status` | Time left counts down and matches the website |
 | 8 | Expiry: create an inactive 5-minute package, generate 1 ticket for it, use it | Warnings, then disconnected at the end; next page is the login page |
 | 9 | Unplug the VPN/server for 10 minutes | Paying customers keep browsing; expiry still happens (router scheduler) |
 | 10 | Console → Network → Validate configuration | All OK |

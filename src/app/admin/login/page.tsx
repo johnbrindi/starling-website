@@ -17,7 +17,7 @@ export default async function StaffLoginPage() {
             <ShieldIcon className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-semibold">Starling Wi-Fi</p>
+            <p className="text-sm font-semibold">Juthelink</p>
             <p className="text-xs text-muted">Operator console</p>
           </div>
         </div>

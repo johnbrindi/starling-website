@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Starling Wi-Fi design tokens: blue primary, white surfaces, charcoal text. No gradients. */
+/* Juthelink design tokens: blue primary, white surfaces, charcoal text. No gradients. */
 @theme {
   --color-brand-50: #eff5ff;
   --color-brand-100: #dbe8fe;

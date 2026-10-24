@@ -6,10 +6,10 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: { default: "Starling Wi-Fi", template: "%s · Starling Wi-Fi" },
+  title: { default: "Juthelink", template: "%s · Juthelink" },
   description: "Fast Wi-Fi by the hour, day, week or month. Pay with MTN Mobile Money or Orange Money.",
-  applicationName: "Starling Wi-Fi",
-  appleWebApp: { capable: true, title: "Starling", statusBarStyle: "default" },
+  applicationName: "Juthelink",
+  appleWebApp: { capable: true, title: "Juthelink", statusBarStyle: "default" },
   icons: { icon: "/favicon.ico", apple: "/icons/apple-touch-icon.png" },
   formatDetection: { telephone: false },
 };

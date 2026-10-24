@@ -1,0 +1,13 @@
+Paste into IP > Hotspot > User Profiles > (profile) > Scripts > On Login.
+Replace DURATION with the pass length: 1h, 12h, 1d, 7d, 14d, 30d.
+
+:local u $user
+:local n ("exp-" . $u)
+:if ([:len [/system scheduler find where name=$n]] = 0) do={
+/system scheduler add name=$n interval=DURATION policy=read,write,test comment="Starling: ends this hotspot user's time" on-event=(":do {/ip hotspot active remove [find where user=\"" . $u . "\"]} on-error={}; :do {/ip hotspot cookie remove [find where user=\"" . $u . "\"]} on-error={}; :do {/ip hotspot user remove [find where name=\"" . $u . "\"]} on-error={}; /system scheduler remove [find where name=\"" . $n . "\"]")
+:delay 1s
+:local c ""
+:do {:set c [/ip hotspot user get [find where name=$u] comment]} on-error={}
+:if ([:len $c] > 0) do={:set c ($c . " | ")}
+:do {/ip hotspot user set [find where name=$u] comment=($c . "Started " . [/system clock get date] . " " . [/system clock get time] . " | ends " . [/system scheduler get [find where name=$n] next-run])} on-error={}
+}

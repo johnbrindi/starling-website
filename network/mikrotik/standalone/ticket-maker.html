@@ -1,0 +1,73 @@
+<!doctype html>
+<!-- Juthelink - Ticket Maker. Open this file in the browser ON YOUR PC (it works offline).
+     It never uploads anything: it only builds the Winbox command and the WhatsApp reply for you. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Juthelink - Ticket Maker</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:#f5f6f8;color:#16181d}
+.top{background:#1d5bd8;color:#fff;padding:16px 20px}.top b{font-size:18px}
+.w{max-width:760px;margin:0 auto;padding:16px}.c{background:#fff;border:1px solid #e1e4ea;border-radius:12px;padding:16px;margin-bottom:14px}
+label{display:block;font-weight:600;font-size:14px;margin:0 0 5px}select,input{width:100%;height:42px;border:1px solid #d3d8e0;border-radius:8px;padding:0 10px;font-size:15px;margin-bottom:12px}
+.g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+button{height:44px;border:0;border-radius:8px;background:#1d5bd8;color:#fff;font-weight:700;padding:0 18px;font-size:15px;cursor:pointer}
+button.s{background:#fff;color:#1748b0;border:1px solid #bfd5fe}
+textarea{width:100%;font-family:monospace;font-size:13px;border:1px solid #d3d8e0;border-radius:8px;padding:10px;min-height:110px}
+h3{margin:0 0 8px;font-size:15px}p.h{color:#6b7180;font-size:13px;margin:6px 0 10px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{border:1px solid #e1e4ea;padding:6px 8px;text-align:left}td.m{font-family:monospace;font-size:15px}
+@media print{.np{display:none}body{background:#fff}.c{border:0}}
+</style></head><body>
+<div class="top np"><b>Juthelink · Ticket Maker</b></div>
+<div class="w">
+<div class="c np">
+<div class="g">
+<div><label for="plan">Plan</label><select id="plan" onchange="mode()"></select></div>
+<div><label for="phone">Customer phone (for 1 ticket)</label><input id="phone" placeholder="6xx xxx xxx"></div>
+<div id="nBox"><label for="n">How many tickets</label><input id="n" type="number" min="1" max="100" value="1"></div>
+<div id="nameBox" style="display:none"><label for="name">Family member's name</label><input id="name" placeholder="e.g. Marie Ngono"></div>
+</div>
+<p class="h" id="famNote" style="display:none;color:#137a43"><b>Family access is free and never expires.</b> Only for family members who contributed to the Starlink. Up to 2 devices, faster speed. Marked FAMILY in Winbox so you can always tell them apart.</p>
+<button onclick="make()">Make ticket(s)</button>
+<p class="h">One customer paid? Choose the plan, type their phone, keep 1, click Make. For printed tickets to sell later, leave the phone empty and choose a number.</p>
+</div>
+
+<div id="out" style="display:none">
+<div class="c np"><h3>Step 1 · Paste this in Winbox → New Terminal, press Enter</h3>
+<textarea id="cmd" readonly></textarea><button class="s" onclick="copy('cmd')">Copy command</button></div>
+<div class="c np" id="replyBox"><h3>Step 2 · Send this reply to the customer on WhatsApp</h3>
+<textarea id="reply" readonly></textarea><button class="s" onclick="copy('reply')">Copy message</button> <a id="waLink" target="_blank"><button class="s">Open WhatsApp chat</button></a></div>
+<div class="c"><h3>Tickets <button class="s np" style="float:right" onclick="print()">Print</button></h3><table id="tbl"></table></div>
+</div>
+</div>
+<script>
+// profile name on the router, label, price
+var PLANS=[["1hour","1 hour",100],["12hours","12 hours",150],["24hours","24 hours",200],["1week","1 week",1350],["2weeks","2 weeks",2500],["1month","1 month",4500]];
+var FAMILY=PLANS.length;PLANS.push(["family","Family member (free)",0]);
+var sel=document.getElementById("plan");
+PLANS.forEach(function(p,i){var o=document.createElement("option");o.value=i;o.textContent=i===FAMILY?p[1]:p[1]+" - "+p[2]+" FCFA";sel.appendChild(o)});
+function mode(){var f=+sel.value===FAMILY;document.getElementById("nBox").style.display=f?"none":"";document.getElementById("nameBox").style.display=f?"":"none";document.getElementById("famNote").style.display=f?"":"none"}
+function rnd(chars,len){var a=new Uint32Array(len),s="";crypto.getRandomValues(a);for(var i=0;i<len;i++)s+=chars[a[i]%chars.length];return s}
+function make(){
+  var fam=+sel.value===FAMILY,p=PLANS[sel.value],n=fam?1:Math.max(1,Math.min(100,parseInt(document.getElementById("n").value)||1));
+  var phone=document.getElementById("phone").value.replace(/\D/g,"").replace(/^237/,"");
+  var name=document.getElementById("name").value.trim().replace(/["\\]/g,"");
+  if(fam&&!name){alert("Type the family member's name.");return}
+  var cmds=[],rows="<tr><th>Username</th><th>Password</th><th>Plan</th></tr>",tickets=[];
+  for(var i=0;i<n;i++){
+    var first=name.split(/\s+/)[0].normalize("NFKD").toLowerCase().replace(/[^a-z]/g,"").slice(0,8);
+    var u=fam&&first?first+rnd("0123456789",3):rnd("abcdefghjkmnpqrstuvwxyz23456789",6),pw=rnd("0123456789",6);
+    var note=fam?"FAMILY: "+name+(phone?", "+phone:""):(n===1&&phone)?phone:"ticket "+new Date().toISOString().slice(0,10);
+    cmds.push('/ip hotspot user add name='+u+' password='+pw+' profile='+p[0]+' comment="'+note+'"');
+    rows+="<tr><td class=m>"+u+"</td><td class=m>"+pw+"</td><td>"+p[1]+"</td></tr>";tickets.push([u,pw]);
+  }
+  document.getElementById("cmd").value=cmds.join("\n");
+  document.getElementById("tbl").innerHTML=rows;
+  var t=tickets[0];
+  var msg=fam?"Welcome to Juthelink, "+name.split(/\s+/)[0]+"! Your family login (free, no expiry):\nUsername: "+t[0]+"\nPassword: "+t[1]+"\n\n1. Connect to the Wi-Fi\n2. Open any website (e.g. neverssl.com)\n3. Enter the username and password, tap Connect.\nIt works on up to 2 of your own devices. Please do not share it: it is for family only."
+  :"Thank you for your payment! Your Juthelink login ("+p[1]+"):\nUsername: "+t[0]+"\nPassword: "+t[1]+"\n\n1. Connect to the Wi-Fi\n2. Open any website (e.g. neverssl.com)\n3. Enter the username and password, tap Connect.\nYour time starts at your first login. Keep this message: if you lose your login, we can send it again.";
+  document.getElementById("reply").value=msg;
+  document.getElementById("replyBox").style.display=n===1?"block":"none";
+  document.getElementById("waLink").href=phone?"https://wa.me/237"+phone+"?text="+encodeURIComponent(msg):"https://wa.me/?text="+encodeURIComponent(msg);
+  document.getElementById("out").style.display="block";
+}
+function copy(id){var e=document.getElementById(id);e.select();try{navigator.clipboard.writeText(e.value)}catch(x){document.execCommand("copy")}}
+</script></body></html>

@@ -9,14 +9,15 @@ import { provisionNow } from "@/server/jobs/tick";
 
 /**
  * GET /api/payments/:id — status of the signed-in customer's payment. While PENDING, each call
- * (at most every 4 s) asks the provider for the authoritative status.
+ * (at most every 10 s) asks the provider for the authoritative status.
  */
 export const GET = handler(async (_req, ctx: RouteContext<"/api/payments/[id]">) => {
   const { id } = await ctx.params;
   const { customer } = await requireCustomer();
   let payment = await db.payment.findUnique({ where: { id }, include: { package: true } });
   if (!payment || payment.customerId !== customer.id) throw new AppError("NOT_FOUND", "Payment not found.");
-  const stale = !payment.lastCheckedAt || Date.now() - payment.lastCheckedAt.getTime() > 4000;
+  // Fapshi allows 6 status checks per minute per payment: check the provider at most every 10 s.
+  const stale = !payment.lastCheckedAt || Date.now() - payment.lastCheckedAt.getTime() > 10_000;
   if (payment.status === "PENDING" && stale) {
     try {
       await verifyPayment(payment.id);

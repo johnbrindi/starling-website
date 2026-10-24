@@ -4,7 +4,7 @@ import { db } from "./db";
 
 /** Operational settings editable by administrators (stored in the Setting table). */
 export const settingsSchema = z.object({
-  businessName: z.string().min(2).max(80).default("Starling Wi-Fi"),
+  businessName: z.string().min(2).max(80).default("Juthelink"),
   supportPhone: z.string().max(30).default("+237 600 000 000"),
   supportWhatsapp: z.string().max(30).default(""),
   supportHours: z.string().max(80).default("Every day, 7:00 to 22:00"),

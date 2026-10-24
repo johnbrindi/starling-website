@@ -172,6 +172,7 @@ model NetworkProfile {
 enum PaymentProvider {
   SIMULATOR
   NOTCHPAY
+  FAPSHI
   CASH // recorded by staff at the counter ("Sell a pass")
 }
 

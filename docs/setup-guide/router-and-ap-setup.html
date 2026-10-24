@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Juthelink - Router and Access Point Setup Guide</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  :root { --blue:#1d5bd8; --blue-d:#1748b0; --blue-l:#eef4ff; --ink:#16181d; --soft:#3d4250; --muted:#6b7180; --line:#dfe3ea; --ok:#137a43; --okb:#e8f5ee; --warn:#8a5a00; --warnb:#fdf4e1; --bad:#b42318; --badb:#fdecea; }
+  * { box-sizing: border-box; }
+  body { font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 26pt; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 16pt; margin: 0 0 4px; color: var(--ink); letter-spacing: -0.01em; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; }
+  p { margin: 6px 0; }
+  .part { break-before: page; }
+  .part-head { border-bottom: 3px solid var(--blue); padding-bottom: 8px; margin-bottom: 12px; }
+  .part-num { color: var(--blue); font-weight: 700; font-size: 10pt; letter-spacing: .08em; text-transform: uppercase; }
+  .lead { color: var(--soft); font-size: 11pt; }
+  .step { display: grid; grid-template-columns: 30px 1fr; gap: 10px; margin: 12px 0; break-inside: avoid; }
+  .n { width: 26px; height: 26px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 10pt; margin-top: 1px; }
+  .step b.t { display: block; font-size: 11pt; margin-bottom: 2px; }
+  .click { font-weight: 600; color: var(--blue-d); }
+  code, .mono { font-family: "Cascadia Mono", "Consolas", "SF Mono", "DejaVu Sans Mono", monospace; font-size: 9pt; }
+  code { background: #f1f3f7; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  pre { font-family: "Cascadia Mono", "Consolas", "DejaVu Sans Mono", monospace; font-size: 8.6pt; background: #0f172a; color: #e6edf7; border-radius: 6px; padding: 9px 11px; white-space: pre-wrap; word-break: break-word; margin: 6px 0; break-inside: avoid; line-height: 1.45; }
+  .box { border-radius: 6px; padding: 8px 11px; margin: 8px 0; font-size: 10pt; break-inside: avoid; border: 1px solid transparent; }
+  .see { background: var(--okb); border-color: #bfe3cd; }
+  .see::before { content: "✔ You should see: "; font-weight: 700; color: var(--ok); }
+  .ifnot { background: var(--badb); border-color: #f3c7c2; }
+  .ifnot::before { content: "✖ If not: "; font-weight: 700; color: var(--bad); }
+  .tip { background: var(--blue-l); border-color: #cfdcfb; }
+  .tip::before { content: "Tip: "; font-weight: 700; color: var(--blue-d); }
+  .warn { background: var(--warnb); border-color: #f1dfb4; }
+  .warn::before { content: "Careful: "; font-weight: 700; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9.8pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #f4f6f9; font-weight: 600; }
+  td.v { font-family: "Cascadia Mono", "Consolas", "DejaVu Sans Mono", monospace; font-size: 9pt; color: var(--blue-d); }
+  .check { list-style: none; padding: 0; margin: 6px 0; }
+  .check li { padding-left: 24px; position: relative; margin: 4px 0; }
+  .check li::before { content: ""; position: absolute; left: 0; top: 2px; width: 13px; height: 13px; border: 1.6px solid var(--soft); border-radius: 3px; }
+  .cover { height: 255mm; display: flex; flex-direction: column; }
+  .cover .band { background: var(--blue); color: #fff; border-radius: 10px; padding: 28px 26px; }
+  .cover .band p { color: #dbe7ff; font-size: 12pt; margin-top: 10px; }
+  .cover .meta { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .cover .meta div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 9.5pt; color: var(--soft); }
+  .cover .meta b { display: block; color: var(--ink); font-size: 11pt; }
+  .toc { margin-top: 18px; columns: 2; column-gap: 24px; font-size: 10pt; }
+  .toc div { break-inside: avoid; padding: 3px 0; border-bottom: 1px dotted var(--line); display: flex; justify-content: space-between; }
+  .diagram { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 10px 0; break-inside: avoid; }
+  .router { display: flex; align-items: flex-start; gap: 6px; justify-content: center; margin: 6px 0 2px; }
+  .port { width: 64px; text-align: center; font-size: 8.5pt; color: var(--soft); }
+  .port .hole { height: 34px; border: 2px solid #9aa3b2; border-radius: 4px; background: #f4f6f9; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--ink); }
+  .port.blue .hole { background: #d7ecff; border-color: #2b7bd8; }
+  .port.yellow .hole { background: #fff4c2; border-color: #d4a800; }
+  .port.power .hole { background: #222; border-color: #222; color: #fff; border-radius: 50%; width: 34px; margin: 0 auto; }
+  .flow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; font-size: 9.5pt; margin: 8px 0; }
+  .flow span.node { border: 1.5px solid var(--blue); color: var(--blue-d); background: var(--blue-l); border-radius: 6px; padding: 5px 9px; font-weight: 600; }
+  .flow span.arrow { color: var(--muted); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .small { font-size: 9pt; color: var(--muted); }
+  .phase { display:inline-block; background: var(--okb); color: var(--ok); border-radius: 999px; padding: 1px 9px; font-size: 8.5pt; font-weight: 700; }
+  .notes td { height: 22px; }
+</style>
+</head>
+<body>
+
+<!-- ============================== COVER ============================== -->
+<section class="cover">
+  <div class="band">
+    <div style="font-size:10pt;letter-spacing:.1em;text-transform:uppercase;opacity:.85">Juthelink · Phase 1</div>
+    <h1>Set up your MikroTik hotspot<br>and Tenda outdoor access point</h1>
+    <p>A complete, first-time, click-by-click walkthrough. At the end, customers connect to “Starling Wi-Fi”, see your login page, type the username and password you sold them, and are disconnected automatically when their time is up.</p>
+  </div>
+  <div class="meta">
+    <div><b>Your equipment</b>Starlink · MikroTik hAP lite (RouterOS 6.48.6) · Tenda outdoor AP</div>
+    <div><b>Time needed</b>About 2–3 hours, with breaks. Do not rush.</div>
+    <div><b>Skill needed</b>None. Every click and every command is written here.</div>
+  </div>
+  <div class="toc">
+    <div><span>0 · Before you start</span><span>2</span></div>
+    <div><span>1 · Winbox basics</span><span>4</span></div>
+    <div><span>2 · Start clean</span><span>5</span></div>
+    <div><span>3 · Password, name, clock</span><span>5</span></div>
+    <div><span>4 · Internet from Starlink</span><span>7</span></div>
+    <div><span>5 · Update the router</span><span>8</span></div>
+    <div><span>6 · Customer network (bridge)</span><span>9</span></div>
+    <div><span>7 · The router's own Wi-Fi (for testing)</span><span>10</span></div>
+    <div><span>8 · Turn on the hotspot (captive portal)</span><span>11</span></div>
+    <div><span>9 · Let your own PC/phone skip the login</span><span>12</span></div>
+    <div><span>10 · Hotspot settings</span><span>13</span></div>
+    <div><span>11 · Packages and prices (profiles)</span><span>14</span></div>
+    <div><span>12 · Your login page</span><span>16</span></div>
+    <div><span>13 · How selling works (MoMo + WhatsApp)</span><span>18</span></div>
+    <div><span>14 · Tenda outdoor access point</span><span>19</span></div>
+    <div><span>15 · Final test checklist</span><span>21</span></div>
+    <div><span>16 · Daily use</span><span>22</span></div>
+    <div><span>17 · Problems and fixes</span><span>23</span></div>
+    <div><span>A · All commands in one place</span><span>24</span></div>
+  </div>
+  <div style="margin-top:auto" class="box tip">This guide sets up the router to work <b>on its own</b> (phase 1): you create usernames and passwords, sell them for cash or Mobile Money, and the router does the rest. Later, the Starling website will be connected to it (phase 2). Nothing in this guide needs to be redone for that.</div>
+</section>
+
+<!-- ============================== PART 0 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 0</div><h2>Before you start</h2><p class="lead">What you are building, what you need, and three rules that keep you safe.</p></div>
+
+  <h3>What you are building</h3>
+  <div class="flow">
+    <span class="node">Starlink</span><span class="arrow">→ blue cable →</span>
+    <span class="node">MikroTik port 1</span><span class="arrow">… MikroTik …</span>
+    <span class="node">port 2</span><span class="arrow">→</span><span class="node">Tenda AP</span><span class="arrow">→</span><span class="node">customer phones</span>
+  </div>
+  <p>The MikroTik sits in the middle. Internet comes in on <b>port 1</b>. Everything plugged into <b>ports 2, 3, 4</b> (and its own Wi-Fi) is the customer side: anyone there must log in on your page before they get internet.</p>
+
+  <h3>Your cables (from your photo)</h3>
+  <div class="diagram">
+    <div class="router">
+      <div class="port power"><div class="hole">⏻</div>power</div>
+      <div class="port blue"><div class="hole">1</div><b>Internet</b><br>blue → Starlink</div>
+      <div class="port"><div class="hole">2</div>Tenda AP<br>(later, Part 14)</div>
+      <div class="port"><div class="hole">3</div>free</div>
+      <div class="port yellow"><div class="hole">4</div>yellow → your PC</div>
+    </div>
+    <p class="small" style="text-align:center">Looking at the back of the hAP lite. Port 1 is the one next to the power socket, marked “Internet”. Keep it like this for the whole guide.</p>
+  </div>
+
+  <h3>What you need</h3>
+  <ul class="check">
+    <li>Starlink set up and working (the Starlink app shows <b>Online</b>).</li>
+    <li>The MikroTik hAP lite, powered, blue cable in port 1, yellow cable in port 4 to your PC.</li>
+    <li>Your PC with <b>Winbox</b> (you already have it and can connect by MAC address).</li>
+    <li>A phone for testing.</li>
+    <li>The kit <code>Starling-Router-Setup-Kit.zip</code> (unzip it on your PC): <code>starling-profiles.rsc</code>, <code>ticket-maker.html</code>, and the <code>hotspot</code> folder with <code>login.html</code>, <code>alogin.html</code>, <code>status.html</code>.</li>
+    <li>The Tenda outdoor AP, its PoE injector and power adapter (only for Part 14).</li>
+    <li>A notebook to write down passwords.</li>
+  </ul>
+
+  <h3>Three rules</h3>
+  <div class="box warn"><b>Always connect Winbox using the MAC address</b> (the letters/numbers like <span class="mono">18:FD:74:FF:17:EB</span>), not an IP address, until Part 9. The MAC connection keeps working even if you make a mistake with IP settings.</div>
+  <div class="box warn"><b>Type values exactly as written.</b> Small letters stay small. No extra spaces. When this guide says <code>bridge-hotspot</code>, type exactly that.</div>
+  <div class="box warn"><b>If you get lost, you can always start again</b> with Part 2 (start clean). Nothing you do here can damage the router.</div>
+
+  <h3>Write your values here</h3>
+  <table class="notes">
+    <tr><th style="width:42%">What</th><th>Value</th></tr>
+    <tr><td>Router MAC address (Winbox)</td><td></td></tr>
+    <tr><td>Router admin password (Part 3)</td><td></td></tr>
+    <tr><td>Wi-Fi name (SSID)</td><td>Starling Wi-Fi</td></tr>
+    <tr><td>Hotspot admin test user / password (Part 8)</td><td></td></tr>
+    <tr><td>Your WhatsApp / MoMo number (Part 12)</td><td></td></tr>
+    <tr><td>Tenda admin password (Part 14)</td><td></td></tr>
+  </table>
+</section>
+
+<!-- ============================== PART 1 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 1</div><h2>Winbox basics</h2><p class="lead">Five things you will use in every step.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Connecting</b>
+    Open Winbox → <span class="click">Neighbors</span> tab → <span class="click">Refresh</span> → click the line that shows <b>hAP lite</b> → make sure the <b>MAC address</b> appears in “Connect To” → Login <code>admin</code>, Password: empty (or the password you set in Part 3) → <span class="click">Connect</span>.</div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">The menu on the left</b>
+    Everything is in the left menu: <span class="click">Interfaces</span>, <span class="click">Wireless</span>, <span class="click">Bridge</span>, <span class="click">IP</span> (has a sub-menu: Addresses, DHCP Client, DNS, Hotspot, Firewall…), <span class="click">System</span> (sub-menu: Password, Identity, Clock, Packages, Reset Configuration…), <span class="click">Files</span>, <span class="click">New Terminal</span>. In this guide, “<span class="click">IP → DNS</span>” means: click IP, then DNS in the sub-menu.</div></div>
+
+  <div class="step"><div class="n">3</div><div><b class="t">Adding and editing</b>
+    In most windows, the blue <span class="click">+</span> (or <span class="click">New</span>) button adds an item. Double-click a line to edit it. In an edit window, <span class="click">Apply</span> saves and keeps it open, <span class="click">OK</span> saves and closes.</div></div>
+
+  <div class="step"><div class="n">4</div><div><b class="t">The terminal (for copy-paste commands)</b>
+    <span class="click">New Terminal</span> opens a black window. You can paste a command there (right-click → Paste, or Ctrl+V) and press <b>Enter</b>. Every step in this guide shows both ways: the clicks, and the command. <b>Use one or the other for a step, not both.</b> If you are unsure, use the clicks.</div></div>
+
+  <div class="step"><div class="n">5</div><div><b class="t">Safe Mode (your undo button)</b>
+    The <span class="click">Safe Mode</span> button (top right in Winbox) protects you: while it is on, if Winbox loses the connection, the router automatically <b>undoes</b> your last changes. Turn it on before risky steps (this guide tells you when), and turn it off again when you are happy with the result so the changes are kept.</div></div>
+
+  <div class="box tip">Your Winbox may look slightly different (newer Winbox 4 has a darker style and some buttons are named “New” instead of “+”). The menu names are the same.</div>
+</section>
+
+<!-- ============================== PART 2 + 3 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 2</div><h2>Start clean</h2><p class="lead">Your router is almost empty already (it showed a <span class="mono">bridge1</span>). We erase everything so it is in a known state.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Reset with no configuration</b>
+    <span class="click">System → Reset Configuration</span> → tick <b>No Default Configuration</b> → leave the other boxes unticked → <span class="click">Reset Configuration</span> → confirm <b>Yes</b>.
+    <pre>/system reset-configuration no-defaults=yes skip-backup=yes</pre>
+    (In the terminal, type <code>y</code> and Enter when it asks “Dangerous! Reset anyway?”)</div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Wait and reconnect</b>
+    Winbox disconnects. Wait about 1 minute (the router reboots). Then Winbox → Neighbors → Refresh → click the MAC address → login <code>admin</code>, empty password → Connect. If it asks about the default configuration, click <b>Remove Configuration</b> (or OK).</div></div>
+  <div class="box see"><span class="click">Bridge</span> is empty, <span class="click">IP → Addresses</span> is empty. That is correct.</div>
+  <div class="box ifnot">The router does not appear in Neighbors: unplug the yellow cable from the PC and plug it back in, wait 20 seconds, Refresh again. Try another port (2 or 3) on the router.</div>
+
+  <div class="part-head" style="margin-top:22px"><div class="part-num">Part 3</div><h2>Password, name and clock</h2></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Set the admin password</b>
+    <span class="click">System → Password</span> → Old Password: empty → New Password and Confirm: a strong password (write it in Part 0) → <span class="click">Change</span>.
+    <pre>/password old-password="" new-password="YourStrongPassword" confirm-new-password="YourStrongPassword"</pre></div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Give the router a name</b>
+    <span class="click">System → Identity</span> → <code>starling-hotspot</code> → OK.
+    <pre>/system identity set name=starling-hotspot</pre></div></div>
+
+  <div class="step"><div class="n">3</div><div><b class="t">Time zone and automatic clock</b>
+    <span class="click">System → Clock</span> → Time Zone Name: <code>Africa/Douala</code> → OK. Then <span class="click">System → SNTP Client</span> → tick <b>Enabled</b> → Primary NTP Server <code>162.159.200.1</code>, Secondary <code>162.159.200.123</code> → OK.
+    <pre>/system clock set time-zone-name=Africa/Douala
+/system ntp client set enabled=yes primary-ntp=162.159.200.1 secondary-ntp=162.159.200.123</pre>
+    The clock matters: customers' time is counted with it. It will show the right time once the internet works (Part 4).</div></div>
+
+  <div class="box tip">From now on, log in with <code>admin</code> and your new password.</div>
+</section>
+
+<!-- ============================== PART 4 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 4</div><h2>Internet from Starlink (port 1)</h2><p class="lead">The router asks the Starlink router for an address on port 1, exactly like a phone does.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Check Starlink</b>
+    The Starlink app says <b>Online</b>, and the blue cable goes from a Starlink router Ethernet/LAN port to <b>port 1</b> of the MikroTik.</div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Add a DHCP client on port 1</b>
+    <span class="click">IP → DHCP Client</span> → <span class="click">+</span> → Interface: <code>ether1</code> → <b>Use Peer DNS: unticked</b> → Add Default Route: <b>yes</b> → OK.
+    <pre>/ip dhcp-client add interface=ether1 use-peer-dns=no add-default-route=yes disabled=no comment="Internet from Starlink"</pre></div></div>
+  <div class="box see">In the DHCP Client list, the Status becomes <b>bound</b> and an IP address appears (for example <span class="mono">192.168.1.23/24</span>, or <span class="mono">100.x.x.x</span> if Starlink is in bypass mode).</div>
+  <div class="box ifnot">Status stays “searching…”: check the blue cable is in <b>port 1</b> and in the Starlink router; restart the Starlink router; wait 1 minute. If Starlink uses the Ethernet Adapter, check it is connected.</div>
+
+  <div class="step"><div class="n">3</div><div><b class="t">Set the DNS servers</b>
+    <span class="click">IP → DNS</span> → Servers: <code>1.1.1.1</code> and (click the small arrow to add a line) <code>8.8.8.8</code> → tick <b>Allow Remote Requests</b> → OK.
+    <pre>/ip dns set servers=1.1.1.1,8.8.8.8 allow-remote-requests=yes</pre></div></div>
+
+  <div class="step"><div class="n">4</div><div><b class="t">Test the internet</b>
+    <span class="click">New Terminal</span> and type:
+    <pre>/ping google.com count=4</pre></div></div>
+  <div class="box see">Four lines with a time like <span class="mono">time=40ms</span> and “received=4”.</div>
+  <div class="box ifnot">“could not resolve”: redo step 3. “timeout”: the DHCP client is not bound; redo step 2.</div>
+
+  <div class="step"><div class="n">5</div><div><b class="t">Check the clock</b>
+    <span class="click">System → Clock</span>: the date and time are now correct (Douala time). If not, wait 2 minutes and look again.</div></div>
+</section>
+
+<!-- ============================== PART 5 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 5</div><h2>Update the router</h2><p class="lead">Always update before configuring the hotspot, so an update does not change your settings later. Your router has 6.48.6; we move to the latest 6.49 “long-term” version.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Download and install</b>
+    <span class="click">System → Packages</span> → <span class="click">Check For Updates</span> → Channel: <b>long-term</b> → wait until it shows the Latest Version (6.49.something) → <span class="click">Download&amp;Install</span>.
+    <pre>/system package update set channel=long-term
+/system package update check-for-updates
+/system package update install</pre></div></div>
+  <div class="box see">The router downloads, then reboots by itself (Winbox disconnects). Wait 2–3 minutes, reconnect by MAC. <span class="click">System → Packages</span> shows the new version.</div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Update the RouterBOARD firmware</b>
+    <span class="click">System → RouterBOARD</span> → if “Current Firmware” and “Upgrade Firmware” are different, click <span class="click">Upgrade</span> → OK. Then <span class="click">System → Reboot</span> → Yes. Reconnect after 1 minute.
+    <pre>/system routerboard upgrade
+/system reboot</pre></div></div>
+
+  <div class="box warn">Do not unplug the power while it is updating. If the update fails or does not show 6.49, that is fine: continue with 6.48.6. Everything in this guide works on both.</div>
+  <div class="box warn">Stay on version 6 (long-term). Do not choose the “stable/7” channel: the hAP lite has very little storage and this guide is written for version 6.</div>
+</section>
+
+<!-- ============================== PART 6 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 6</div><h2>Customer network (the bridge)</h2><p class="lead">A “bridge” joins ports 2, 3, 4 and the Wi-Fi into one customer network. Port 1 (internet) must NOT be in it.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Create the bridge</b>
+    <span class="click">Bridge</span> → <span class="click">Bridge</span> tab → <span class="click">+</span> → Name: <code>bridge-hotspot</code> → OK.
+    <pre>/interface bridge add name=bridge-hotspot comment="Customers"</pre></div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Put ports 2, 3, 4 and the Wi-Fi in it</b>
+    <span class="click">Bridge</span> → <span class="click">Ports</span> tab → <span class="click">+</span> → Interface <code>ether2</code>, Bridge <code>bridge-hotspot</code> → OK. Repeat for <code>ether3</code>, <code>ether4</code> and <code>wlan1</code>.
+    <pre>/interface bridge port add bridge=bridge-hotspot interface=ether2
+/interface bridge port add bridge=bridge-hotspot interface=ether3
+/interface bridge port add bridge=bridge-hotspot interface=ether4
+/interface bridge port add bridge=bridge-hotspot interface=wlan1</pre></div></div>
+  <div class="box see">The Ports tab lists ether2, ether3, ether4, wlan1, all with bridge <b>bridge-hotspot</b>. <b>ether1 is not there.</b></div>
+  <div class="box tip">Winbox may disconnect for a second because your PC (port 4) just moved into the bridge. Reconnect by MAC. This is normal.</div>
+
+  <div class="step"><div class="n">3</div><div><b class="t">Give the customer network its address</b>
+    <span class="click">IP → Addresses</span> → <span class="click">+</span> → Address <code>10.5.50.1/24</code> → Interface <code>bridge-hotspot</code> → OK.
+    <pre>/ip address add address=10.5.50.1/24 interface=bridge-hotspot comment="Customer gateway"</pre></div></div>
+  <div class="box see">IP → Addresses shows <span class="mono">10.5.50.1/24</span> on bridge-hotspot (and the Starlink address on ether1, marked D).</div>
+  <div class="box tip">10.5.50.1 is your router's address for customers. Customers will get addresses 10.5.50.10 to 10.5.50.250. The Tenda will later get 10.5.50.2.</div>
+</section>
+
+<!-- ============================== PART 7 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 7</div><h2>The router's own Wi-Fi (for testing now)</h2><p class="lead">The hAP lite has a small indoor Wi-Fi. We turn it on so you can test everything before mounting the Tenda. You can keep it on afterwards as a second, indoor access point.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Make the Wi-Fi open (no password)</b>
+    The hotspot login page is the lock, so the Wi-Fi itself has no password (like airports and cafés). <span class="click">Wireless</span> → <span class="click">Security Profiles</span> tab → double-click <b>default</b> → Mode: <b>none</b> → OK.
+    <pre>/interface wireless security-profiles set [find default=yes] mode=none</pre></div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Set the Wi-Fi name and turn it on</b>
+    <span class="click">Wireless</span> → <span class="click">WiFi Interfaces</span> tab → double-click <b>wlan1</b> → <span class="click">Wireless</span> tab: Mode <b>ap bridge</b>, Band <b>2GHz-B/G/N</b>, Channel Width <b>20MHz</b>, Frequency <b>auto</b>, SSID <code>Starling Wi-Fi</code>, Security Profile <b>default</b> → OK. Then select wlan1 and click the blue tick <span class="click">✓ Enable</span>.
+    <pre>/interface wireless set wlan1 mode=ap-bridge band=2ghz-b/g/n channel-width=20mhz frequency=auto ssid="Starling Wi-Fi" security-profile=default wireless-protocol=802.11 disabled=no</pre></div></div>
+  <div class="box see">On your phone, a Wi-Fi called <b>Starling Wi-Fi</b> appears, without a lock icon. Do not connect yet: there is no hotspot until Part 8, so the phone would not get an address.</div>
+</section>
+
+<!-- ============================== PART 8 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 8</div><h2>Turn on the hotspot (captive portal)</h2><p class="lead">The Hotspot Setup wizard creates the login system, gives addresses to customers, and shares the internet. This is the same wizard as in the video.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Start the wizard</b>
+    <span class="click">IP → Hotspot</span> → <span class="click">Servers</span> tab → <span class="click">Hotspot Setup</span>. Answer each screen and click <span class="click">Next</span>:</div></div>
+
+  <table>
+    <tr><th style="width:44%">The wizard asks</th><th>You answer</th></tr>
+    <tr><td>HotSpot Interface</td><td class="v">bridge-hotspot</td></tr>
+    <tr><td>Local Address of Network</td><td class="v">10.5.50.1/24 &nbsp;(Masquerade Network: ticked)</td></tr>
+    <tr><td>Address Pool of Network</td><td class="v">10.5.50.10-10.5.50.250</td></tr>
+    <tr><td>Select Certificate</td><td class="v">none</td></tr>
+    <tr><td>IP Address of SMTP Server</td><td class="v">0.0.0.0</td></tr>
+    <tr><td>DNS Servers</td><td class="v">1.1.1.1 and 8.8.8.8</td></tr>
+    <tr><td>DNS Name</td><td class="v">login.starling</td></tr>
+    <tr><td>Name of Local HotSpot User</td><td class="v">admin &nbsp;+ a password you choose (for your own tests; write it in Part 0)</td></tr>
+  </table>
+  <div class="box see">“Setup has completed successfully”. In the Servers tab there is one server on bridge-hotspot (Winbox names it <b>server1</b> or <b>hotspot1</b>; either is fine). <span class="click">IP → DHCP Server</span> shows a server on bridge-hotspot. <span class="click">IP → Firewall → NAT</span> shows a “masquerade hotspot network” rule.</div>
+  <div class="box tip">The DNS Name <code>login.starling</code> is the address customers see at the top of the login page. It is not a real website; the router answers it itself.</div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Make sure FastTrack is not active</b>
+    FastTrack is a speed shortcut that lets customers skip the login. You started clean, so there should be none, but check: <span class="click">IP → Firewall → Filter Rules</span>. If any rule has Action <b>fasttrack connection</b>, select it and click the red <span class="click">✗ Disable</span>.
+    <pre>/ip firewall filter disable [find action=fasttrack-connection]</pre></div></div>
+
+  <div class="step"><div class="n">3</div><div><b class="t">First test with your phone</b>
+    Phone → Wi-Fi → <b>Starling Wi-Fi</b> → connect. Open the browser and go to <code>http://neverssl.com</code>.</div></div>
+  <div class="box see">MikroTik's grey login page appears (Part 12 replaces it with yours). Log in with <code>admin</code> and the hotspot password from step 1: you can browse.</div>
+  <div class="box ifnot"><b>Phone says “Couldn't get IP address”</b> (and IP → DHCP Server → Leases stays empty): the Wi-Fi is not part of the customer bridge, or the wizard was run several times. Run this in New Terminal (safe to run more than once), then forget the network on the phone and join again:
+    <pre>/interface bridge port remove [find interface=wlan1]
+/interface bridge port add bridge=bridge-hotspot interface=wlan1
+/ip dhcp-server network remove [find]
+/ip dhcp-server network add address=10.5.50.0/24 gateway=10.5.50.1 dns-server=10.5.50.1
+/ip dhcp-server enable [find]</pre></div>
+  <div class="box ifnot">The phone says “no internet” and no page appears: type <code>http://login.starling</code> in the browser. Still nothing: check <span class="click">IP → Hotspot → Servers</span>: hotspot1 must not be red (disabled). Check <span class="click">IP → DHCP Server → Leases</span>: your phone must have a 10.5.50.x address.</div>
+</section>
+
+<!-- ============================== PART 9 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 9</div><h2>Let your own PC and phone skip the login</h2><p class="lead">Your PC on port 4 is now on the customer network, so its browser would also need to log in. You can let your own devices through without a ticket.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Find your PC's MAC address</b>
+    <span class="click">IP → DHCP Server</span> → <span class="click">Leases</span> tab. Your PC is the line with your PC's name (Host Name). Note its <b>MAC Address</b>. (Also your phone's, from the test in Part 8.)</div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Add a bypass</b>
+    <span class="click">IP → Hotspot</span> → <span class="click">IP Bindings</span> tab → <span class="click">+</span> → MAC Address: your PC's MAC → Type: <b>bypassed</b> → Comment: <code>Owner PC</code> → OK. Repeat for your own phone.
+    <pre>/ip hotspot ip-binding add mac-address=AA:BB:CC:DD:EE:FF type=bypassed comment="Owner PC"</pre>
+    (Replace AA:BB:CC:DD:EE:FF with the real MAC.)</div></div>
+  <div class="box see">On your PC, any website opens without the login page.</div>
+  <div class="box warn">Only add your own devices. Every bypassed device uses internet without paying and without speed limits.</div>
+</section>
+
+<!-- ============================== PART 10 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 10</div><h2>Hotspot settings</h2><p class="lead">The settings the video recommends: one address per phone, and the login methods.</p></div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">One address per phone</b>
+    <span class="click">IP → Hotspot → Servers</span> → double-click your server (<b>server1</b> or <b>hotspot1</b>) → Addresses Per MAC: <code>1</code> → OK.
+    <pre>/ip hotspot set [find] addresses-per-mac=1</pre></div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Login methods</b>
+    <span class="click">IP → Hotspot</span> → <span class="click">Server Profiles</span> tab → double-click <b>hsprof1</b> → <span class="click">Login</span> tab → tick <b>HTTP CHAP</b>, <b>HTTP PAP</b>, <b>MAC Cookie</b>, <b>Cookie</b> (untick the others) → OK. (How long the MAC cookie lasts is set in the packages, Part 11.)
+    <pre>/ip hotspot profile set hsprof1 login-by=http-chap,http-pap,mac-cookie,cookie</pre></div></div>
+
+  <table>
+    <tr><th style="width:30%">Setting</th><th>Why</th></tr>
+    <tr><td>Addresses per MAC = 1</td><td>Each phone gets exactly one address.</td></tr>
+    <tr><td>HTTP PAP</td><td>Needed by your Starling login page (Part 12) and later the website's Connect button.</td></tr>
+    <tr><td>MAC Cookie</td><td>A phone that already logged in is let back in automatically after it reconnects, without typing again (until its time ends).</td></tr>
+  </table>
+</section>
+
+<!-- ============================== PART 11 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 11</div><h2>Packages and prices (user profiles)</h2><p class="lead">A “user profile” is a package: how long it lasts, how fast it is, how many phones can use it. Your six packages are ready in a file, including a small script that <b>starts the clock at the customer's first login and removes them automatically when the time is up</b>.</p></div>
+
+  <table>
+    <tr><th>Profile</th><th>Length</th><th>Price</th><th>Phones</th><th>Speed (up/down)</th></tr>
+    <tr><td class="v">1hour</td><td>1 hour</td><td>100 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">12hours</td><td>12 hours</td><td>150 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">24hours</td><td>24 hours</td><td>200 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">1week</td><td>7 days</td><td>1 350 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">2weeks</td><td>14 days</td><td>2 500 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">1month</td><td>30 days</td><td>4 500 FCFA</td><td>2</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">family</td><td>never expires</td><td>free</td><td>2</td><td>5 / 10 Mbit/s</td></tr>
+  </table>
+  <div class="box tip"><b>family</b> is only for the family members who contributed to the Starlink (Part 13). Public customers can never get it unless you create a family login for them.</div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Upload the file</b>
+    <span class="click">Files</span> → drag <code>starling-profiles.rsc</code> from your PC into the Files window (or click <span class="click">Upload</span> and choose it).</div></div>
+  <div class="box see">The Files list shows <span class="mono">starling-profiles.rsc</span> at the top level (not inside a folder).</div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Import it</b>
+    <span class="click">New Terminal</span> → type:
+    <pre>/import file-name=starling-profiles.rsc</pre></div></div>
+  <div class="box see">Seven lines like “Profile 1hour (1h, 100 FCFA, 1 device(s)) ready” and “Profile family (free, never expires…) ready” and “Script file loaded and executed successfully”. <span class="click">IP → Hotspot → User Profiles</span> lists the six profiles.</div>
+  <div class="box ifnot">“no such file”: the file is not at the top level or the name is different; check <span class="click">Files</span>. To try again, simply run the import again: it replaces the profiles.</div>
+  <div class="box tip">Already imported an older version of this file? Upload the new one (replace) and run the import again. It updates the profiles in place and adds <b>family</b>; customers who are online keep working.</div>
+
+  <h3>What each profile does (you do not need to change anything)</h3>
+  <table>
+    <tr><th style="width:30%">Setting</th><th>Value and meaning</th></tr>
+    <tr><td>Shared Users</td><td><b>1</b>: one phone at a time per username (2 for 1month).</td></tr>
+    <tr><td>Rate Limit</td><td><b>2M/5M</b>: 2 Mbit/s upload, 5 Mbit/s download per customer, so one person downloading a film does not slow everyone.</td></tr>
+    <tr><td>Idle Timeout</td><td><b>none</b>: a customer is not logged out just for being idle.</td></tr>
+    <tr><td>Keepalive Timeout</td><td><b>3h</b>: if a phone switches Wi-Fi off, it keeps its place for 3 hours, so the same username cannot be passed to a friend's phone.</td></tr>
+    <tr><td>Status Autorefresh</td><td><b>1m</b>: the “time left” page refreshes every minute.</td></tr>
+    <tr><td>Scripts → On Login</td><td>At the first login: creates a timer (in <span class="click">System → Scheduler</span>, named <span class="mono">exp-username</span>) and writes the start and end time in the user's Comment. When the timer ends: disconnects the phone and deletes the user.</td></tr>
+  </table>
+  <div class="box tip">To change a speed later: <span class="click">IP → Hotspot → User Profiles</span> → double-click the profile → Rate Limit (e.g. <code>3M/8M</code>) → OK. To change a duration, edit the number after <code>interval=</code> in the profile's <b>Scripts → On Login</b> box (e.g. <code>1h</code>, <code>2d</code>, <code>7d</code>).</div>
+</section>
+
+<!-- ============================== PART 12 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 12</div><h2>Your Juthelink login page</h2><p class="lead">Replace MikroTik's grey page with yours: plans, “Pay with MTN MoMo” (the payment code is filled in automatically for the plan chosen), WhatsApp, and the login form. The three files together are under 10 KB, tiny for the router.</p></div>
+
+  <div class="box tip"><b>Where are the files?</b> In the kit zip <span class="mono">Starling-Router-Setup-Kit.zip</span>, folder <span class="mono">hotspot</span>: <span class="mono">login.html</span>, <span class="mono">alogin.html</span>, <span class="mono">status.html</span>. (In the project: <span class="mono">network/mikrotik/standalone/hotspot/</span>.) Your numbers are already inside: MoMo <b>677 358 806</b>, WhatsApp <b>673 727 995</b>. No editing needed.</div>
+
+  <div class="step"><div class="n">1</div><div><b class="t">Unzip the kit on your PC</b>
+    Right-click the zip → Extract. You get a folder with the PDF, <span class="mono">starling-profiles.rsc</span>, <span class="mono">ticket-maker.html</span> and the <span class="mono">hotspot</span> folder.</div></div>
+
+  <div class="step"><div class="n">2</div><div><b class="t">Keep a copy of MikroTik's page</b>
+    Winbox → <span class="click">Files</span> → open the <b>hotspot</b> folder → right-click <span class="mono">hotspot/login.html</span> → rename to <code>hotspot/login-original.html</code>. (If your Winbox cannot rename files, skip this: the original pages can be restored any time with <span class="click">IP → Hotspot → Server Profiles → Reset HTML</span>.)</div></div>
+
+  <div class="step"><div class="n">3</div><div><b class="t">Upload the three pages into the hotspot folder</b>
+    Drag <code>login.html</code>, <code>alogin.html</code> and <code>status.html</code> from the kit's <span class="mono">hotspot</span> folder onto the <b>hotspot</b> folder in the Files window (or click <span class="click">Upload</span> while the hotspot folder is open). Replace existing files when asked.</div></div>
+  <div class="box see"><span class="mono">hotspot/login.html</span>, <span class="mono">hotspot/alogin.html</span>, <span class="mono">hotspot/status.html</span> with today's date, <b>inside</b> the hotspot folder, exactly those names.</div>
+  <div class="box ifnot">They appear at the top level: drag them onto the folder name, or remove and upload again. Close and reopen Files if the list does not refresh.</div>
+
+  <div class="step"><div class="n">4</div><div><b class="t">Remove the logout page</b>
+    Delete <span class="mono">hotspot/logout.html</span> (customers must not log out and pass their login to someone else). Leave every other file in the hotspot folder (rlogin.html, redirect.html, error.html, errors.txt, md5.js, css, img): the router uses some of them itself. To get MikroTik's original pages back at any time: <span class="click">IP → Hotspot → Server Profiles → Reset HTML</span>.</div></div>
+
+  <div class="step"><div class="n">5</div><div><b class="t">Test</b>
+    On your phone (not bypassed): join the Wi-Fi → open <code>http://neverssl.com</code>.</div></div>
+  <div class="box see">The blue <b>Juthelink</b> page: 1 Choose a plan, 2 Pay with MTN MoMo, 3 Send confirmation on WhatsApp, 4 Log in. Tap a plan: the yellow button and the code below it change (for 1 hour: <span class="mono">*126*9*677358806*100#</span>).</div>
+  <div style="display:flex;gap:18px;justify-content:center;margin-top:8px;break-inside:avoid">
+    <figure style="margin:0;text-align:center"><img src="img/standalone-login.png" style="width:150px;border:1px solid #dfe3ea;border-radius:8px"><figcaption class="small">Login page</figcaption></figure>
+    <figure style="margin:0;text-align:center"><img src="img/standalone-status.png" style="width:150px;border:1px solid #dfe3ea;border-radius:8px"><figcaption class="small">Time left</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============================== PART 13 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 13</div><h2>How selling works (MTN MoMo + WhatsApp)</h2><p class="lead">There is no payment API yet, so <b>you</b> confirm each payment. The router does everything else: it starts the clock at the first login and disconnects the customer when the time is up.</p></div>
+
+  <table>
+    <tr><th style="width:8%">#</th><th style="width:44%">The customer</th><th>You</th></tr>
+    <tr><td>1</td><td>Joins the Wi-Fi, the login page opens, chooses a plan.</td><td>—</td></tr>
+    <tr><td>2</td><td>Taps <b>Pay with MTN MoMo</b>: the phone dialer opens with <span class="mono">*126*9*677358806*AMOUNT#</span>. Presses call, enters the MoMo PIN.</td><td>Your MoMo phone receives the payment SMS.</td></tr>
+    <tr><td>3</td><td>Taps <b>Send payment confirmation</b>: WhatsApp opens with a ready message (plan + amount); adds their MoMo number and sends.</td><td>You check the MoMo SMS matches (amount and number).</td></tr>
+    <tr><td>4</td><td>—</td><td>Open <b>ticket-maker.html</b> on your PC → choose the plan → type the customer's phone → <b>Make ticket</b> → copy the command into Winbox <span class="click">New Terminal</span> → Enter → copy the WhatsApp reply and send it.</td></tr>
+    <tr><td>5</td><td>Types the username and password in step 4 of the login page → <b>Connect</b>. The Time left page appears.</td><td>Done. The router ends their access automatically.</td></tr>
+  </table>
+  <div class="box tip">iPhones do not allow websites to start USSD codes. iPhone users dial the code shown under the yellow button themselves. Some Android “sign in to network” windows also block it: the customer can copy the code or dial it by hand.</div>
+
+  <h3>Where do usernames come from?</h3>
+  <p>You create them with <b>ticket-maker.html</b> (open it by double-clicking; it works offline on your PC). It makes a random username (6 letters/numbers, e.g. <span class="mono">k7m4qx</span>) and a 6-digit password, and gives you the exact Winbox command, for example:</p>
+  <pre>/ip hotspot user add name=k7m4qx password=739215 profile=1hour comment="677123456"</pre>
+  <p>The customer's phone number goes into the <b>comment</b>. At the first login the router adds the start and end time to that comment, so you can always see who, when and until when.</p>
+
+  <h3>“I lost my login”</h3>
+  <p>The login page has a <b>Lost your login?</b> link that opens WhatsApp with “I lost my Wi-Fi login. My phone number is …”. To find it: Winbox → <span class="click">IP → Hotspot → Users</span> → <span class="click">Find</span> → type the phone number. The matching line shows the username, password and when it ends. If it has not ended, send it again. If the user is gone, their time had ended (expired users are deleted automatically).</p>
+  <div class="box tip">A customer who already logged in on their phone is usually let back in automatically (MAC cookie), even without typing the login again, until their time ends.</div>
+
+  <h3>Family members (free access)</h3>
+  <p>For family members who contributed to buying the Starlink: open <b>ticket-maker.html</b> → Plan: <b>Family member (free)</b> → type their name (and phone) → <b>Make ticket</b> → paste the command into Winbox → send them the WhatsApp message. Example command:</p>
+  <pre>/ip hotspot user add name=marie766 password=261043 profile=family comment="FAMILY: Marie Ngono, 677123456"</pre>
+  <ul>
+    <li>Free, never expires, up to <b>2 of their own devices</b>, faster speed (5/10 Mbit/s).</li>
+    <li>Everyone can be told apart: in <span class="click">IP → Hotspot → Users</span>, family logins have profile <b>family</b> and a comment starting with <b>FAMILY:</b>. Use <span class="click">Find</span> → <code>FAMILY</code> to list them all.</li>
+    <li>If a family login is shared with the public, change its password (double-click → Password) or click <span class="click">✗ Disable</span>. Only you can create family logins.</li>
+  </ul>
+
+  <h3>Printed tickets for later</h3>
+  <p>In ticket-maker, leave the phone empty and choose e.g. 20 tickets → paste the commands → <b>Print</b> the list and cut it. Each ticket's time starts at its first login, so they can wait in a drawer.</p>
+
+  <h3>Check a ticket works</h3>
+  <p>Make one 1-hour ticket for yourself and log in on your phone.</p>
+  <div class="box see">“You are connected”, then <b>Time left</b> counting down from about 1 hour. In Winbox: <span class="click">IP → Hotspot → Active</span> shows the user; <span class="click">Users</span> shows its comment “phone | Started … | ends …”; <span class="click">System → Scheduler</span> shows <span class="mono">exp-username</span>.</div>
+</section>
+
+<!-- ============================== PART 14 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 14</div><h2>Tenda outdoor access point</h2><p class="lead">The Tenda must only <b>broadcast the Wi-Fi</b> (“AP mode”). The MikroTik does everything else. If the Tenda acts as a router, all customers look like one phone and the hotspot cannot tell them apart.</p></div>
+
+  <h3>14.1 Configure the Tenda on your desk first</h3>
+  <div class="step"><div class="n">1</div><div><b class="t">Wire it to your PC (not to the MikroTik yet)</b>
+    Tenda cable → <b>PoE</b> port of the Tenda injector. Injector <b>LAN</b> port → your PC. Injector power → socket. Wait 1–2 minutes for the Tenda to start.</div></div>
+  <div class="step"><div class="n">2</div><div><b class="t">Reset the Tenda</b>
+    With power on, press and hold its reset button (or the button on the unit) for about 8 seconds, until the lights flash. Wait 1 minute.</div></div>
+  <div class="step"><div class="n">3</div><div><b class="t">Give your PC an address in the Tenda's range</b>
+    Look at the label on the Tenda for the default address (often <code>192.168.2.1</code>, user <code>admin</code>, password <code>admin</code>). On Windows: Settings → Network → Ethernet → IP assignment → Edit → <b>Manual</b>, IPv4 on, IP address <code>192.168.2.100</code>, Subnet mask <code>255.255.255.0</code>, Gateway empty → Save.</div></div>
+  <div class="step"><div class="n">4</div><div><b class="t">Open the Tenda settings</b>
+    Browser → <code>http://192.168.2.1</code> (or the address on the label) → log in. Set a new admin password if asked (write it in Part 0).</div></div>
+
+  <div class="step"><div class="n">5</div><div><b class="t">Choose AP mode</b>
+    Find <b>Working Mode / Operation Mode / Quick Setup</b> → choose <b>AP</b> (Access Point). <b>Not</b> Router, WISP, Client+AP or Repeater.</div></div>
+
+  <div class="step"><div class="n">6</div><div><b class="t">Wi-Fi name and security</b>
+    Wireless / Wi-Fi settings: SSID <code>Starling Wi-Fi</code> (exactly the same as the MikroTik), Security <b>None / Open</b>, Country <b>Cameroon</b> (if listed), Channel <b>1, 6 or 11</b> (choose a different one from the hAP lite if you keep both), Channel width <b>20 MHz</b>. If there is <b>Client Isolation / AP Isolation</b>, turn it <b>on</b>.</div></div>
+
+  <div class="step"><div class="n">7</div><div><b class="t">LAN address and DHCP</b>
+    LAN / Network settings: IP Address <code>10.5.50.2</code>, Subnet mask <code>255.255.255.0</code>, Gateway <code>10.5.50.1</code>, DNS <code>10.5.50.1</code>. <b>DHCP server: OFF</b> (if the option exists). Save. The Tenda reboots; your browser loses it. That is expected.</div></div>
+
+  <div class="step"><div class="n">8</div><div><b class="t">Put your PC back to automatic</b>
+    Windows: Ethernet → IP assignment → Edit → <b>Automatic (DHCP)</b> → Save.</div></div>
+</section>
+
+<section class="part">
+  <h3>14.2 Connect the Tenda to the MikroTik</h3>
+  <div class="diagram">
+    <div class="flow"><span class="node">MikroTik port 2</span><span class="arrow">→ cable →</span><span class="node">Injector LAN</span><span class="arrow">  </span><span class="node">Injector PoE</span><span class="arrow">→ long outdoor cable →</span><span class="node">Tenda</span></div>
+    <p class="small" style="text-align:center">The injector also plugs into the power socket. Never plug the PoE port into the MikroTik or your PC.</p>
+  </div>
+  <div class="step"><div class="n">1</div><div><b class="t">Plug in</b>
+    Short cable from <b>MikroTik port 2</b> to the injector's <b>LAN</b> port. Keep the PoE port going to the Tenda.</div></div>
+  <div class="step"><div class="n">2</div><div><b class="t">Check the Tenda is visible to the MikroTik</b>
+    Winbox → <span class="click">New Terminal</span>:
+    <pre>/ping 10.5.50.2 count=4</pre></div></div>
+  <div class="box see">Four replies. From your PC (bypassed), <code>http://10.5.50.2</code> opens the Tenda settings.</div>
+  <div class="box ifnot">No reply: check the cable is in port 2 and the injector's LAN port; redo 14.1 step 7 (address 10.5.50.2, gateway 10.5.50.1).</div>
+
+  <div class="step"><div class="n">3</div><div><b class="t">Test through the Tenda</b>
+    Stand near the Tenda (or turn off the hAP lite Wi-Fi for the test: <span class="click">Wireless</span> → select wlan1 → <span class="click">✗ Disable</span>). Phone → Starling Wi-Fi → open <code>http://neverssl.com</code>.</div></div>
+  <div class="box see">The blue Starling login page. In Winbox, <span class="click">IP → DHCP Server → Leases</span> shows your phone's own MAC address and a 10.5.50.x address.</div>
+  <div class="box ifnot">The phone gets a 192.168.x.x address, or several phones show the same MAC in <span class="click">IP → Hotspot → Hosts</span>: the Tenda is still in router mode or its DHCP is on. Redo 14.1 steps 5 and 7.</div>
+
+  <h3>14.3 Mounting outdoors</h3>
+  <ul>
+    <li>Mount it 3–6 m high on a pole or wall, facing where customers sit, antennas pointing up.</li>
+    <li>Leave a “drip loop” (a U-shaped bend) in the cable below the Tenda so rain runs off, and close the cable cover tightly.</li>
+    <li>Keep the injector indoors and dry.</li>
+    <li>If you keep the hAP lite's own Wi-Fi on (indoors), use a different channel from the Tenda (e.g. 1 and 11). Same name is fine: phones pick the strongest.</li>
+  </ul>
+</section>
+
+<!-- ============================== PART 15 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 15</div><h2>Final test checklist</h2><p class="lead">Tick every line. Use a phone that is not bypassed (Part 9), with private Wi-Fi address turned off.</p></div>
+  <table>
+    <tr><th style="width:5%">✓</th><th style="width:45%">Test</th><th>Expected</th></tr>
+    <tr><td>☐</td><td>Winbox → New Terminal → <code>/ping google.com count=4</code></td><td>4 replies</td></tr>
+    <tr><td>☐</td><td>Phone joins <b>Starling Wi-Fi</b> near the Tenda</td><td>Connected, no password asked</td></tr>
+    <tr><td>☐</td><td>Open <code>http://neverssl.com</code></td><td>Blue Starling login page</td></tr>
+    <tr><td>☐</td><td>Log in with a wrong password</td><td>Red message “invalid username or password”</td></tr>
+    <tr><td>☐</td><td>Log in with <code>test001</code> / <code>123456</code> (1hour)</td><td>“You are connected”, then Time left page</td></tr>
+    <tr><td>☐</td><td>Open YouTube / WhatsApp</td><td>Works</td></tr>
+    <tr><td>☐</td><td>A second phone tries the same username at the same time</td><td>Refused (“no more sessions are allowed”)</td></tr>
+    <tr><td>☐</td><td>Turn Wi-Fi off and on again on the first phone</td><td>Back online without typing (MAC cookie)</td></tr>
+    <tr><td>☐</td><td>Winbox <span class="click">IP → Hotspot → Users</span></td><td>test001 Comment shows Started … | ends …</td></tr>
+    <tr><td>☐</td><td>Wait 1 hour (or test with a <code>10m</code> profile)</td><td>Phone disconnected, login page appears again, test001 deleted</td></tr>
+    <tr><td>☐</td><td>Unplug the router power, plug back in</td><td>After 1 minute everything works again</td></tr>
+  </table>
+  <div class="box tip">Quick expiry test without waiting an hour: <span class="click">IP → Hotspot → User Profiles</span> → <span class="click">+</span> → Name <code>test10min</code>, Shared Users 1 → <span class="click">Scripts</span> tab → paste the On Login script from <code>on-login-script.txt</code> and change <code>DURATION</code> to <code>10m</code> → OK. Create a user with this profile and log in. Delete the profile after the test.</div>
+
+  <h3>Save your work (backup)</h3>
+  <div class="step"><div class="n">1</div><div><b class="t">Make a backup on the router and copy it to your PC</b>
+    <span class="click">Files</span> → <span class="click">Backup</span> → Name <code>starling-working</code> → Backup. Then drag <span class="mono">starling-working.backup</span> from the Files window to your PC. Also in the terminal:
+    <pre>/export file=starling-working</pre>
+    and copy <span class="mono">starling-working.rsc</span> to your PC too (it is a readable text copy of all settings).</div></div>
+  <div class="box tip">To go back to this working state one day: <span class="click">Files</span> → select <span class="mono">starling-working.backup</span> → <span class="click">Restore</span>.</div>
+</section>
+
+<!-- ============================== PART 16 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 16</div><h2>Daily use</h2></div>
+  <table>
+    <tr><th style="width:36%">I want to…</th><th>Where in Winbox</th></tr>
+    <tr><td>Sell a pass</td><td>Check the MoMo SMS → <b>ticket-maker.html</b> → paste the command in Winbox → send the WhatsApp reply (Part 13).</td></tr>
+    <tr><td>Give a family member free access</td><td>ticket-maker.html → <b>Family member (free)</b> → name → paste the command (Part 13).</td></tr>
+    <tr><td>See all family logins</td><td><span class="click">IP → Hotspot → Users → Find</span> → <code>FAMILY</code>.</td></tr>
+    <tr><td>Find a customer's login (lost login)</td><td><span class="click">IP → Hotspot → Users → Find</span> → type their phone number.</td></tr>
+    <tr><td>See who is online now</td><td><span class="click">IP → Hotspot → Active</span> (user, address, uptime, data).</td></tr>
+    <tr><td>See when a customer's time ends</td><td><span class="click">IP → Hotspot → Users</span> → Comment column (“Started … | ends …”), or <span class="click">System → Scheduler</span> → <span class="mono">exp-username</span> → Next Run.</td></tr>
+    <tr><td>Disconnect a phone (e.g. customer changed phone)</td><td><span class="click">IP → Hotspot → Active</span> → select the line → <span class="click">−</span> (Remove). The customer can log in again on the new phone; their time keeps running.</td></tr>
+    <tr><td>Stop a customer completely</td><td><span class="click">IP → Hotspot → Users</span> → select → <span class="click">✗ Disable</span>, then remove them from Active.</td></tr>
+    <tr><td>Give someone free internet (staff)</td><td><span class="click">IP → Hotspot → IP Bindings → +</span>, their MAC, type bypassed.</td></tr>
+    <tr><td>Change prices on the login page</td><td>Edit login.html on your PC and upload it again into the hotspot folder (Part 12).</td></tr>
+    <tr><td>Check the router is healthy</td><td>Bottom bar of Winbox: CPU % and memory. CPU often above 70 % when busy means it is time for a bigger router.</td></tr>
+  </table>
+
+  <h3>Tell every customer</h3>
+  <ul>
+    <li><b>Turn off private / random Wi-Fi address</b> for Starling Wi-Fi. Android: Settings → Wi-Fi → gear → Privacy → <b>Use device MAC</b>. iPhone: Settings → Wi-Fi → ⓘ → turn off <b>Private Wi-Fi Address</b>. Otherwise the Wi-Fi keeps asking them to log in.</li>
+    <li>Type the username and password exactly, with no spaces.</li>
+    <li>One ticket works on one phone, and the time starts at the first login.</li>
+  </ul>
+</section>
+
+<!-- ============================== PART 17 ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Part 17</div><h2>Problems and fixes</h2></div>
+  <table>
+    <tr><th style="width:38%">Problem</th><th>Fix</th></tr>
+    <tr><td>Winbox cannot find the router</td><td>Use the MAC address. Replug the yellow cable. Try another port. Last resort: hardware reset (unplug power, hold reset, plug power, keep holding about 5 s until the light flashes, release), then start again at Part 2.</td></tr>
+    <tr><td>DHCP Client on ether1 not “bound”</td><td>Blue cable in port 1? Starlink app Online? Restart the Starlink router.</td></tr>
+    <tr><td>Customers get internet without logging in</td><td>FastTrack rule active (Part 8 step 2), or the device is bypassed (Part 9), or the hotspot server hotspot1 is disabled.</td></tr>
+    <tr><td>Grey MikroTik page instead of the blue one</td><td>Files not inside the hotspot folder or wrong name (Part 12).</td></tr>
+    <tr><td>No login page pops up</td><td>Open <code>http://neverssl.com</code> or <code>http://login.starling</code>. HTTPS sites (Google, Facebook) cannot show the login page; that is normal.</td></tr>
+    <tr><td>“invalid username or password”</td><td>Extra space or capital letter. Check the user in IP → Hotspot → Users. The user may have expired (deleted).</td></tr>
+    <tr><td>“no more sessions are allowed for user”</td><td>Another phone is using this ticket (or the same phone with a new random MAC). Remove it from Active, and ask the customer to turn off private Wi-Fi address.</td></tr>
+    <tr><td>Customer asked to log in again and again</td><td>Private / random Wi-Fi address is on. See Part 16.</td></tr>
+    <tr><td>Phones get 192.168.x.x addresses</td><td>Tenda DHCP is on or Tenda is in router mode (Part 14.1 steps 5 and 7).</td></tr>
+    <tr><td>All phones show the same MAC in IP → Hotspot → Hosts</td><td>Tenda is in router mode. Put it in AP mode.</td></tr>
+    <tr><td>Time ended too early or too late</td><td>Clock wrong: System → Clock and System → SNTP Client (Part 3 step 3). Check internet works.</td></tr>
+    <tr><td>Profiles import fails</td><td>The file must be at the top level in Files. Run the import again.</td></tr>
+    <tr><td>Everything is slow</td><td>Check Starlink speed in the Starlink app. Lower the per-customer speed in the profiles. Check router CPU.</td></tr>
+  </table>
+</section>
+
+<!-- ============================== APPENDIX ============================== -->
+<section class="part">
+  <div class="part-head"><div class="part-num">Appendix A</div><h2>All commands in one place</h2><p class="lead">Exactly what the clicks above do, for the terminal. Run them in order, one block at a time, after Part 2 (start clean). Replace the values in CAPITALS first.</p></div>
+<pre># Part 3 - password, name, clock
+/password old-password="" new-password="YOUR-PASSWORD" confirm-new-password="YOUR-PASSWORD"
+/system identity set name=starling-hotspot
+/system clock set time-zone-name=Africa/Douala
+/system ntp client set enabled=yes primary-ntp=162.159.200.1 secondary-ntp=162.159.200.123
+
+# Part 4 - internet from Starlink on port 1
+/ip dhcp-client add interface=ether1 use-peer-dns=no add-default-route=yes disabled=no comment="Internet from Starlink"
+/ip dns set servers=1.1.1.1,8.8.8.8 allow-remote-requests=yes
+/ping google.com count=4
+
+# Part 6 - customer bridge
+/interface bridge add name=bridge-hotspot comment="Customers"
+/interface bridge port add bridge=bridge-hotspot interface=ether2
+/interface bridge port add bridge=bridge-hotspot interface=ether3
+/interface bridge port add bridge=bridge-hotspot interface=ether4
+/interface bridge port add bridge=bridge-hotspot interface=wlan1
+/ip address add address=10.5.50.1/24 interface=bridge-hotspot comment="Customer gateway"
+
+# Part 7 - the hAP lite's own open Wi-Fi
+/interface wireless security-profiles set [find default=yes] mode=none
+/interface wireless set wlan1 mode=ap-bridge band=2ghz-b/g/n channel-width=20mhz frequency=auto ssid="Starling Wi-Fi" security-profile=default wireless-protocol=802.11 disabled=no
+
+# Part 8 - hotspot (what the Hotspot Setup wizard creates)
+/ip pool add name=hs-pool ranges=10.5.50.10-10.5.50.250
+/ip dhcp-server add name=dhcp-hotspot interface=bridge-hotspot address-pool=hs-pool lease-time=1h disabled=no
+/ip dhcp-server network add address=10.5.50.0/24 gateway=10.5.50.1 dns-server=10.5.50.1
+/ip hotspot profile add name=hsprof1 hotspot-address=10.5.50.1 dns-name=login.starling html-directory=hotspot smtp-server=0.0.0.0
+/ip hotspot add name=hotspot1 interface=bridge-hotspot address-pool=hs-pool profile=hsprof1 disabled=no
+/ip hotspot user add name=admin password="YOUR-TEST-PASSWORD"
+/ip firewall nat add chain=srcnat src-address=10.5.50.0/24 action=masquerade comment="masquerade hotspot network"
+/ip firewall filter disable [find action=fasttrack-connection]
+
+# Part 9 - your own devices skip the login
+/ip hotspot ip-binding add mac-address=YOUR:PC:MAC:AA:BB:CC type=bypassed comment="Owner PC"
+
+# Part 10 - hotspot settings
+/ip hotspot set [find] addresses-per-mac=1
+/ip hotspot profile set hsprof1 login-by=http-chap,http-pap,mac-cookie,cookie
+
+# Part 11 - packages (upload starling-profiles.rsc to Files first)
+/import file-name=starling-profiles.rsc
+
+# Part 13 - a customer
+/ip hotspot user add name=frank482 password=739215 profile=24hours
+
+# Backup
+/export file=starling-working</pre>
+  <div class="box tip">Every command on this page was tested on RouterOS 6.48 before this guide was written. When you create the hotspot with the terminal (Part 8) instead of the wizard, the <span class="mono">hotspot</span> folder with MikroTik's default pages is created automatically, exactly as with the wizard.</div>
+  <p class="small" style="margin-top:14px">Phase 2 (later): the Starling website and payments connect to this same router through a secure tunnel. It uses its own profiles and users and never touches the ones you create here. See <span class="mono">docs/network-integration-guide.md</span> Part 8.</p>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- Juthelink - time left page (http://login.starling/status). No logout button on purpose. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="pragma" content="no-cache"><title>Juthelink - Time left</title>
+<style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;color:#16181d;background:#f5f6f8}
+.top{background:#1d5bd8;color:#fff;padding:20px 18px 64px;text-align:center}.top small{opacity:.85;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+#left{font-family:monospace;font-size:40px;font-weight:700;margin:6px 0}
+.w{max-width:420px;margin:-46px auto 0;padding:0 14px 24px}.c{background:#fff;border:1px solid #e1e4ea;border-radius:14px;padding:4px 16px}
+.r{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eef0f3}.r:last-child{border:0}.r span{color:#6b7180}
+.warn{display:none;background:#fdf4e1;color:#8a5a00;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:14px}
+.btn{display:block;height:50px;border-radius:10px;font-weight:700;text-align:center;line-height:50px;text-decoration:none;margin-top:12px;background:#1d5bd8;color:#fff}</style></head>
+<body><div class="top"><small>Time left</small><div id="left">$(session-time-left)</div>Logged in as <b>$(username)</b></div>
+<div class="w"><div class="c">
+<div class="r"><span>Connected for</span><b>$(uptime)</b></div>
+<div class="r"><span>Downloaded</span><b>$(bytes-out-nice)</b></div>
+<div class="r"><span>Uploaded</span><b>$(bytes-in-nice)</b></div></div>
+<div class="warn" id="warn">Your time is almost up. Tap “Buy more time” to stay connected.</div>
+<a class="btn" id="more" href="#">Buy more time</a>
+<a class="btn" id="help" href="#" style="background:#fff;color:#16181d;border:1.5px solid #25d366">WhatsApp us</a></div>
+<script>
+var PORTAL="https://YOUR-WEBSITE",WA="237673727995",U="$(username)";
+document.getElementById("more").href=PORTAL+"/plans";
+document.getElementById("help").href="https://wa.me/"+WA+"?text="+encodeURIComponent("Hello Juthelink, I need help. My username is "+U+".");
+function secs(v){if(!v)return -1;var t=0,m;if((m=v.match(/(\d+):(\d+):(\d+)$/))){t+=m[1]*3600+m[2]*60+ +m[3];v=v.slice(0,m.index)}
+var u={w:604800,d:86400,h:3600,m:60,s:1},r=/(\d+)([wdhms])/g;while((m=r.exec(v)))t+=m[1]*u[m[2]];return t}
+function f(s){var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60,p=function(n){return(n<10?"0":"")+n};
+return d?d+"d "+p(h)+"h "+p(m)+"m":h?h+"h "+p(m)+"m "+p(x)+"s":m+"m "+p(x)+"s"}
+var left=secs("$(session-time-left)"),el=document.getElementById("left");
+if(left>=0){setInterval(function(){el.textContent=left>0?f(left):"Time is up";if(left<=900)document.getElementById("warn").style.display="block";if(left>0)left--;},1000)}else el.textContent="Connected";
+setTimeout(function(){location.reload()},60000);
+</script></body></html>

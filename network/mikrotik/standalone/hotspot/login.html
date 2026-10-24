@@ -1,0 +1,77 @@
+<!doctype html>
+<!-- Juthelink - router login page. Upload into the router's "hotspot" folder as login.html.
+     PORTAL (your website) is filled in by build_sync.py. Edit PLANS/WA below if they change. -->
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="pragma" content="no-cache"><meta http-equiv="expires" content="-1">
+<title>Juthelink</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;color:#16181d;background:#f5f6f8;font-size:15px}
+.top{background:#1d5bd8;color:#fff;padding:20px 18px 52px}.top b{font-size:19px}.top p{margin:8px 0 0;opacity:.9;line-height:1.4}
+.w{max-width:420px;margin:-38px auto 0;padding:0 14px 28px}
+.c{background:#fff;border:1px solid #e1e4ea;border-radius:14px;padding:16px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 10px}h2 i{font-style:normal;display:inline-block;width:22px;height:22px;border-radius:50%;background:#1d5bd8;color:#fff;text-align:center;line-height:22px;font-size:12px;margin-right:6px}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.plans button{position:relative;text-align:left;font:inherit;color:#16181d;background:#fff;border:2px solid #e1e4ea;border-radius:12px;padding:11px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.plans b{display:block;font-size:17px}.plans span{color:#6b7180;font-size:13px}
+.plans button i{position:absolute;top:9px;right:9px;width:22px;height:22px;border-radius:50%;border:2px solid #d3d8e0;font-style:normal;font-size:13px;line-height:18px;text-align:center;color:transparent}
+.plans button.on{border-color:#1d5bd8;background:#eef4ff;box-shadow:0 0 0 1px #1d5bd8}
+.plans button.on b{color:#1748b0}.plans button.on i{background:#1d5bd8;border-color:#1d5bd8;color:#fff}
+.sel{margin:10px 0 0;font-size:14px;color:#1748b0;font-weight:600}
+.btn{display:block;width:100%;height:50px;border:0;border-radius:10px;background:#1d5bd8;color:#fff;font-size:16px;font-weight:700;text-align:center;line-height:50px;text-decoration:none;cursor:pointer}
+.mtn{background:#ffcb05;color:#16181d}.wa{background:#fff;border:1.5px solid #25d366;color:#16181d}
+.code{font-family:monospace;font-size:17px;text-align:center;background:#f5f6f8;border-radius:8px;padding:8px;margin:10px 0 0;letter-spacing:1px}
+.s{color:#6b7180;font-size:13px;line-height:1.45;margin:8px 0 0}
+label.f{display:block;font-weight:600;margin:0 0 5px;font-size:14px}
+input.t{width:100%;height:48px;border:1px solid #d3d8e0;border-radius:10px;padding:0 12px;font-size:17px;margin:0 0 12px}
+.err{display:none;background:#fdecea;color:#b42318;padding:10px 12px;border-radius:10px;margin:0 0 12px}
+details{font-size:14px;color:#3d4250}summary{font-weight:600;color:#16181d;cursor:pointer}details ol{padding-left:18px;line-height:1.5}
+a.l{color:#1748b0}
+</style></head><body>
+<div class="top"><b>Juthelink</b><p>Fast satellite Wi-Fi. Choose a plan, pay with MTN MoMo or Orange Money, and you are connected automatically.</p></div>
+<div class="w">
+<div class="err" id="err">$(error)</div>
+
+<div class="c"><h2><i>1</i>Choose a plan</h2><div class="plans" id="plans"></div><p class="sel" id="sel"></p></div>
+
+<div class="c"><h2><i>2</i>Pay and connect</h2>
+<a class="btn mtn" id="pay" href="#">Continue to payment</a>
+<p class="s">You will create a free account (name, phone, password), then approve the payment request that appears on your phone. Your login is created and this phone is connected automatically.</p></div>
+
+<div class="c"><h2><i>3</i>Already have a login?</h2>
+<form name="login" action="$(link-login-only)" method="post" onsubmit="return go()">
+<input type="hidden" name="dst" value="$(link-orig)"><input type="hidden" name="popup" value="false">
+<label class="f" for="u">Username</label><input class="t" id="u" name="username" value="$(username)" autocapitalize="none" autocomplete="username" spellcheck="false">
+<label class="f" for="p">Password</label><input class="t" id="p" name="password" type="password" autocomplete="current-password">
+<button class="btn" type="submit">Connect</button></form>
+<p class="s">Family member? Log in with the username and password you were given (no payment needed).</p>
+<p class="s">Lost your login? Tap <a class="l" id="acct" href="#">My account</a> and sign in with your phone number to see it again.</p>
+<p class="s">Need help? WhatsApp <b>+237 673 727 995</b> (open WhatsApp using your mobile data).</p></div>
+
+<div class="c"><details><summary>Can't connect, or asked to log in again and again?</summary><ol>
+<li><b>Android:</b> Settings → Wi-Fi → gear next to this network → Privacy → <b>Use device MAC</b>.</li>
+<li><b>iPhone:</b> Settings → Wi-Fi → ⓘ → turn off <b>Private Wi-Fi Address</b>.</li>
+<li>Type the username and password exactly, without spaces.</li></ol></details></div>
+<p class="s" style="text-align:center">Your time starts at your first login and ends automatically. One login works on one phone.</p>
+</div>
+<script>
+var PORTAL="https://YOUR-WEBSITE";
+var PLANS=[["1 hour",100,"1-hour"],["12 hours",150,"12-hours"],["24 hours",200,"24-hours"],["1 week",1350,"1-week"],["2 weeks",2500,"2-weeks"],["1 month",4500,"1-month"]];
+function q(v){return encodeURIComponent(v)}
+var CTX="?login="+q("$(link-login-only)")+"&mac="+q("$(mac)")+"&ip="+q("$(ip)");
+var box=document.getElementById("plans"),pick=0,btns=[];
+var er=document.getElementById("err");if(er.textContent.replace(/\s/g,"")&&er.textContent.indexOf("$"+"(")<0)er.style.display="block";
+function show(){var p=PLANS[pick];
+btns.forEach(function(b,i){b.className=i===pick?"on":"";b.setAttribute("aria-pressed",i===pick)});
+document.getElementById("sel").textContent="Selected: "+p[0]+" · "+p[1].toLocaleString("fr-FR")+" FCFA";
+document.getElementById("pay").href=PORTAL+"/portal"+CTX+"&plan="+p[2];
+document.getElementById("pay").textContent="Pay "+p[1].toLocaleString("fr-FR")+" FCFA and connect";}
+PLANS.forEach(function(p,i){var b=document.createElement("button");b.type="button";
+b.innerHTML='<i>&#10003;</i><b>'+p[1].toLocaleString("fr-FR")+' F</b><span>'+p[0]+'</span>';
+b.onclick=function(){pick=i;show()};box.appendChild(b);btns.push(b)});
+document.getElementById("acct").href=PORTAL+"/portal"+CTX;
+show();
+function go(){var f=document.login;f.username.value=f.username.value.replace(/\s+/g,"").toLowerCase();f.password.value=f.password.value.replace(/\s+/g,"");
+if(!f.username.value){f.username.focus();return false}if(!f.password.value){f.password.focus();return false}return true}
+</script>
+</body></html>

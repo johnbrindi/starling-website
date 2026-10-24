@@ -87,6 +87,21 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
   const password = cred?.password ?? "";
   const userpass = cred?.style === "userpass";
 
+  // Bought from the Wi-Fi login page: as soon as the router has the login, connect this phone automatically (once).
+  const autoConnect = !!storedUrl && status.state === "READY" && !!code;
+  useEffect(() => {
+    if (!autoConnect) return;
+    const key = `starling.autoconnect.${code}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      return;
+    }
+    const t = setTimeout(() => window.location.assign(hotspotLoginHref(code, password, login.url, login.returnTo)), 1200);
+    return () => clearTimeout(t);
+  }, [autoConnect, code, password, login.url, login.returnTo]);
+
   async function simulateConnect() {
     setConnectMsg(null);
     try {
@@ -190,6 +205,7 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
               </p>
             ) : (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                {autoConnect ? <p className="flex items-center gap-2 text-sm font-medium text-brand-700"><Spinner /> Connecting this phone to the Wi-Fi…</p> : null}
                 <a href={hotspotLoginHref(code, password, login.url, login.returnTo)} className="inline-flex h-12 items-center justify-center rounded-md bg-brand-600 px-5 font-medium text-white hover:bg-brand-700">
                   Connect this device
                 </a>
@@ -198,7 +214,7 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
                     Simulate connect (test router)
                   </Button>
                 ) : null}
-                <p className="text-xs text-muted sm:ml-2">You must be connected to the Starling Wi-Fi network. Or type it on the Wi-Fi login page.</p>
+                <p className="text-xs text-muted sm:ml-2">You must be connected to the Juthelink network. Or type it on the Wi-Fi login page.</p>
               </div>
             )}
             {connectMsg ? <p className="mt-2 text-sm text-ink-soft">{connectMsg}</p> : null}

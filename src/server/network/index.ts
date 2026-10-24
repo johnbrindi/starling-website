@@ -4,6 +4,7 @@ import { env } from "../env";
 import { FakeNetworkAdapter, emptyFakeState, type FakeRouterState, type FakeStateStore } from "./fake";
 import { RadiusAdapter } from "./radius/adapter";
 import { RouterOsAdapter } from "./routeros/adapter";
+import { RouterPullAdapter } from "./routerpull";
 import type { NetworkAdapter } from "./types";
 
 const FAKE_STATE_KEY = "dev:fake-router";
@@ -49,6 +50,9 @@ export function getNetworkAdapter(): NetworkAdapter {
       break;
     case "radius":
       cached = new RadiusAdapter(db, { host: e.RADIUS_NAS_HOST!, port: e.RADIUS_COA_PORT, secret: e.RADIUS_SECRET! });
+      break;
+    case "routerpull":
+      cached = new RouterPullAdapter(db);
       break;
     case "fake":
       cached = new FakeNetworkAdapter(new DbFakeStore());

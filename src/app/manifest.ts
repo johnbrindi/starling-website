@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Starling Wi-Fi",
-    short_name: "Starling",
+    name: "Juthelink",
+    short_name: "Juthelink",
     description: "Buy Wi-Fi time with MTN Mobile Money or Orange Money and see your remaining time.",
     id: "/",
     start_url: "/account?source=pwa",

@@ -43,7 +43,17 @@ async function main() {
       update: {}, // never overwrite prices an administrator has changed
     });
   }
-  console.log(`Packages: ${PACKAGES.length} ensured`);
+  // Each package uses the router profile of the same length (network/mikrotik/standalone/starling-profiles.rsc).
+  const ROUTER_PROFILE: Record<string, string> = { "1-hour": "1hour", "12-hours": "12hours", "24-hours": "24hours", "1-week": "1week", "2-weeks": "2weeks", "1-month": "1month" };
+  for (const [slug, routerName] of Object.entries(ROUTER_PROFILE)) {
+    const prof = await db.networkProfile.upsert({
+      where: { routerName },
+      create: { routerName, description: `Router profile ${routerName} (expiry timer + speed on the router)`, rateLimit: "2M/5M", sharedUsers: routerName === "1month" ? 2 : 1, idleTimeout: "none", keepaliveTimeout: "3h", statusAutorefresh: "1m" },
+      update: {},
+    });
+    await db.package.updateMany({ where: { slug }, data: { networkProfileId: prof.id } });
+  }
+  console.log(`Packages: ${PACKAGES.length} ensured and linked to router profiles`);
 
   if (isProd) {
     console.log("Production: no demo data or staff accounts seeded. Run `npm run admin:create`.");

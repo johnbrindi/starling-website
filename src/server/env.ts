@@ -15,7 +15,7 @@ const schema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     APP_URL: z.url(),
-    APP_NAME: z.string().default("Starling Wi-Fi"),
+    APP_NAME: z.string().default("Juthelink"),
     DATABASE_URL: z.string().min(1),
 
     SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
@@ -25,14 +25,20 @@ const schema = z
     CRON_SECRET: z.string().min(24),
     TRUST_PROXY: bool,
 
-    PAYMENT_PROVIDER: z.enum(["simulator", "notchpay"]).default("simulator"),
+    PAYMENT_PROVIDER: z.enum(["simulator", "notchpay", "fapshi"]).default("simulator"),
+    FAPSHI_BASE_URL: z.url().default("https://sandbox.fapshi.com"),
+    FAPSHI_API_USER: optionalString,
+    FAPSHI_API_KEY: optionalString,
+    FAPSHI_WEBHOOK_SECRET: optionalString,
     ALLOW_SIMULATED_PAYMENTS: bool,
     NOTCHPAY_BASE_URL: z.url().default("https://api.notchpay.co"),
     NOTCHPAY_PUBLIC_KEY: optionalString,
     NOTCHPAY_PRIVATE_KEY: optionalString,
     NOTCHPAY_WEBHOOK_HASH: optionalString,
 
-    NETWORK_ADAPTER: z.enum(["fake", "routeros", "radius"]).default("fake"),
+    NETWORK_ADAPTER: z.enum(["fake", "routeros", "radius", "routerpull"]).default("fake"),
+    /** Shared secret the router sends when it polls /api/router/pull (NETWORK_ADAPTER=routerpull). */
+    ROUTER_PULL_KEY: optionalString,
     ALLOW_FAKE_NETWORK: bool,
     ROUTER_HOST: optionalString,
     ROUTER_PORT: z.coerce.number().int().positive().default(8728),
@@ -94,6 +100,12 @@ const schema = z
         path: ["NOTCHPAY_PUBLIC_KEY"],
         message: "NOTCHPAY_PUBLIC_KEY and NOTCHPAY_WEBHOOK_HASH are required when PAYMENT_PROVIDER=notchpay.",
       });
+    }
+    if (env.PAYMENT_PROVIDER === "fapshi" && (!env.FAPSHI_API_USER || !env.FAPSHI_API_KEY)) {
+      ctx.addIssue({ code: "custom", path: ["FAPSHI_API_USER"], message: "FAPSHI_API_USER and FAPSHI_API_KEY are required when PAYMENT_PROVIDER=fapshi." });
+    }
+    if (env.NETWORK_ADAPTER === "routerpull" && (!env.ROUTER_PULL_KEY || env.ROUTER_PULL_KEY.length < 24)) {
+      ctx.addIssue({ code: "custom", path: ["ROUTER_PULL_KEY"], message: "ROUTER_PULL_KEY (at least 24 random characters) is required when NETWORK_ADAPTER=routerpull." });
     }
     if (env.NETWORK_ADAPTER === "routeros" && (!env.ROUTER_HOST || !env.ROUTER_USERNAME || !env.ROUTER_PASSWORD)) {
       ctx.addIssue({

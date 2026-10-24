@@ -28,6 +28,7 @@ export async function checkNetworkHealth() {
  */
 export async function syncSessions(now = new Date()) {
   const adapter = getNetworkAdapter();
+  if (adapter.deferred) return { active: 0, kicked: 0 }; // the router enforces sessions itself in pull mode
   let sessions;
   try {
     sessions = await adapter.listActiveSessions();
@@ -115,6 +116,7 @@ export async function syncSessions(now = new Date()) {
  */
 export async function reconcileNetwork(now = new Date()) {
   const adapter = getNetworkAdapter();
+  if (adapter.deferred) return { reprovisioned: 0, removed: 0, routerUsers: 0 }; // the router pulls its own work
   const routerUsers = await adapter.listManagedUsers();
   const onRouter = new Set(routerUsers.map((u) => u.username));
   const entitled = await db.accessCredential.findMany({

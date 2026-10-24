@@ -119,7 +119,7 @@ export class CampayProvider implements PaymentProviderAdapter {
       external_reference: input.reference,
     });
     if (!res.reference) throw new ProviderError("Campay did not return a transaction reference", false);
-    const orange = /orange/i.test(res.operator ?? "") || input.channel === "cm.orange";
+    const orange = /orange/i.test(res.operator ?? "");
     const dial = res.ussd_code || (orange ? "#150*50#" : "*126#");
     return {
       providerReference: res.reference,

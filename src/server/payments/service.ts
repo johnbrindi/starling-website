@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { Payment, Prisma } from "@/generated/prisma/client";
-import { normalizeCameroonPhone } from "@/lib/phone";
+import { guessOperator, normalizeCameroonPhone } from "@/lib/phone";
 import { db } from "../db";
 import { randomCode } from "../crypto";
 import { audit } from "../audit";
@@ -44,6 +44,10 @@ function newReference() {
 export async function createCheckout(customerId: string, input: CheckoutInput) {
   const phone = normalizeCameroonPhone(input.phone);
   if (!phone) throw new AppError("VALIDATION_FAILED", "Enter a valid Cameroon mobile number (e.g. 6 70 00 00 00).");
+  // Juthelink accepts MTN Mobile Money only.
+  if (guessOperator(phone) === "ORANGE") {
+    throw new AppError("VALIDATION_FAILED", "Only MTN Mobile Money is accepted. Please use an MTN number.", [{ path: "phone", message: "Use an MTN MoMo number." }]);
+  }
 
   const existing = await db.payment.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
   if (existing) {

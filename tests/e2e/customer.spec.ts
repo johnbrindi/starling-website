@@ -11,7 +11,7 @@ async function register(page: Page, name: string, phone: string, password = "e2e
 test.describe("customer journey (simulated payment, fake router)", () => {
   test("create account → choose pass → pay → code → connect → countdown", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: /Fast Wi-Fi from 100 FCFA/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Fast Wi-Fi from 105 FCFA/ })).toBeVisible();
     await page.getByRole("link", { name: /1 Hour/ }).first().click();
 
     // Not signed in: the plan page asks for an account first.
@@ -24,7 +24,7 @@ test.describe("customer journey (simulated payment, fake router)", () => {
     await expect(page).toHaveURL(/\/plans\/1-hour/);
     await expect(page.getByText("Buying as")).toContainText("Awa Bello");
     await expect(page.getByLabel("Mobile Money number")).toHaveValue("670000000");
-    await page.getByRole("button", { name: /Pay .*100.*FCFA/ }).click();
+    await page.getByRole("button", { name: /Pay .*105.*FCFA/ }).click();
 
     await expect(page).toHaveURL(/\/pay\//);
     await expect(page.getByText("Simulated payment", { exact: true })).toBeVisible();
@@ -48,7 +48,7 @@ test.describe("customer journey (simulated payment, fake router)", () => {
 
   test("a failed payment grants nothing", async ({ page }) => {
     await page.goto("/register?next=/plans/1-hour");
-    await register(page, "Paul Etoa", "690000001"); // ends in 1 = declined
+    await register(page, "Paul Etoa", "670000011"); // ends in 1 = declined
     await expect(page).toHaveURL(/\/plans\/1-hour/);
     await page.getByRole("button", { name: /Pay/ }).click();
     await expect(page.getByRole("heading", { name: "Payment not completed" })).toBeVisible({ timeout: 20_000 });

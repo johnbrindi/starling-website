@@ -371,12 +371,12 @@
 
   <table>
     <tr><th>Profile</th><th>Length</th><th>Price</th><th>Phones</th><th>Speed (up/down)</th></tr>
-    <tr><td class="v">1hour</td><td>1 hour</td><td>100 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">12hours</td><td>12 hours</td><td>150 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">24hours</td><td>24 hours</td><td>200 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">1week</td><td>7 days</td><td>1 350 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">2weeks</td><td>14 days</td><td>2 500 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">1month</td><td>30 days</td><td>4 500 FCFA</td><td>2</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">1hour</td><td>1 hour</td><td>105 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">12hours</td><td>12 hours</td><td>155 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">24hours</td><td>24 hours</td><td>210 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">1week</td><td>7 days</td><td>1 400 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">2weeks</td><td>14 days</td><td>2 600 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
+    <tr><td class="v">1month</td><td>30 days</td><td>4 650 FCFA</td><td>2</td><td>2 / 5 Mbit/s</td></tr>
     <tr><td class="v">family</td><td>never expires</td><td>free</td><td>2</td><td>5 / 10 Mbit/s</td></tr>
   </table>
   <div class="box tip"><b>family</b> is only for the family members who contributed to the Starlink (Part 13). Public customers can never get it unless you create a family login for them.</div>
@@ -388,7 +388,7 @@
   <div class="step"><div class="n">2</div><div><b class="t">Import it</b>
     <span class="click">New Terminal</span> → type:
     <pre>/import file-name=starling-profiles.rsc</pre></div></div>
-  <div class="box see">Seven lines like “Profile 1hour (1h, 100 FCFA, 1 device(s)) ready” and “Profile family (free, never expires…) ready” and “Script file loaded and executed successfully”. <span class="click">IP → Hotspot → User Profiles</span> lists the six profiles.</div>
+  <div class="box see">Seven lines like “Profile 1hour (1h, 105 FCFA, 1 device(s)) ready” and “Profile family (free, never expires…) ready” and “Script file loaded and executed successfully”. <span class="click">IP → Hotspot → User Profiles</span> lists the six profiles.</div>
   <div class="box ifnot">“no such file”: the file is not at the top level or the name is different; check <span class="click">Files</span>. To try again, simply run the import again: it replaces the profiles.</div>
   <div class="box tip">Already imported an older version of this file? Upload the new one (replace) and run the import again. It updates the profiles in place and adds <b>family</b>; customers who are online keep working.</div>
 
@@ -446,14 +446,14 @@
 
 <!-- ============================== PART 13 ============================== -->
 <section class="part">
-  <div class="part-head"><div class="part-num">Part 13</div><h2>How selling works (automatic, with Campay)</h2><p class="lead">Customers pay with MTN MoMo or Orange Money through Campay. The website checks the payment with Campay itself, creates the login, and the router picks it up within about 10 seconds. The phone is then logged in automatically. You do nothing.</p></div>
+  <div class="part-head"><div class="part-num">Part 13</div><h2>How selling works (automatic, with Campay)</h2><p class="lead">Customers pay with <b>MTN MoMo</b> through Campay (Orange numbers are refused with a clear message). The website checks the payment with Campay itself, creates the login, and the router picks it up within about 10 seconds. The phone is then logged in automatically. You do nothing.</p></div>
 
   <table>
     <tr><th style="width:8%">#</th><th>What the customer does / sees</th></tr>
     <tr><td>1</td><td>Joins the Wi-Fi. The Juthelink page opens. Taps a plan: it gets a <b>✓</b> and “Selected: …”.</td></tr>
     <tr><td>2</td><td>Taps <b>Pay … FCFA and connect</b>. The Juthelink website opens (allowed before login).</td></tr>
     <tr><td>3</td><td>First time: creates a free account (name, phone, password). Next time: signs in.</td></tr>
-    <tr><td>4</td><td>Taps <b>Pay</b>. A MoMo / Orange Money prompt appears on their phone; they enter their PIN. (No prompt? Dial <b>*126#</b> for MTN or <b>#150*50#</b> for Orange to approve.)</td></tr>
+    <tr><td>4</td><td>Taps <b>Pay</b>. An MTN MoMo prompt appears on their phone; they enter their PIN. (No prompt? Dial <b>*126#</b> to approve.)</td></tr>
     <tr><td>5</td><td>“Payment confirmed”. A few seconds later the phone goes back to the Juthelink page, the username and password are <b>filled in automatically</b> and it connects by itself.</td></tr>
     <tr><td>6</td><td>“You are connected”, then the <b>Time left</b> page counting down. When the time is up the router disconnects them and deletes the login.</td></tr>
   </table>
@@ -467,7 +467,7 @@
   <div class="box tip">A customer who already logged in on a phone is usually let back in automatically (MAC cookie) until their time ends.</div>
 
   <h3>Where is the money?</h3>
-  <p>In your Campay account (campay.net → your app <b>starling</b> → Money balance / Transactions). Every Juthelink payment has a reference like <span class="mono">SW-20261024-XXXXXXXX</span> that you also see in the admin site under Payments. Withdraw from Campay to your MoMo as usual.</p>
+  <p>In your Campay account (campay.net → your app <b>starling</b> → Money balance / Transactions). Every Juthelink payment has a reference like <span class="mono">SW-20261024-XXXXXXXX</span> that you also see in the admin site under Payments. Withdraw from Campay to your MTN MoMo number <b>677 358 806</b>.</p>
 
   <h3>Family members (free access)</h3>
   <p>For family members who contributed to buying the Starlink: open <b>ticket-maker.html</b> → Plan: <b>Family member (free)</b> → type their name (and phone) → <b>Make ticket</b> → paste the command into Winbox <span class="click">New Terminal</span> → send them the message. Example:</p>
@@ -612,7 +612,7 @@
     <tr><td>“Pay … and connect” opens a blank / error page</td><td>The website is not in the walled garden: import <span class="mono">juthelink-sync.rsc</span> again (Part 12 step 4). Check the router has internet and DNS (<code>/ping starling-website-lilac.vercel.app</code>).</td></tr>
     <tr><td>Paid, “Payment confirmed”, but not connected after 1 minute</td><td>Log shows “website not reachable”: router internet or clock problem (Part 3, Part 4). Or the scheduler <b>juthelink-sync</b> is disabled. The customer can tap <b>My account → Connect</b> once it is fixed; the login is kept.</td></tr>
     <tr><td>Log: “juthelink-sync: could not add … (profile …)”</td><td>The package profiles are missing: import <span class="mono">starling-profiles.rsc</span> again (Part 11).</td></tr>
-    <tr><td>“We could not start the payment”</td><td>The number is not a MoMo / Orange Money number, or Campay is down. Ask the customer to try again or use another number.</td></tr>
+    <tr><td>“We could not start the payment”</td><td>The number is not an MTN MoMo number, or Campay is down. Ask the customer to try again or use another number.</td></tr>
     <tr><td>Profiles import fails</td><td>The file must be at the top level in Files. Run the import again.</td></tr>
     <tr><td>Everything is slow</td><td>Check Starlink speed in the Starlink app. Lower the per-customer speed in the profiles. Check router CPU.</td></tr>
   </table>

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Juthelink",
     short_name: "Juthelink",
-    description: "Buy Wi-Fi time with MTN Mobile Money or Orange Money and see your remaining time.",
+    description: "Buy Wi-Fi time with MTN Mobile Money and see your remaining time.",
     id: "/",
     start_url: "/account?source=pwa",
     scope: "/",

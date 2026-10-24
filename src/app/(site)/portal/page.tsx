@@ -40,7 +40,7 @@ export default async function PortalPage(props: PageProps<"/portal">) {
       ) : null}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Welcome to Juthelink</h1>
-        <p className="mt-1 text-sm text-ink-soft">Choose a pass, pay with MTN MoMo or Orange Money, and connect with your personal code.</p>
+        <p className="mt-1 text-sm text-ink-soft">Choose a pass, pay with MTN MoMo, and you are connected automatically.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {plans.map((p) => (

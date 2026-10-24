@@ -9,7 +9,7 @@ import { PhoneIcon, ShieldIcon, TicketIcon, WifiIcon } from "@/components/ui/ico
 const STEPS = [
   { icon: ShieldIcon, title: "Create your account", text: "Your name, phone number and a password. Free, 30 seconds." },
   { icon: TicketIcon, title: "Choose a pass", text: "From 1 hour to 1 month. Prices in FCFA." },
-  { icon: PhoneIcon, title: "Pay with Mobile Money", text: "Approve the MTN MoMo or Orange Money prompt on your phone." },
+  { icon: PhoneIcon, title: "Pay with Mobile Money", text: "Approve the MTN MoMo prompt on your phone." },
   { icon: WifiIcon, title: "Connect with your code", text: "Tap Connect. Your personal code logs your device in." },
 ];
 
@@ -19,7 +19,7 @@ export default async function HomePage() {
     <div className="space-y-12">
       <section className="max-w-2xl">
         <p className="text-sm font-medium text-brand-700">Satellite internet · {settings.businessName}</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Fast Wi-Fi from 100 FCFA.</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Fast Wi-Fi from 105 FCFA.</h1>
         <p className="mt-3 text-ink-soft">Buy a pass with Mobile Money and get online in under a minute. Your time and access code are always in your account.</p>
         <div className="mt-6 flex flex-col gap-2 min-[400px]:flex-row">
           {ctx ? (

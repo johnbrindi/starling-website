@@ -5,8 +5,9 @@ import { encrypt } from "@/server/crypto";
 import { expireDue } from "@/server/subscriptions/service";
 import { makePackage, resetDb, resetOverrides } from "../helpers/fixtures";
 
+let phoneSeq = 10000;
 async function cred(username: string, password: string, over: Record<string, unknown> = {}) {
-  const c = await db.customer.create({ data: { phone: `+2376700${Math.floor(Math.random() * 90000) + 10000}` } });
+  const c = await db.customer.create({ data: { phone: `+2376700${phoneSeq++}` } });
   return db.accessCredential.create({
     data: { customerId: c.id, username, passwordEnc: encrypt(password), validFrom: new Date(Date.now() - 1000), validUntil: new Date(Date.now() + 3600_000), networkProfileName: "1hour", ...over },
   });

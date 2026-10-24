@@ -31,7 +31,7 @@ input.t{width:100%;height:48px;border:1px solid #d3d8e0;border-radius:10px;paddi
 details{font-size:14px;color:#3d4250}summary{font-weight:600;color:#16181d;cursor:pointer}details ol{padding-left:18px;line-height:1.5}
 a.l{color:#1748b0}
 </style></head><body>
-<div class="top"><b>Juthelink</b><p>Fast satellite Wi-Fi. Choose a plan, pay with MTN MoMo or Orange Money, and you are connected automatically.</p></div>
+<div class="top"><b>Juthelink</b><p>Fast satellite Wi-Fi. Choose a plan, pay with MTN MoMo, and you are connected automatically.</p></div>
 <div class="w">
 <div class="ok" id="ok">Payment confirmed. Connecting you to the Wi-Fi…</div>
 <div class="err" id="err">$(error)</div>
@@ -61,7 +61,7 @@ a.l{color:#1748b0}
 </div>
 <script>
 var PORTAL="https://YOUR-WEBSITE";
-var PLANS=[["1 hour",100,"1-hour"],["12 hours",150,"12-hours"],["24 hours",200,"24-hours"],["1 week",1350,"1-week"],["2 weeks",2500,"2-weeks"],["1 month",4500,"1-month"]];
+var PLANS=[["1 hour",105,"1-hour"],["12 hours",155,"12-hours"],["24 hours",210,"24-hours"],["1 week",1400,"1-week"],["2 weeks",2600,"2-weeks"],["1 month",4650,"1-month"]];
 function q(v){return encodeURIComponent(v)}
 var SRV="$(server-address)",CTX="?login="+q(/^[0-9.]+(:[0-9]+)?$/.test(SRV)?"http://"+SRV+"/login":"$(link-login-only)")+"&mac="+q("$(mac)")+"&ip="+q("$(ip)");
 var box=document.getElementById("plans"),pick=0,btns=[];

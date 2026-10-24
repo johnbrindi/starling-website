@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Help" };
 
 const FAQ: [string, string][] = [
   ["How do I connect?", "Join the Wi-Fi network on your phone. The welcome page opens automatically (if not, open any website such as http://neverssl.com). Choose a pass, pay, then tap Connect."],
-  ["Which payment methods are accepted?", "MTN Mobile Money and Orange Money. You approve the payment on your own phone with your PIN. We never ask for your PIN. You can also buy a voucher card for cash at the counter."],
+  ["Which payment methods are accepted?", "MTN Mobile Money (MoMo). You approve the payment on your own phone with your PIN. We never ask for your PIN. You can also buy a voucher card for cash at the counter."],
   ["I paid but have no code.", "Open My Wi-Fi. If the payment is still being confirmed, wait one minute; we re-check automatically. You are never charged twice for the same purchase. If money left your account but no pass appears after 10 minutes, contact support with the reference shown on the payment screen."],
   ["When does my time start?", "As soon as the payment is confirmed. The countdown runs in real time, whether or not you are browsing."],
   ["What happens if I buy again before my time ends?", "The new time is added after your current pass, on the same code, so you are not disconnected."],

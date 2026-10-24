@@ -40,7 +40,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{border:1px solid 
 </div>
 <script>
 // profile name on the router, label, price
-var PLANS=[["1hour","1 hour",100],["12hours","12 hours",150],["24hours","24 hours",200],["1week","1 week",1350],["2weeks","2 weeks",2500],["1month","1 month",4500]];
+var PLANS=[["1hour","1 hour",105],["12hours","12 hours",155],["24hours","24 hours",210],["1week","1 week",1400],["2weeks","2 weeks",2600],["1month","1 month",4650]];
 var FAMILY=PLANS.length;PLANS.push(["family","Family member (free)",0]);
 var sel=document.getElementById("plan");
 PLANS.forEach(function(p,i){var o=document.createElement("option");o.value=i;o.textContent=i===FAMILY?p[1]:p[1]+" - "+p[2]+" FCFA";sel.appendChild(o)});

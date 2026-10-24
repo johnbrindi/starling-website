@@ -18,7 +18,7 @@ import { Alert, Card, CardHeader } from "@/components/ui/primitives";
 export const metadata: Metadata = { title: "My Wi-Fi" };
 
 const LINKS = [
-  { href: "/plans", title: "Buy a pass", text: "From 100 FCFA" },
+  { href: "/plans", title: "Buy a pass", text: "From 105 FCFA" },
   { href: "/redeem", title: "Voucher card", text: "Redeem a printed card" },
   { href: "/account/history", title: "History", text: "Payments and passes" },
   { href: "/account/settings", title: "Account", text: "Name and password" },

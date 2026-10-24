@@ -6,12 +6,12 @@ from pathlib import Path
 
 RATE = "2M/5M"  # upload/download per customer (router view: rx/tx)
 PACKAGES = [  # (profile name, RouterOS interval, price note, devices)
-    ("1hour", "1h", "100 FCFA", 1),
-    ("12hours", "12h", "150 FCFA", 1),
-    ("24hours", "1d", "200 FCFA", 1),
-    ("1week", "7d", "1350 FCFA", 1),
-    ("2weeks", "14d", "2500 FCFA", 1),
-    ("1month", "30d", "4500 FCFA", 2),
+    ("1hour", "1h", "105 FCFA", 1),
+    ("12hours", "12h", "155 FCFA", 1),
+    ("24hours", "1d", "210 FCFA", 1),
+    ("1week", "7d", "1400 FCFA", 1),
+    ("2weeks", "14d", "2600 FCFA", 1),
+    ("1month", "30d", "4650 FCFA", 2),
 ]
 
 ON_LOGIN = r''':local u $user

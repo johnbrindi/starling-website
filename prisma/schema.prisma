@@ -173,6 +173,7 @@ enum PaymentProvider {
   SIMULATOR
   NOTCHPAY
   FAPSHI
+  CAMPAY
   CASH // recorded by staff at the counter ("Sell a pass")
 }
 

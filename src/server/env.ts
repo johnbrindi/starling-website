@@ -25,7 +25,12 @@ const schema = z
     CRON_SECRET: z.string().min(24),
     TRUST_PROXY: bool,
 
-    PAYMENT_PROVIDER: z.enum(["simulator", "notchpay", "fapshi"]).default("simulator"),
+    PAYMENT_PROVIDER: z.enum(["simulator", "notchpay", "fapshi", "campay"]).default("simulator"),
+    CAMPAY_BASE_URL: z.url().default("https://demo.campay.net"),
+    CAMPAY_TOKEN: optionalString,
+    CAMPAY_USERNAME: optionalString,
+    CAMPAY_PASSWORD: optionalString,
+    CAMPAY_WEBHOOK_KEY: optionalString,
     FAPSHI_BASE_URL: z.url().default("https://sandbox.fapshi.com"),
     FAPSHI_API_USER: optionalString,
     FAPSHI_API_KEY: optionalString,
@@ -72,7 +77,7 @@ const schema = z
         ctx.addIssue({
           code: "custom",
           path: ["NETWORK_ADAPTER"],
-          message: "The fake network adapter is forbidden in production. Configure routeros or radius.",
+          message: "The fake network adapter is forbidden in production. Configure routerpull, routeros or radius.",
         });
       }
       if (!env.APP_URL.startsWith("https://")) {
@@ -100,6 +105,9 @@ const schema = z
         path: ["NOTCHPAY_PUBLIC_KEY"],
         message: "NOTCHPAY_PUBLIC_KEY and NOTCHPAY_WEBHOOK_HASH are required when PAYMENT_PROVIDER=notchpay.",
       });
+    }
+    if (env.PAYMENT_PROVIDER === "campay" && !env.CAMPAY_TOKEN && (!env.CAMPAY_USERNAME || !env.CAMPAY_PASSWORD)) {
+      ctx.addIssue({ code: "custom", path: ["CAMPAY_TOKEN"], message: "CAMPAY_TOKEN (or CAMPAY_USERNAME and CAMPAY_PASSWORD) is required when PAYMENT_PROVIDER=campay." });
     }
     if (env.PAYMENT_PROVIDER === "fapshi" && (!env.FAPSHI_API_USER || !env.FAPSHI_API_KEY)) {
       ctx.addIssue({ code: "custom", path: ["FAPSHI_API_USER"], message: "FAPSHI_API_USER and FAPSHI_API_KEY are required when PAYMENT_PROVIDER=fapshi." });

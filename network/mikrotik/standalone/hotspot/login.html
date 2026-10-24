@@ -1,6 +1,8 @@
 <!doctype html>
 <!-- Juthelink - router login page. Upload into the router's "hotspot" folder as login.html.
-     PORTAL (your website) is filled in by build_sync.py. Edit PLANS/WA below if they change. -->
+     PORTAL (your website) is filled in by build_sync.py. Edit PLANS below if prices change.
+     After payment the website opens this page as login#u=USER&p=PASS: the form is filled and sent automatically.
+     Works with login-by http-chap and/or http-pap. -->
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="pragma" content="no-cache"><meta http-equiv="expires" content="-1">
@@ -24,12 +26,14 @@ h2{font-size:15px;margin:0 0 10px}h2 i{font-style:normal;display:inline-block;wi
 .s{color:#6b7180;font-size:13px;line-height:1.45;margin:8px 0 0}
 label.f{display:block;font-weight:600;margin:0 0 5px;font-size:14px}
 input.t{width:100%;height:48px;border:1px solid #d3d8e0;border-radius:10px;padding:0 12px;font-size:17px;margin:0 0 12px}
+.ok{display:none;background:#e7f6ee;color:#137a43;padding:12px;border-radius:10px;margin:0 0 12px;font-weight:600}
 .err{display:none;background:#fdecea;color:#b42318;padding:10px 12px;border-radius:10px;margin:0 0 12px}
 details{font-size:14px;color:#3d4250}summary{font-weight:600;color:#16181d;cursor:pointer}details ol{padding-left:18px;line-height:1.5}
 a.l{color:#1748b0}
 </style></head><body>
 <div class="top"><b>Juthelink</b><p>Fast satellite Wi-Fi. Choose a plan, pay with MTN MoMo or Orange Money, and you are connected automatically.</p></div>
 <div class="w">
+<div class="ok" id="ok">Payment confirmed. Connecting you to the Wi-Fi…</div>
 <div class="err" id="err">$(error)</div>
 
 <div class="c"><h2><i>1</i>Choose a plan</h2><div class="plans" id="plans"></div><p class="sel" id="sel"></p></div>
@@ -38,9 +42,10 @@ a.l{color:#1748b0}
 <a class="btn mtn" id="pay" href="#">Continue to payment</a>
 <p class="s">You will create a free account (name, phone, password), then approve the payment request that appears on your phone. Your login is created and this phone is connected automatically.</p></div>
 
-<div class="c"><h2><i>3</i>Already have a login?</h2>
-<form name="login" action="$(link-login-only)" method="post" onsubmit="return go()">
-<input type="hidden" name="dst" value="$(link-orig)"><input type="hidden" name="popup" value="false">
+<div class="c" id="box3"><h2><i>3</i>Already have a login?</h2>
+<form name="sendin" action="$(link-login-only)" method="post" style="display:none">
+<input type="hidden" name="username"><input type="hidden" name="password"><input type="hidden" name="dst" value="$(link-orig)"><input type="hidden" name="popup" value="false"></form>
+<form name="login" action="#" onsubmit="return go()">
 <label class="f" for="u">Username</label><input class="t" id="u" name="username" value="$(username)" autocapitalize="none" autocomplete="username" spellcheck="false">
 <label class="f" for="p">Password</label><input class="t" id="p" name="password" type="password" autocomplete="current-password">
 <button class="btn" type="submit">Connect</button></form>
@@ -58,7 +63,7 @@ a.l{color:#1748b0}
 var PORTAL="https://YOUR-WEBSITE";
 var PLANS=[["1 hour",100,"1-hour"],["12 hours",150,"12-hours"],["24 hours",200,"24-hours"],["1 week",1350,"1-week"],["2 weeks",2500,"2-weeks"],["1 month",4500,"1-month"]];
 function q(v){return encodeURIComponent(v)}
-var CTX="?login="+q("$(link-login-only)")+"&mac="+q("$(mac)")+"&ip="+q("$(ip)");
+var SRV="$(server-address)",CTX="?login="+q(/^[0-9.]+(:[0-9]+)?$/.test(SRV)?"http://"+SRV+"/login":"$(link-login-only)")+"&mac="+q("$(mac)")+"&ip="+q("$(ip)");
 var box=document.getElementById("plans"),pick=0,btns=[];
 var er=document.getElementById("err");if(er.textContent.replace(/\s/g,"")&&er.textContent.indexOf("$"+"(")<0)er.style.display="block";
 function show(){var p=PLANS[pick];
@@ -71,7 +76,21 @@ b.innerHTML='<i>&#10003;</i><b>'+p[1].toLocaleString("fr-FR")+' F</b><span>'+p[0
 b.onclick=function(){pick=i;show()};box.appendChild(b);btns.push(b)});
 document.getElementById("acct").href=PORTAL+"/portal"+CTX;
 show();
-function go(){var f=document.login;f.username.value=f.username.value.replace(/\s+/g,"").toLowerCase();f.password.value=f.password.value.replace(/\s+/g,"");
-if(!f.username.value){f.username.focus();return false}if(!f.password.value){f.password.focus();return false}return true}
+function md5(s){function a(x,y){var l=(x&65535)+(y&65535);return(x>>16)+(y>>16)+(l>>16)<<16|l&65535}function r(n,c){return n<<c|n>>>32-c}
+var n=s.length,w=[],i,j,h=[1732584193,-271733879,-1732584194,271733878],K=[],S=[7,12,17,22,5,9,14,20,4,11,16,23,6,10,15,21];for(i=0;i<64;i++)K[i]=Math.floor(Math.abs(Math.sin(i+1))*4294967296)|0;
+for(i=0;i<n;i++)w[i>>2]|=(s.charCodeAt(i)&255)<<i%4*8;w[n>>2]|=128<<n%4*8;var L=(n+8>>6)*16+14;w[L]=n*8;for(i=0;i<=L+1;i++)w[i]|=0;
+for(i=0;i<w.length;i+=16){var A=h[0],B=h[1],C=h[2],D=h[3],F,g,T;for(j=0;j<64;j++){if(j<16){F=B&C|~B&D;g=j}else if(j<32){F=D&B|~D&C;g=(5*j+1)%16}else if(j<48){F=B^C^D;g=(3*j+5)%16}else{F=C^(B|~D);g=7*j%16}
+T=D;D=C;C=B;B=a(B,r(a(a(A,F),a(K[j],w[i+g])),S[(j>>4)*4+j%4]));A=T}h[0]=a(h[0],A);h[1]=a(h[1],B);h[2]=a(h[2],C);h[3]=a(h[3],D)}
+var o="";for(i=0;i<16;i++)o+=(h[i>>2]>>i%4*8&255|256).toString(16).slice(1);return o}
+var CID="$(chap-id)",CCH="$(chap-challenge)";
+function go(){var f=document.login,o=document.sendin,u=f.username.value.replace(/\s+/g,"").toLowerCase(),p=f.password.value.replace(/\s+/g,"");f.username.value=u;f.password.value=p;
+if(!u){f.username.focus();return false}if(!p){f.password.focus();return false}
+o.username.value=u;o.password.value=CID&&CID.indexOf("$"+"(")<0?md5(CID+p+CCH):p;o.submit();return false}
+// Paid on the website: it sends the phone back here with the login after "#". Fill it in and connect.
+(function(){var h=location.hash.slice(1),m={};if(!h)return;h.split("&").forEach(function(kv){var i=kv.indexOf("=");if(i>0)m[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1))});
+if(!/^[a-z0-9_-]{1,40}$/i.test(m.u||"")||!/^[A-Za-z0-9_-]{1,40}$/.test(m.p||""))return;
+try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
+var f=document.login;f.username.value=m.u;f.password.value=m.p;er.style.display="none";document.getElementById("ok").style.display="block";
+document.getElementById("box3").scrollIntoView();setTimeout(go,700)})();
 </script>
 </body></html>

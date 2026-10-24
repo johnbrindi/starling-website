@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { Payment, Prisma } from "@/generated/prisma/client";
 import { normalizeCameroonPhone } from "@/lib/phone";
@@ -105,9 +106,13 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
     return { payment, instructions: res.instructions ?? null, reused: false };
   } catch (err) {
     const message = err instanceof ProviderError ? err.message : "Payment provider error";
+    const providerSaid = err instanceof ProviderError && !err.retryable ? message.replace(/^\w+ error: /, "") : "";
     payment = await db.payment.update({ where: { id: payment.id }, data: { status: "FAILED", failureReason: message.slice(0, 300) } });
     log.warn("Payment initiation failed", { paymentId: payment.id, error: errorMessage(err) });
-    throw new AppError("PAYMENT_PROVIDER_ERROR", "We could not start the payment. Please try again in a moment.");
+    if (/phone/i.test(providerSaid)) {
+      throw new AppError("PAYMENT_PROVIDER_ERROR", "This number cannot receive a Mobile Money request. Use an MTN MoMo or Orange Money number.");
+    }
+    throw new AppError("PAYMENT_PROVIDER_ERROR", providerSaid ? `We could not start the payment: ${providerSaid}` : "We could not start the payment. Please try again in a moment.");
   }
 }
 
@@ -189,7 +194,8 @@ export async function handleWebhook(providerId: ProviderId, rawBody: string, hea
     event = await db.webhookEvent.create({
       data: {
         provider: providerId,
-        eventKey: parsed.eventKey,
+        // An unauthenticated event must not reserve the key of the genuine event that may follow.
+        eventKey: parsed.signatureValid ? parsed.eventKey : `invalid:${createHash("sha256").update(rawBody).digest("hex")}`,
         eventType: parsed.eventType,
         signatureValid: parsed.signatureValid,
         payload: (parsed.payload ?? {}) as Prisma.InputJsonValue,

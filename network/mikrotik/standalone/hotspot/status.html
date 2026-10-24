@@ -25,7 +25,11 @@ function secs(v){if(!v)return -1;var t=0,m;if((m=v.match(/(\d+):(\d+):(\d+)$/)))
 var u={w:604800,d:86400,h:3600,m:60,s:1},r=/(\d+)([wdhms])/g;while((m=r.exec(v)))t+=m[1]*u[m[2]];return t}
 function f(s){var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60,p=function(n){return(n<10?"0":"")+n};
 return d?d+"d "+p(h)+"h "+p(m)+"m":h?h+"h "+p(m)+"m "+p(x)+"s":m+"m "+p(x)+"s"}
-var left=secs("$(session-time-left)"),el=document.getElementById("left");
-if(left>=0){setInterval(function(){el.textContent=left>0?f(left):"Time is up";if(left<=900)document.getElementById("warn").style.display="block";if(left>0)left--;},1000)}else el.textContent="Connected";
+var left=secs("$(session-time-left)"),el=document.getElementById("left"),run=0;
+function count(){if(run)return;run=1;setInterval(function(){el.textContent=left>0?f(left):"Time is up";if(left<=900)document.getElementById("warn").style.display="block";if(left>0)left--;},1000)}
+if(left>=0)count();else{el.textContent="Connected";
+// Logins bought online: the website knows the exact end time.
+try{var x=new XMLHttpRequest();x.open("GET",PORTAL+"/api/hotspot/time-left?u="+encodeURIComponent(U));x.timeout=8000;
+x.onload=function(){try{var r=JSON.parse(x.responseText);if(r.secondsLeft>0){left=r.secondsLeft;count()}}catch(e){}};x.send()}catch(e){}}
 setTimeout(function(){location.reload()},60000);
 </script></body></html>

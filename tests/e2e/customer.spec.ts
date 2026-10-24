@@ -38,7 +38,7 @@ test.describe("customer journey (simulated payment, fake router)", () => {
     await expect(page.getByText(/^(59|60) min/)).toBeVisible();
 
     await expect(page.getByRole("button", { name: /Simulate connect/ })).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByRole("link", { name: "Connect this device" })).toHaveAttribute("href", /^http:\/\/10\.5\.50\.1\/login\?username=[A-Z0-9]{8}&password=/);
+    await expect(page.getByRole("link", { name: "Connect this device" })).toHaveAttribute("href", /^http:\/\/10\.5\.50\.1\/login#u=[A-Z0-9]{8}&p=/);
     await page.getByRole("button", { name: /Simulate connect/ }).click();
     await expect(page.getByText(/Connected on 1 device/)).toBeVisible({ timeout: 20_000 });
 

@@ -1,6 +1,6 @@
 // Payment provider contract. A provider only reports facts; the payment service decides what to do.
 
-export type ProviderId = "SIMULATOR" | "NOTCHPAY" | "FAPSHI";
+export type ProviderId = "SIMULATOR" | "NOTCHPAY" | "FAPSHI" | "CAMPAY";
 
 export type ProviderStatus = "pending" | "succeeded" | "failed" | "cancelled" | "expired";
 

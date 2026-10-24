@@ -16,7 +16,7 @@ export const GET = handler(async (_req, ctx: RouteContext<"/api/payments/[id]">)
   const { customer } = await requireCustomer();
   let payment = await db.payment.findUnique({ where: { id }, include: { package: true } });
   if (!payment || payment.customerId !== customer.id) throw new AppError("NOT_FOUND", "Payment not found.");
-  // Fapshi allows 6 status checks per minute per payment: check the provider at most every 10 s.
+  // Providers rate-limit status checks (Fapshi: 6/min per payment): check the provider at most every 10 s.
   const stale = !payment.lastCheckedAt || Date.now() - payment.lastCheckedAt.getTime() > 10_000;
   if (payment.status === "PENDING" && stale) {
     try {

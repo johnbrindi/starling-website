@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+node_modules
+.next
+test-results
+playwright-report
+archive
+docs/setup-guide/*.pdf
+src/generated

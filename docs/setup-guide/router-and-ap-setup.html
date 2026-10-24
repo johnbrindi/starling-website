@@ -131,7 +131,7 @@
     <li>The MikroTik hAP lite, powered, blue cable in port 1, yellow cable in port 4 to your PC.</li>
     <li>Your PC with <b>Winbox</b> (you already have it and can connect by MAC address).</li>
     <li>A phone for testing.</li>
-    <li>The kit <code>Starling-Router-Setup-Kit.zip</code> (unzip it on your PC): <code>starling-profiles.rsc</code>, <code>ticket-maker.html</code>, and the <code>hotspot</code> folder with <code>login.html</code>, <code>alogin.html</code>, <code>status.html</code>.</li>
+    <li>The kit <code>Juthelink-Router-Kit.zip</code> (unzip it on your PC): <code>starling-profiles.rsc</code>, <code>juthelink-sync.rsc</code>, <code>ticket-maker.html</code>, and the <code>hotspot</code> folder with <code>login.html</code>, <code>alogin.html</code>, <code>status.html</code>.</li>
     <li>The Tenda outdoor AP, its PoE injector and power adapter (only for Part 14).</li>
     <li>A notebook to write down passwords.</li>
   </ul>
@@ -407,71 +407,79 @@
 
 <!-- ============================== PART 12 ============================== -->
 <section class="part">
-  <div class="part-head"><div class="part-num">Part 12</div><h2>Your Juthelink login page</h2><p class="lead">Replace MikroTik's grey page with yours: plans, “Pay with MTN MoMo” (the payment code is filled in automatically for the plan chosen), WhatsApp, and the login form. The three files together are under 10 KB, tiny for the router.</p></div>
+  <div class="part-head"><div class="part-num">Part 12</div><h2>Your Juthelink pages and automatic logins</h2><p class="lead">Two things go on the router: the three Juthelink pages (what customers see) and one small script that collects the logins customers buy on the website, every 10 seconds. Together they use about 15 KB.</p></div>
 
-  <div class="box tip"><b>Where are the files?</b> In the kit zip <span class="mono">Starling-Router-Setup-Kit.zip</span>, folder <span class="mono">hotspot</span>: <span class="mono">login.html</span>, <span class="mono">alogin.html</span>, <span class="mono">status.html</span>. (In the project: <span class="mono">network/mikrotik/standalone/hotspot/</span>.) Your numbers are already inside: MoMo <b>677 358 806</b>, WhatsApp <b>673 727 995</b>. No editing needed.</div>
+  <div class="box tip"><b>Where are the files?</b> In <span class="mono">Juthelink-Router-Kit.zip</span>: the folder <span class="mono">hotspot</span> (<span class="mono">login.html</span>, <span class="mono">alogin.html</span>, <span class="mono">status.html</span>) and the file <span class="mono">juthelink-sync.rsc</span>. They are already made for your website <b>starling-website-lilac.vercel.app</b>. No editing needed.</div>
+  <div class="box warn"><b>Keep <span class="mono">juthelink-sync.rsc</span> private.</b> It contains the router's secret key for the website. Do not send it on WhatsApp or post it anywhere. If it leaks, ask for a new key and a new file.</div>
 
   <div class="step"><div class="n">1</div><div><b class="t">Unzip the kit on your PC</b>
-    Right-click the zip → Extract. You get a folder with the PDF, <span class="mono">starling-profiles.rsc</span>, <span class="mono">ticket-maker.html</span> and the <span class="mono">hotspot</span> folder.</div></div>
+    Right-click the zip → Extract. You get the PDF, <span class="mono">juthelink-sync.rsc</span>, <span class="mono">starling-profiles.rsc</span>, <span class="mono">ticket-maker.html</span> and the <span class="mono">hotspot</span> folder.</div></div>
 
-  <div class="step"><div class="n">2</div><div><b class="t">Keep a copy of MikroTik's page</b>
-    Winbox → <span class="click">Files</span> → open the <b>hotspot</b> folder → right-click <span class="mono">hotspot/login.html</span> → rename to <code>hotspot/login-original.html</code>. (If your Winbox cannot rename files, skip this: the original pages can be restored any time with <span class="click">IP → Hotspot → Server Profiles → Reset HTML</span>.)</div></div>
-
-  <div class="step"><div class="n">3</div><div><b class="t">Upload the three pages into the hotspot folder</b>
-    Drag <code>login.html</code>, <code>alogin.html</code> and <code>status.html</code> from the kit's <span class="mono">hotspot</span> folder onto the <b>hotspot</b> folder in the Files window (or click <span class="click">Upload</span> while the hotspot folder is open). Replace existing files when asked.</div></div>
-  <div class="box see"><span class="mono">hotspot/login.html</span>, <span class="mono">hotspot/alogin.html</span>, <span class="mono">hotspot/status.html</span> with today's date, <b>inside</b> the hotspot folder, exactly those names.</div>
+  <div class="step"><div class="n">2</div><div><b class="t">Upload the three pages into the hotspot folder</b>
+    Winbox → <span class="click">Files</span> → drag <code>login.html</code>, <code>alogin.html</code> and <code>status.html</code> from the kit's <span class="mono">hotspot</span> folder onto the <b>hotspot</b> folder (or open the folder and click <span class="click">Upload</span>). Replace the old files when asked.</div></div>
+  <div class="box see"><span class="mono">hotspot/login.html</span>, <span class="mono">hotspot/alogin.html</span>, <span class="mono">hotspot/status.html</span> with today's date, <b>inside</b> the hotspot folder.</div>
   <div class="box ifnot">They appear at the top level: drag them onto the folder name, or remove and upload again. Close and reopen Files if the list does not refresh.</div>
 
-  <div class="step"><div class="n">4</div><div><b class="t">Remove the logout page</b>
-    Delete <span class="mono">hotspot/logout.html</span> (customers must not log out and pass their login to someone else). Leave every other file in the hotspot folder (rlogin.html, redirect.html, error.html, errors.txt, md5.js, css, img): the router uses some of them itself. To get MikroTik's original pages back at any time: <span class="click">IP → Hotspot → Server Profiles → Reset HTML</span>.</div></div>
+  <div class="step"><div class="n">3</div><div><b class="t">Remove the logout page</b>
+    Delete <span class="mono">hotspot/logout.html</span> (customers must not log out and pass their login to someone else). Leave every other file in the hotspot folder: the router uses some of them itself. To get MikroTik's original pages back at any time: <span class="click">IP → Hotspot → Server Profiles → Reset HTML</span>.</div></div>
 
-  <div class="step"><div class="n">5</div><div><b class="t">Test</b>
-    On your phone (not bypassed): join the Wi-Fi → open <code>http://neverssl.com</code>.</div></div>
-  <div class="box see">The blue <b>Juthelink</b> page: 1 Choose a plan, 2 Pay with MTN MoMo, 3 Send confirmation on WhatsApp, 4 Log in. Tap a plan: the yellow button and the code below it change (for 1 hour: <span class="mono">*126*9*677358806*100#</span>).</div>
+  <div class="step"><div class="n">4</div><div><b class="t">Install the automatic-login script</b>
+    Drag <code>juthelink-sync.rsc</code> into the Files window at the <b>top level</b> (not into the hotspot folder). Then open <span class="click">New Terminal</span> and type:
+    <pre>/import file-name=juthelink-sync.rsc</pre></div></div>
+  <div class="box see"><span class="mono">Juthelink sync installed: the router now checks the website every 10 seconds</span>. In <span class="click">System → Scheduler</span> there is <b>juthelink-sync</b> with interval <b>00:00:10</b>, and in <span class="click">IP → Hotspot → Walled Garden IP List</span> there is <b>starling-website-lilac.vercel.app</b> (customers can open the website before they log in).</div>
+  <div class="box ifnot">“failure” or nothing happens: the file must be at the top level in Files and named exactly <span class="mono">juthelink-sync.rsc</span>. Running the import again is safe.</div>
+
+  <div class="step"><div class="n">5</div><div><b class="t">Make sure both login methods are on</b>
+    In the terminal:
+    <pre>/ip hotspot profile set [find] login-by=http-chap,http-pap,cookie,mac-cookie</pre>
+    (The Juthelink page works with either; having both on avoids surprises.)</div></div>
+
+  <div class="step"><div class="n">6</div><div><b class="t">Check the router reaches the website</b>
+    Wait 30 seconds, then <span class="click">Log</span>. There must be <b>no</b> red line “juthelink-sync: website not reachable”. If there is, check the router has internet (<code>/ping google.com count=3</code>) and the clock is right (Part 3).</div></div>
+
   <div style="display:flex;gap:18px;justify-content:center;margin-top:8px;break-inside:avoid">
-    <figure style="margin:0;text-align:center"><img src="img/standalone-login.png" style="width:150px;border:1px solid #dfe3ea;border-radius:8px"><figcaption class="small">Login page</figcaption></figure>
-    <figure style="margin:0;text-align:center"><img src="img/standalone-status.png" style="width:150px;border:1px solid #dfe3ea;border-radius:8px"><figcaption class="small">Time left</figcaption></figure>
+    <figure style="margin:0;text-align:center"><img src="img/standalone-login.png" style="width:150px;border:1px solid #dfe3ea;border-radius:8px"><figcaption class="small">Login page (plan ticked)</figcaption></figure>
+    <figure style="margin:0;text-align:center"><img src="img/juthelink-pay.png" style="width:150px;border:1px solid #dfe3ea;border-radius:8px"><figcaption class="small">Approve on the phone</figcaption></figure>
+    <figure style="margin:0;text-align:center"><img src="img/standalone-status.png" style="width:150px;border:1px solid #dfe3ea;border-radius:8px"><figcaption class="small">Connected, time left</figcaption></figure>
   </div>
 </section>
 
 <!-- ============================== PART 13 ============================== -->
 <section class="part">
-  <div class="part-head"><div class="part-num">Part 13</div><h2>How selling works (MTN MoMo + WhatsApp)</h2><p class="lead">There is no payment API yet, so <b>you</b> confirm each payment. The router does everything else: it starts the clock at the first login and disconnects the customer when the time is up.</p></div>
+  <div class="part-head"><div class="part-num">Part 13</div><h2>How selling works (automatic, with Campay)</h2><p class="lead">Customers pay with MTN MoMo or Orange Money through Campay. The website checks the payment with Campay itself, creates the login, and the router picks it up within about 10 seconds. The phone is then logged in automatically. You do nothing.</p></div>
 
   <table>
-    <tr><th style="width:8%">#</th><th style="width:44%">The customer</th><th>You</th></tr>
-    <tr><td>1</td><td>Joins the Wi-Fi, the login page opens, chooses a plan.</td><td>—</td></tr>
-    <tr><td>2</td><td>Taps <b>Pay with MTN MoMo</b>: the phone dialer opens with <span class="mono">*126*9*677358806*AMOUNT#</span>. Presses call, enters the MoMo PIN.</td><td>Your MoMo phone receives the payment SMS.</td></tr>
-    <tr><td>3</td><td>Taps <b>Send payment confirmation</b>: WhatsApp opens with a ready message (plan + amount); adds their MoMo number and sends.</td><td>You check the MoMo SMS matches (amount and number).</td></tr>
-    <tr><td>4</td><td>—</td><td>Open <b>ticket-maker.html</b> on your PC → choose the plan → type the customer's phone → <b>Make ticket</b> → copy the command into Winbox <span class="click">New Terminal</span> → Enter → copy the WhatsApp reply and send it.</td></tr>
-    <tr><td>5</td><td>Types the username and password in step 4 of the login page → <b>Connect</b>. The Time left page appears.</td><td>Done. The router ends their access automatically.</td></tr>
+    <tr><th style="width:8%">#</th><th>What the customer does / sees</th></tr>
+    <tr><td>1</td><td>Joins the Wi-Fi. The Juthelink page opens. Taps a plan: it gets a <b>✓</b> and “Selected: …”.</td></tr>
+    <tr><td>2</td><td>Taps <b>Pay … FCFA and connect</b>. The Juthelink website opens (allowed before login).</td></tr>
+    <tr><td>3</td><td>First time: creates a free account (name, phone, password). Next time: signs in.</td></tr>
+    <tr><td>4</td><td>Taps <b>Pay</b>. A MoMo / Orange Money prompt appears on their phone; they enter their PIN. (No prompt? Dial <b>*126#</b> for MTN or <b>#150*50#</b> for Orange to approve.)</td></tr>
+    <tr><td>5</td><td>“Payment confirmed”. A few seconds later the phone goes back to the Juthelink page, the username and password are <b>filled in automatically</b> and it connects by itself.</td></tr>
+    <tr><td>6</td><td>“You are connected”, then the <b>Time left</b> page counting down. When the time is up the router disconnects them and deletes the login.</td></tr>
   </table>
-  <div class="box tip">iPhones do not allow websites to start USSD codes. iPhone users dial the code shown under the yellow button themselves. Some Android “sign in to network” windows also block it: the customer can copy the code or dial it by hand.</div>
+  <div class="box tip">A payment counts only when Campay confirms it to the website, for the exact amount. A customer cannot get internet by faking a page or a screenshot. A declined or cancelled payment gives nothing; the customer can try again.</div>
 
-  <h3>Where do usernames come from?</h3>
-  <p>You create them with <b>ticket-maker.html</b> (open it by double-clicking; it works offline on your PC). It makes a random username (6 letters/numbers, e.g. <span class="mono">k7m4qx</span>) and a 6-digit password, and gives you the exact Winbox command, for example:</p>
-  <pre>/ip hotspot user add name=k7m4qx password=739215 profile=1hour comment="677123456"</pre>
-  <p>The customer's phone number goes into the <b>comment</b>. At the first login the router adds the start and end time to that comment, so you can always see who, when and until when.</p>
+  <h3>Where do the logins come from?</h3>
+  <p>The website makes a random username (6 letters/numbers, e.g. <span class="mono">k7m4qx</span>) and a 6-digit password for each purchase. The router adds it with the right package and puts the customer's phone number in the <b>comment</b>. At the first login the router adds the start and end time to that comment. You can see every login in <span class="click">IP → Hotspot → Users</span>.</p>
 
-  <h3>“I lost my login”</h3>
-  <p>The login page has a <b>Lost your login?</b> link that opens WhatsApp with “I lost my Wi-Fi login. My phone number is …”. To find it: Winbox → <span class="click">IP → Hotspot → Users</span> → <span class="click">Find</span> → type the phone number. The matching line shows the username, password and when it ends. If it has not ended, send it again. If the user is gone, their time had ended (expired users are deleted automatically).</p>
-  <div class="box tip">A customer who already logged in on their phone is usually let back in automatically (MAC cookie), even without typing the login again, until their time ends.</div>
+  <h3>“I lost my login” / changed phone</h3>
+  <p>On the Juthelink page: <b>Lost your login? → My account</b>, sign in with their phone number and password: the login is shown again with a <b>Connect</b> button. Forgot their password too? They tap “Forgot password” and use their Wi-Fi username or a code you give them from the admin site.</p>
+  <div class="box tip">A customer who already logged in on a phone is usually let back in automatically (MAC cookie) until their time ends.</div>
+
+  <h3>Where is the money?</h3>
+  <p>In your Campay account (campay.net → your app <b>starling</b> → Money balance / Transactions). Every Juthelink payment has a reference like <span class="mono">SW-20261024-XXXXXXXX</span> that you also see in the admin site under Payments. Withdraw from Campay to your MoMo as usual.</p>
 
   <h3>Family members (free access)</h3>
-  <p>For family members who contributed to buying the Starlink: open <b>ticket-maker.html</b> → Plan: <b>Family member (free)</b> → type their name (and phone) → <b>Make ticket</b> → paste the command into Winbox → send them the WhatsApp message. Example command:</p>
+  <p>For family members who contributed to buying the Starlink: open <b>ticket-maker.html</b> → Plan: <b>Family member (free)</b> → type their name (and phone) → <b>Make ticket</b> → paste the command into Winbox <span class="click">New Terminal</span> → send them the message. Example:</p>
   <pre>/ip hotspot user add name=marie766 password=261043 profile=family comment="FAMILY: Marie Ngono, 677123456"</pre>
   <ul>
     <li>Free, never expires, up to <b>2 of their own devices</b>, faster speed (5/10 Mbit/s).</li>
-    <li>Everyone can be told apart: in <span class="click">IP → Hotspot → Users</span>, family logins have profile <b>family</b> and a comment starting with <b>FAMILY:</b>. Use <span class="click">Find</span> → <code>FAMILY</code> to list them all.</li>
-    <li>If a family login is shared with the public, change its password (double-click → Password) or click <span class="click">✗ Disable</span>. Only you can create family logins.</li>
+    <li>In <span class="click">IP → Hotspot → Users</span> family logins have profile <b>family</b> and a comment starting with <b>FAMILY:</b>. <span class="click">Find</span> → <code>FAMILY</code> lists them all.</li>
+    <li>If a family login is shared with the public, change its password or click <span class="click">✗ Disable</span>.</li>
   </ul>
 
-  <h3>Printed tickets for later</h3>
-  <p>In ticket-maker, leave the phone empty and choose e.g. 20 tickets → paste the commands → <b>Print</b> the list and cut it. Each ticket's time starts at its first login, so they can wait in a drawer.</p>
-
-  <h3>Check a ticket works</h3>
-  <p>Make one 1-hour ticket for yourself and log in on your phone.</p>
-  <div class="box see">“You are connected”, then <b>Time left</b> counting down from about 1 hour. In Winbox: <span class="click">IP → Hotspot → Active</span> shows the user; <span class="click">Users</span> shows its comment “phone | Started … | ends …”; <span class="click">System → Scheduler</span> shows <span class="mono">exp-username</span>.</div>
+  <h3>Cash customers and printed tickets</h3>
+  <p>Someone pays you in cash? Use <b>ticket-maker.html</b> (works offline on your PC): choose the plan, <b>Make ticket</b>, paste the command into Winbox, give them the username and password. For tickets to sell later, leave the phone empty and choose e.g. 20 → <b>Print</b>. Each ticket's time starts at its first login.</p>
 </section>
 
 <!-- ============================== PART 14 ============================== -->
@@ -536,7 +544,7 @@
     <tr><th style="width:5%">✓</th><th style="width:45%">Test</th><th>Expected</th></tr>
     <tr><td>☐</td><td>Winbox → New Terminal → <code>/ping google.com count=4</code></td><td>4 replies</td></tr>
     <tr><td>☐</td><td>Phone joins <b>Starling Wi-Fi</b> near the Tenda</td><td>Connected, no password asked</td></tr>
-    <tr><td>☐</td><td>Open <code>http://neverssl.com</code></td><td>Blue Starling login page</td></tr>
+    <tr><td>☐</td><td>Open <code>http://neverssl.com</code></td><td>Blue Juthelink login page</td></tr>
     <tr><td>☐</td><td>Log in with a wrong password</td><td>Red message “invalid username or password”</td></tr>
     <tr><td>☐</td><td>Log in with <code>test001</code> / <code>123456</code> (1hour)</td><td>“You are connected”, then Time left page</td></tr>
     <tr><td>☐</td><td>Open YouTube / WhatsApp</td><td>Works</td></tr>
@@ -544,6 +552,7 @@
     <tr><td>☐</td><td>Turn Wi-Fi off and on again on the first phone</td><td>Back online without typing (MAC cookie)</td></tr>
     <tr><td>☐</td><td>Winbox <span class="click">IP → Hotspot → Users</span></td><td>test001 Comment shows Started … | ends …</td></tr>
     <tr><td>☐</td><td>Wait 1 hour (or test with a <code>10m</code> profile)</td><td>Phone disconnected, login page appears again, test001 deleted</td></tr>
+    <tr><td>☐</td><td>Buy the cheapest plan with your own MoMo number on a phone that is not bypassed (Part 13)</td><td>Prompt on the phone → “Payment confirmed” → the page fills the login and connects by itself → Time left counting down</td></tr>
     <tr><td>☐</td><td>Unplug the router power, plug back in</td><td>After 1 minute everything works again</td></tr>
   </table>
   <div class="box tip">Quick expiry test without waiting an hour: <span class="click">IP → Hotspot → User Profiles</span> → <span class="click">+</span> → Name <code>test10min</code>, Shared Users 1 → <span class="click">Scripts</span> tab → paste the On Login script from <code>on-login-script.txt</code> and change <code>DURATION</code> to <code>10m</code> → OK. Create a user with this profile and log in. Delete the profile after the test.</div>
@@ -561,10 +570,12 @@
   <div class="part-head"><div class="part-num">Part 16</div><h2>Daily use</h2></div>
   <table>
     <tr><th style="width:36%">I want to…</th><th>Where in Winbox</th></tr>
-    <tr><td>Sell a pass</td><td>Check the MoMo SMS → <b>ticket-maker.html</b> → paste the command in Winbox → send the WhatsApp reply (Part 13).</td></tr>
+    <tr><td>Sell a pass</td><td>Nothing to do: customers pay with Campay on the login page and are connected automatically (Part 13). Cash customer: ticket-maker.html.</td></tr>
+    <tr><td>See payments and money</td><td>Campay account → app <b>starling</b> → Transactions; the admin site → Payments.</td></tr>
     <tr><td>Give a family member free access</td><td>ticket-maker.html → <b>Family member (free)</b> → name → paste the command (Part 13).</td></tr>
     <tr><td>See all family logins</td><td><span class="click">IP → Hotspot → Users → Find</span> → <code>FAMILY</code>.</td></tr>
-    <tr><td>Find a customer's login (lost login)</td><td><span class="click">IP → Hotspot → Users → Find</span> → type their phone number.</td></tr>
+    <tr><td>Find a customer's login (lost login)</td><td>The customer: Juthelink page → <b>My account</b>. You: <span class="click">IP → Hotspot → Users → Find</span> → their phone number.</td></tr>
+    <tr><td>Check automatic logins are working</td><td><span class="click">System → Scheduler</span> → <b>juthelink-sync</b> Run Count goes up every 10 s; <span class="click">Log</span> has no “website not reachable”.</td></tr>
     <tr><td>See who is online now</td><td><span class="click">IP → Hotspot → Active</span> (user, address, uptime, data).</td></tr>
     <tr><td>See when a customer's time ends</td><td><span class="click">IP → Hotspot → Users</span> → Comment column (“Started … | ends …”), or <span class="click">System → Scheduler</span> → <span class="mono">exp-username</span> → Next Run.</td></tr>
     <tr><td>Disconnect a phone (e.g. customer changed phone)</td><td><span class="click">IP → Hotspot → Active</span> → select the line → <span class="click">−</span> (Remove). The customer can log in again on the new phone; their time keeps running.</td></tr>
@@ -598,6 +609,10 @@
     <tr><td>Phones get 192.168.x.x addresses</td><td>Tenda DHCP is on or Tenda is in router mode (Part 14.1 steps 5 and 7).</td></tr>
     <tr><td>All phones show the same MAC in IP → Hotspot → Hosts</td><td>Tenda is in router mode. Put it in AP mode.</td></tr>
     <tr><td>Time ended too early or too late</td><td>Clock wrong: System → Clock and System → SNTP Client (Part 3 step 3). Check internet works.</td></tr>
+    <tr><td>“Pay … and connect” opens a blank / error page</td><td>The website is not in the walled garden: import <span class="mono">juthelink-sync.rsc</span> again (Part 12 step 4). Check the router has internet and DNS (<code>/ping starling-website-lilac.vercel.app</code>).</td></tr>
+    <tr><td>Paid, “Payment confirmed”, but not connected after 1 minute</td><td>Log shows “website not reachable”: router internet or clock problem (Part 3, Part 4). Or the scheduler <b>juthelink-sync</b> is disabled. The customer can tap <b>My account → Connect</b> once it is fixed; the login is kept.</td></tr>
+    <tr><td>Log: “juthelink-sync: could not add … (profile …)”</td><td>The package profiles are missing: import <span class="mono">starling-profiles.rsc</span> again (Part 11).</td></tr>
+    <tr><td>“We could not start the payment”</td><td>The number is not a MoMo / Orange Money number, or Campay is down. Ask the customer to try again or use another number.</td></tr>
     <tr><td>Profiles import fails</td><td>The file must be at the top level in Files. Run the import again.</td></tr>
     <tr><td>Everything is slow</td><td>Check Starlink speed in the Starlink app. Lower the per-customer speed in the profiles. Check router CPU.</td></tr>
   </table>

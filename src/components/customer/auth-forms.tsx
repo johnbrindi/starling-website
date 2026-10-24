@@ -6,7 +6,7 @@ import { useState } from "react";
 import { api, ApiError, fieldErrors } from "@/lib/api-client";
 import { Alert, Field, Input } from "@/components/ui/primitives";
 import { PasswordInput, PhoneInput } from "@/components/ui/inputs";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 function useAuthSubmit(path: string, next: string) {
   const router = useRouter();
@@ -73,9 +73,9 @@ export function RegisterForm({ next }: { next: string }) {
           </Link>
         </p>
       ) : null}
-      <Button type="submit" size="lg" className="w-full" loading={busy}>
+      <SubmitButton size="lg" className="w-full" loading={busy}>
         Create account
-      </Button>
+      </SubmitButton>
     </form>
   );
 }
@@ -108,9 +108,9 @@ export function LoginForm({ next }: { next: string }) {
         <PasswordInput id="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
       {error ? <Alert tone="bad">{error}</Alert> : null}
-      <Button type="submit" size="lg" className="w-full" loading={busy}>
+      <SubmitButton size="lg" className="w-full" loading={busy}>
         Sign in
-      </Button>
+      </SubmitButton>
     </form>
   );
 }
@@ -144,9 +144,9 @@ export function ResetPasswordForm({ next }: { next: string }) {
         <PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} invalid={!!errors.password} required />
       </Field>
       {error && !Object.keys(errors).length ? <Alert tone="bad">{error}</Alert> : null}
-      <Button type="submit" size="lg" className="w-full" loading={busy}>
+      <SubmitButton size="lg" className="w-full" loading={busy}>
         Set new password and sign in
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

@@ -6,6 +6,7 @@ import { api, ApiError, fieldErrors } from "@/lib/api-client";
 import { Alert, Field, Input } from "@/components/ui/primitives";
 import { PasswordInput } from "@/components/ui/inputs";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 /** Redeem a prepaid voucher card bought for cash. The pass is added to the signed-in account. */
 export function VoucherForm() {
@@ -44,9 +45,9 @@ export function VoucherForm() {
         />
       </Field>
       {error ? <Alert tone="bad">{error}</Alert> : null}
-      <Button type="submit" size="lg" className="w-full" loading={busy} disabled={code.replace(/[^a-z0-9]/gi, "").length < 8}>
+      <SubmitButton size="lg" className="w-full" loading={busy} disabled={code.replace(/[^a-z0-9]/gi, "").length < 8}>
         Redeem voucher
-      </Button>
+      </SubmitButton>
     </form>
   );
 }
@@ -79,9 +80,9 @@ export function ProfileForm({ initialName }: { initialName: string }) {
         <Input id="pf-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
       {msg ? <Alert tone={msg.tone}>{msg.text}</Alert> : null}
-      <Button type="submit" variant="secondary" loading={busy} disabled={name.trim() === initialName}>
+      <SubmitButton variant="secondary" loading={busy} disabled={name.trim() === initialName}>
         Save name
-      </Button>
+      </SubmitButton>
     </form>
   );
 }
@@ -121,9 +122,9 @@ export function ChangePasswordForm() {
         <PasswordInput id="cp-new" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
       {msg ? <Alert tone={msg.tone}>{msg.text}</Alert> : null}
-      <Button type="submit" variant="secondary" loading={busy} disabled={!current || password.length < 8}>
+      <SubmitButton variant="secondary" loading={busy} disabled={!current || password.length < 8}>
         Change password
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

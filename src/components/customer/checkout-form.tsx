@@ -9,7 +9,7 @@ import { formatDuration, formatXaf } from "@/lib/format";
 import { loadHotspotContext } from "@/lib/hotspot";
 import { Alert, Field } from "@/components/ui/primitives";
 import { PhoneInput } from "@/components/ui/inputs";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 type Channel = "cm.mtn" | "cm.orange";
 
@@ -80,9 +80,9 @@ export function CheckoutForm({ plan, defaultPhone, simulated }: { plan: PackageD
 
       {error && !Object.keys(errors).length ? <Alert tone="bad">{error}</Alert> : null}
 
-      <Button type="submit" size="lg" className="w-full" loading={busy}>
+      <SubmitButton size="lg" className="w-full" loading={busy}>
         Pay {formatXaf(plan.effectivePriceXaf)} for {formatDuration(plan.durationMinutes)}
-      </Button>
+      </SubmitButton>
       <p className="text-center text-xs text-muted">You will get a prompt on that phone. Enter your Mobile Money PIN there, never on this website.</p>
     </form>
   );

@@ -19,7 +19,9 @@ export default async function PlanPage(props: PageProps<"/plans/[slug]">) {
   const { slug } = await props.params;
   const [plan, ctx] = await Promise.all([getActivePackageBySlug(slug), getCustomer()]);
   if (!plan) notFound();
-  const simulated = getActiveProvider().simulated;
+  const provider = getActiveProvider();
+  const simulated = provider.simulated;
+  const manual = provider.id === "MANUAL";
   const here = `/plans/${plan.slug}`;
   return (
     <div className="mx-auto max-w-3xl">
@@ -56,7 +58,7 @@ export default async function PlanPage(props: PageProps<"/plans/[slug]">) {
               <p className="mb-4 text-sm text-muted">
                 Buying as <span className="font-medium text-ink">{ctx.customer.name ?? ctx.customer.phone}</span>
               </p>
-              <CheckoutForm plan={plan} defaultPhone={ctx.customer.phone} simulated={simulated} />
+              <CheckoutForm plan={plan} defaultPhone={ctx.customer.phone} simulated={simulated} manual={manual} />
             </>
           ) : (
             <div className="py-2 text-center">

@@ -40,6 +40,75 @@ function newReference() {
   return `SW-${d}-${randomCode(10)}`;
 }
 
+const MANUAL_UNCLAIMED_MINUTES = 30;
+const MANUAL_CLAIMED_HOURS = 48;
+
+export const claimSchema = z.object({
+  transactionId: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\s+/g, "").toUpperCase())
+    .pipe(z.string().regex(/^[A-Z0-9.-]{6,30}$/, "Type the Transaction ID exactly as in the MTN SMS (letters and numbers).")),
+});
+
+/** Customer submits the MTN MoMo transaction ID of a manual payment. Grants nothing by itself. */
+export async function claimManualPayment(customerId: string, paymentId: string, input: z.infer<typeof claimSchema>) {
+  const payment = await db.payment.findUnique({ where: { id: paymentId } });
+  if (!payment || payment.customerId !== customerId) throw new AppError("NOT_FOUND", "Payment not found.");
+  if (payment.provider !== "MANUAL") throw new AppError("CONFLICT", "This payment does not need a transaction ID.");
+  if (payment.status !== "PENDING") throw new AppError("CONFLICT", `This payment is already ${payment.status.toLowerCase()}.`);
+  try {
+    const moved = await db.payment.updateMany({
+      where: { id: payment.id, status: "PENDING" },
+      data: { providerReference: input.transactionId, claimedAt: new Date(), expiresAt: new Date(Date.now() + MANUAL_CLAIMED_HOURS * 3600_000) },
+    });
+    if (moved.count === 0) throw new AppError("CONFLICT", "This payment was just updated. Please reload the page.");
+  } catch (err) {
+    // (provider, providerReference) is unique: one MoMo transaction can pay for one pass only.
+    if ((err as { code?: string }).code === "P2002") {
+      throw new AppError("CONFLICT", "This Transaction ID was already used for another purchase.", [{ path: "transactionId", message: "Already used." }]);
+    }
+    throw err;
+  }
+  await audit({ actorType: "CUSTOMER", actorId: customerId, action: "payment.manual_claimed", targetType: "Payment", targetId: payment.id, metadata: { transactionId: input.transactionId } });
+  return (await db.payment.findUnique({ where: { id: paymentId }, include: { package: true } }))!;
+}
+
+/** Staff confirm a manual MoMo payment after checking the MTN SMS. Creates the pass and login. */
+export async function approveManualPayment(paymentId: string, staffId: string) {
+  const payment = await db.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) throw new AppError("NOT_FOUND", "Payment not found.");
+  if (payment.provider !== "MANUAL") throw new AppError("CONFLICT", "Only manual MoMo payments can be approved by staff.");
+  if (payment.status !== "PENDING" && payment.status !== "EXPIRED") throw new AppError("CONFLICT", `This payment is already ${payment.status.toLowerCase()}.`);
+  // A late confirmation (customer paid, staff were slow) is still honoured.
+  await db.payment.updateMany({
+    where: { id: payment.id, status: { in: ["PENDING", "EXPIRED"] } },
+    data: { status: "PENDING", recordedById: staffId, failureReason: null, providerStatus: "APPROVED" },
+  });
+  const result = await fulfilPayment(payment.id);
+  await audit({ actorType: "STAFF", actorId: staffId, action: "payment.manual_approved", targetType: "Payment", targetId: payment.id, metadata: { amount: payment.amountXaf, transactionId: payment.providerReference } });
+  return result;
+}
+
+/** Staff reject a manual MoMo payment (no money received / wrong amount). */
+export async function rejectManualPayment(paymentId: string, staffId: string, reason: string) {
+  const payment = await db.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) throw new AppError("NOT_FOUND", "Payment not found.");
+  if (payment.provider !== "MANUAL") throw new AppError("CONFLICT", "Only manual MoMo payments can be rejected by staff.");
+  const moved = await db.payment.updateMany({
+    where: { id: payment.id, status: { in: ["PENDING", "EXPIRED"] } },
+    data: { status: "FAILED", recordedById: staffId, providerStatus: "REJECTED", failureReason: reason.slice(0, 300) },
+  });
+  if (moved.count === 0) throw new AppError("CONFLICT", `This payment is already ${payment.status.toLowerCase()}.`);
+  await audit({ actorType: "STAFF", actorId: staffId, action: "payment.manual_rejected", targetType: "Payment", targetId: payment.id, metadata: { reason } });
+  await notify(payment.customerId, {
+    type: "PAYMENT_FAILED",
+    title: "Payment not confirmed",
+    body: `We could not find your MoMo payment: ${reason}. No access was granted. Contact us if you paid.`,
+    dedupeKey: `payfail:${payment.id}`,
+  });
+}
+
 /** Starts a Mobile Money payment for a signed-in customer. Never grants access by itself. */
 export async function createCheckout(customerId: string, input: CheckoutInput) {
   const phone = normalizeCameroonPhone(input.phone);
@@ -86,7 +155,8 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
         payerPhone: phone,
         clientMac: input.clientMac?.toUpperCase().replace(/-/g, ":"),
         clientIp: input.clientIp,
-        expiresAt: new Date(Date.now() + settings.paymentTimeoutMinutes * 60_000),
+        // Manual MoMo: time to dial the code and type the transaction ID (extended once it is submitted).
+        expiresAt: new Date(Date.now() + (provider.id === "MANUAL" ? MANUAL_UNCLAIMED_MINUTES : settings.paymentTimeoutMinutes) * 60_000),
       },
     });
   } catch (err) {
@@ -132,6 +202,18 @@ export async function verifyPayment(paymentId: string): Promise<Payment> {
     return (await db.payment.findUnique({ where: { id: paymentId } }))!;
   }
   if (payment.status !== "PENDING" || payment.provider === "CASH") return payment;
+  if (payment.provider === "MANUAL") {
+    // Staff confirm manual payments; only expiry happens here.
+    if (payment.expiresAt <= new Date()) {
+      await db.payment.updateMany({
+        where: { id: payment.id, status: "PENDING" },
+        data: { status: "EXPIRED", failureReason: payment.claimedAt ? "Not confirmed in time. Contact us if you paid." : "No transaction ID was submitted in time." },
+      });
+    } else {
+      await db.payment.update({ where: { id: payment.id }, data: { lastCheckedAt: new Date() } });
+    }
+    return (await db.payment.findUnique({ where: { id: paymentId } }))!;
+  }
 
   const provider = getProvider(payment.provider);
   let result: StatusResult;
@@ -252,7 +334,7 @@ export async function reconcilePayments(now = new Date()) {
   let checked = 0;
   for (const p of pending) {
     try {
-      if (p.provider === "CASH") continue;
+      if (p.provider === "CASH" || (p.provider === "MANUAL" && p.status === "EXPIRED")) continue;
       if (p.status === "EXPIRED") {
         const r = await getProvider(p.provider).fetchStatus(p);
         await db.payment.update({ where: { id: p.id }, data: { lastCheckedAt: new Date(), checkCount: { increment: 1 } } });

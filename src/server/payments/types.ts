@@ -1,6 +1,6 @@
 // Payment provider contract. A provider only reports facts; the payment service decides what to do.
 
-export type ProviderId = "SIMULATOR" | "NOTCHPAY" | "FAPSHI" | "CAMPAY";
+export type ProviderId = "SIMULATOR" | "NOTCHPAY" | "FAPSHI" | "CAMPAY" | "MANUAL";
 
 export type ProviderStatus = "pending" | "succeeded" | "failed" | "cancelled" | "expired";
 
@@ -16,7 +16,8 @@ export interface InitiateInput {
 }
 
 export interface InitiateResult {
-  providerReference: string;
+  /** Null when the provider has no transaction yet (manual MoMo: the customer submits it later). */
+  providerReference: string | null;
   status: ProviderStatus;
   /** Customer-facing instruction, e.g. "Approve the prompt on your phone". */
   instructions?: string;

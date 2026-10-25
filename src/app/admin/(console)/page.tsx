@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { requireStaffPage } from "@/server/admin/guard";
+import { db } from "@/server/db";
 import { getDashboard } from "@/server/admin/dashboard";
 import { formatDateTime, formatXaf } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
@@ -8,10 +10,18 @@ export default async function DashboardPage(props: PageProps<"/admin">) {
   await requireStaffPage("dashboard:view");
   const sp = await props.searchParams;
   const d = await getDashboard();
+  const toConfirm = await db.payment.count({ where: { provider: "MANUAL", status: "PENDING", claimedAt: { not: null } } });
   const netOk = d.network.status?.ok ?? false;
   return (
     <>
       <PageHeader title="Dashboard" description="Live figures from the database. Revenue excludes simulated payments." />
+      {toConfirm > 0 ? (
+        <div className="mb-4">
+          <Alert tone="warn" title={`${toConfirm} MoMo payment(s) waiting for you`}>
+            <Link href="/admin/confirm" className="font-semibold underline">Open Confirm MoMo</Link> and approve them after checking the MTN SMS.
+          </Alert>
+        </div>
+      ) : null}
       {sp.denied ? <div className="mb-4"><Alert tone="bad">You do not have permission to open that page.</Alert></div> : null}
       {d.deadJobs > 0 || d.provisionFailed > 0 ? (
         <div className="mb-4">

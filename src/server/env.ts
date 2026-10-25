@@ -25,7 +25,9 @@ const schema = z
     CRON_SECRET: z.string().min(24),
     TRUST_PROXY: bool,
 
-    PAYMENT_PROVIDER: z.enum(["simulator", "notchpay", "fapshi", "campay"]).default("simulator"),
+    PAYMENT_PROVIDER: z.enum(["simulator", "notchpay", "fapshi", "campay", "manual"]).default("simulator"),
+    /** PAYMENT_PROVIDER=manual: the MTN MoMo number customers send money to (staff confirm each payment). */
+    MANUAL_MOMO_NUMBER: z.string().regex(/^6\d{8}$/, "MANUAL_MOMO_NUMBER must be 9 digits, e.g. 677358806").default("677358806"),
     CAMPAY_BASE_URL: z.url().default("https://demo.campay.net"),
     CAMPAY_TOKEN: optionalString,
     CAMPAY_USERNAME: optionalString,

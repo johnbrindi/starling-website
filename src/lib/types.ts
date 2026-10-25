@@ -33,6 +33,8 @@ export interface PaymentDto {
   failureReason: string | null;
   createdAt: string;
   expiresAt: string;
+  /** Manual MTN MoMo payment: what to dial, and the transaction ID once the customer submitted it. */
+  manual: { momoNumber: string; ussd: string; transactionId: string | null; claimedAt: string | null } | null;
 }
 
 export type AccessState = "NONE" | "PROVISIONING" | "READY" | "ONLINE" | "SCHEDULED" | "EXPIRED" | "REVOKED";

@@ -17,6 +17,7 @@ export default async function ConsoleLayout({ children }: LayoutProps<"/admin">)
   const role = ctx.staff.role;
   const items = [
     { href: "/admin", label: "Dashboard", show: true },
+    { href: "/admin/confirm", label: "Confirm MoMo", show: can(role, "payments:approve") },
     { href: "/admin/sell", label: "Sell a pass", show: can(role, "sales:create") },
     { href: "/admin/tickets", label: "Printed tickets", show: can(role, "sales:create") },
     { href: "/admin/customers", label: "Customers", show: can(role, "customers:view") },

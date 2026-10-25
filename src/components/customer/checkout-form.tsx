@@ -11,7 +11,7 @@ import { Alert, Field } from "@/components/ui/primitives";
 import { PhoneInput } from "@/components/ui/inputs";
 import { SubmitButton } from "@/components/ui/submit-button";
 
-export function CheckoutForm({ plan, defaultPhone, simulated }: { plan: PackageDto; defaultPhone?: string; simulated: boolean }) {
+export function CheckoutForm({ plan, defaultPhone, simulated, manual = false }: { plan: PackageDto; defaultPhone?: string; simulated: boolean; manual?: boolean }) {
   const router = useRouter();
   const [phone, setPhone] = useState(defaultPhone?.replace(/^\+237/, "") ?? "");
   const [busy, setBusy] = useState(false);
@@ -63,7 +63,11 @@ export function CheckoutForm({ plan, defaultPhone, simulated }: { plan: PackageD
       <SubmitButton size="lg" className="w-full" loading={busy}>
         Pay {formatXaf(plan.effectivePriceXaf)} for {formatDuration(plan.durationMinutes)}
       </SubmitButton>
-      <p className="text-center text-xs text-muted">You will get a prompt on that phone. Enter your MTN MoMo PIN there, never on this website.</p>
+      <p className="text-center text-xs text-muted">
+        {manual
+          ? "Next you get the MTN MoMo code to dial. Enter your PIN only on your phone, never on this website."
+          : "You will get a prompt on that phone. Enter your MTN MoMo PIN there, never on this website."}
+      </p>
     </form>
   );
 }

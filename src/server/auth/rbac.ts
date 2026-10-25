@@ -8,6 +8,8 @@ export const PERMISSIONS = [
   "sales:create",
   "payments:view",
   "payments:reconcile",
+  /** Confirm or reject manual MTN MoMo payments after checking the MTN SMS. */
+  "payments:approve",
   "network:view",
   "network:manage",
   "settings:manage",
@@ -18,7 +20,7 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 const VIEWER: Permission[] = ["dashboard:view", "customers:view", "payments:view", "network:view"];
-const SUPPORT: Permission[] = [...VIEWER, "customers:revoke", "sales:create", "audit:view"];
+const SUPPORT: Permission[] = [...VIEWER, "customers:revoke", "sales:create", "payments:approve", "audit:view"];
 const ADMIN: Permission[] = PERMISSIONS.filter((p) => p !== "staff:manage");
 
 /** Deny-by-default: a role has only the permissions listed here. */

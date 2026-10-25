@@ -446,18 +446,22 @@
 
 <!-- ============================== PART 13 ============================== -->
 <section class="part">
-  <div class="part-head"><div class="part-num">Part 13</div><h2>How selling works (automatic, with Campay)</h2><p class="lead">Customers pay with <b>MTN MoMo</b> through Campay (Orange numbers are refused with a clear message). The website checks the payment with Campay itself, creates the login, and the router picks it up within about 10 seconds. The phone is then logged in automatically. You do nothing.</p></div>
+  <div class="part-head"><div class="part-num">Part 13</div><h2>How selling works (MTN MoMo, you confirm)</h2><p class="lead">Customers pay by MTN MoMo to <b>677 358 806</b> and type the Transaction ID from their SMS. You check your MoMo SMS and tap <b>Approve</b> on your phone. Everything else is automatic: the login is created, the router picks it up within about 10 seconds, and the customer's phone connects by itself.</p></div>
 
   <table>
-    <tr><th style="width:8%">#</th><th>What the customer does / sees</th></tr>
-    <tr><td>1</td><td>Joins the Wi-Fi. The Juthelink page opens. Taps a plan: it gets a <b>✓</b> and “Selected: …”.</td></tr>
-    <tr><td>2</td><td>Taps <b>Pay … FCFA and connect</b>. The Juthelink website opens (allowed before login).</td></tr>
-    <tr><td>3</td><td>First time: creates a free account (name, phone, password). Next time: signs in.</td></tr>
-    <tr><td>4</td><td>Taps <b>Pay</b>. An MTN MoMo prompt appears on their phone; they enter their PIN. (No prompt? Dial <b>*126#</b> to approve.)</td></tr>
-    <tr><td>5</td><td>“Payment confirmed”. A few seconds later the phone goes back to the Juthelink page, the username and password are <b>filled in automatically</b> and it connects by itself.</td></tr>
-    <tr><td>6</td><td>“You are connected”, then the <b>Time left</b> page counting down. When the time is up the router disconnects them and deletes the login.</td></tr>
+    <tr><th style="width:8%">#</th><th style="width:46%">The customer</th><th>You (on your phone)</th></tr>
+    <tr><td>1</td><td>Joins the Wi-Fi. The Juthelink page opens. Taps a plan (✓), then <b>Pay … FCFA and connect</b>.</td><td>—</td></tr>
+    <tr><td>2</td><td>Creates a free account (name, phone, password) or signs in.</td><td>—</td></tr>
+    <tr><td>3</td><td>Sees the code, e.g. <span class="mono">*126*9*677358806*105#</span>, taps <b>Dial now</b> (or types it), enters the MoMo PIN.</td><td>Your MoMo phone gets the SMS “You have received 105 FCFA … Transaction ID …”.</td></tr>
+    <tr><td>4</td><td>Types the <b>Transaction ID</b> from their MTN SMS → <b>I have paid, confirm my payment</b>. The page shows “Checking your payment”.</td><td>Open the admin site → <b>Confirm MoMo</b>. Check the amount and Transaction ID match your SMS → <b>Approve</b>. (No money? <b>Reject</b> with a reason.)</td></tr>
+    <tr><td>5</td><td>“Payment confirmed”. A few seconds later the Juthelink page opens with the username and password filled in, and the phone connects by itself. <b>Time left</b> counts down.</td><td>Done. The router ends their access automatically.</td></tr>
   </table>
-  <div class="box tip">A payment counts only when Campay confirms it to the website, for the exact amount. A customer cannot get internet by faking a page or a screenshot. A declined or cancelled payment gives nothing; the customer can try again.</div>
+  <div class="box tip"><b>Keep the admin site on your phone's home screen:</b> open <span class="mono">https://starling-website-lilac.vercel.app/admin</span> in Chrome → ⋮ → <b>Add to Home screen</b>. The Dashboard shows a yellow banner when payments are waiting; the Confirm MoMo page refreshes by itself.</div>
+  <div class="box warn">Approve only what you see on your own MoMo SMS. A customer's screenshot is not proof. Each Transaction ID can be used for <b>one</b> purchase only; the system refuses it a second time.</div>
+  <div class="box tip"><b>Later, automatic payments:</b> once Fapshi (or Campay live) approves your account, the website is switched to automatic payments by changing one setting. The router and these files stay the same.</div>
+
+  <h3>Make a login yourself (cash, or a customer who calls you)</h3>
+  <p>Admin site → <b>Sell a pass</b> → choose the plan → (optional) their phone → <b>Record cash sale</b>. You get a username and password to give them. It reaches the router automatically within about 10 seconds. This works from your phone anywhere.</p>
 
   <h3>Where do the logins come from?</h3>
   <p>The website makes a random username (6 letters/numbers, e.g. <span class="mono">k7m4qx</span>) and a 6-digit password for each purchase. The router adds it with the right package and puts the customer's phone number in the <b>comment</b>. At the first login the router adds the start and end time to that comment. You can see every login in <span class="click">IP → Hotspot → Users</span>.</p>
@@ -467,7 +471,7 @@
   <div class="box tip">A customer who already logged in on a phone is usually let back in automatically (MAC cookie) until their time ends.</div>
 
   <h3>Where is the money?</h3>
-  <p>In your Campay account (campay.net → your app <b>starling</b> → Money balance / Transactions). Every Juthelink payment has a reference like <span class="mono">SW-20261024-XXXXXXXX</span> that you also see in the admin site under Payments. Withdraw from Campay to your MTN MoMo number <b>677 358 806</b>.</p>
+  <p>Directly in your MTN MoMo account <b>677 358 806</b>. The admin site → <b>Payments</b> lists every purchase with its Transaction ID, and <b>Confirm MoMo</b> shows the last 48 hours.</p>
 
   <h3>Family members (free access)</h3>
   <p>For family members who contributed to buying the Starlink: open <b>ticket-maker.html</b> → Plan: <b>Family member (free)</b> → type their name (and phone) → <b>Make ticket</b> → paste the command into Winbox <span class="click">New Terminal</span> → send them the message. Example:</p>
@@ -552,7 +556,7 @@
     <tr><td>☐</td><td>Turn Wi-Fi off and on again on the first phone</td><td>Back online without typing (MAC cookie)</td></tr>
     <tr><td>☐</td><td>Winbox <span class="click">IP → Hotspot → Users</span></td><td>test001 Comment shows Started … | ends …</td></tr>
     <tr><td>☐</td><td>Wait 1 hour (or test with a <code>10m</code> profile)</td><td>Phone disconnected, login page appears again, test001 deleted</td></tr>
-    <tr><td>☐</td><td>Buy the cheapest plan with your own MoMo number on a phone that is not bypassed (Part 13)</td><td>Prompt on the phone → “Payment confirmed” → the page fills the login and connects by itself → Time left counting down</td></tr>
+    <tr><td>☐</td><td>Buy the 1-hour plan with your own MTN number on a phone that is not bypassed, then approve it in Admin → Confirm MoMo (Part 13)</td><td>“Payment confirmed” → the page fills the login and connects by itself → Time left counting down</td></tr>
     <tr><td>☐</td><td>Unplug the router power, plug back in</td><td>After 1 minute everything works again</td></tr>
   </table>
   <div class="box tip">Quick expiry test without waiting an hour: <span class="click">IP → Hotspot → User Profiles</span> → <span class="click">+</span> → Name <code>test10min</code>, Shared Users 1 → <span class="click">Scripts</span> tab → paste the On Login script from <code>on-login-script.txt</code> and change <code>DURATION</code> to <code>10m</code> → OK. Create a user with this profile and log in. Delete the profile after the test.</div>
@@ -570,8 +574,8 @@
   <div class="part-head"><div class="part-num">Part 16</div><h2>Daily use</h2></div>
   <table>
     <tr><th style="width:36%">I want to…</th><th>Where in Winbox</th></tr>
-    <tr><td>Sell a pass</td><td>Nothing to do: customers pay with Campay on the login page and are connected automatically (Part 13). Cash customer: ticket-maker.html.</td></tr>
-    <tr><td>See payments and money</td><td>Campay account → app <b>starling</b> → Transactions; the admin site → Payments.</td></tr>
+    <tr><td>Sell a pass</td><td>Customers pay by MoMo on the login page; you tap <b>Approve</b> in Admin → Confirm MoMo (Part 13). Cash customer: Admin → Sell a pass.</td></tr>
+    <tr><td>See payments and money</td><td>Your MoMo SMS; the admin site → Payments / Confirm MoMo.</td></tr>
     <tr><td>Give a family member free access</td><td>ticket-maker.html → <b>Family member (free)</b> → name → paste the command (Part 13).</td></tr>
     <tr><td>See all family logins</td><td><span class="click">IP → Hotspot → Users → Find</span> → <code>FAMILY</code>.</td></tr>
     <tr><td>Find a customer's login (lost login)</td><td>The customer: Juthelink page → <b>My account</b>. You: <span class="click">IP → Hotspot → Users → Find</span> → their phone number.</td></tr>
@@ -612,7 +616,8 @@
     <tr><td>“Pay … and connect” opens a blank / error page</td><td>The website is not in the walled garden: import <span class="mono">juthelink-sync.rsc</span> again (Part 12 step 4). Check the router has internet and DNS (<code>/ping starling-website-lilac.vercel.app</code>).</td></tr>
     <tr><td>Paid, “Payment confirmed”, but not connected after 1 minute</td><td>Log shows “website not reachable”: router internet or clock problem (Part 3, Part 4). Or the scheduler <b>juthelink-sync</b> is disabled. The customer can tap <b>My account → Connect</b> once it is fixed; the login is kept.</td></tr>
     <tr><td>Log: “juthelink-sync: could not add … (profile …)”</td><td>The package profiles are missing: import <span class="mono">starling-profiles.rsc</span> again (Part 11).</td></tr>
-    <tr><td>“We could not start the payment”</td><td>The number is not an MTN MoMo number, or Campay is down. Ask the customer to try again or use another number.</td></tr>
+    <tr><td>Customer paid but is still “Checking your payment”</td><td>Open Admin → Confirm MoMo and approve it. If they typed a wrong Transaction ID, you can still approve after checking your SMS (amount and their phone number).</td></tr>
+    <tr><td>WhatsApp button does nothing before login</td><td>Normal: the Wi-Fi blocks other sites until the customer is connected. They tap <b>Call us</b> or <b>Copy number</b>, or use WhatsApp with mobile data.</td></tr>
     <tr><td>Profiles import fails</td><td>The file must be at the top level in Files. Run the import again.</td></tr>
     <tr><td>Everything is slow</td><td>Check Starlink speed in the Starlink app. Lower the per-customer speed in the profiles. Check router CPU.</td></tr>
   </table>

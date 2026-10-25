@@ -13,15 +13,17 @@ export class ApiError extends Error {
 
 export async function api<T>(path: string, init: { method?: string; body?: unknown; csrf?: string } = {}): Promise<T> {
   let res: Response;
+  // FormData (file uploads) is sent as multipart; the browser sets the boundary header.
+  const form = typeof FormData !== "undefined" && init.body instanceof FormData;
   try {
     res = await fetch(path, {
       method: init.method ?? (init.body ? "POST" : "GET"),
       headers: {
         Accept: "application/json",
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...(init.body && !form ? { "Content-Type": "application/json" } : {}),
         ...(init.csrf ? { "x-csrf-token": init.csrf } : {}),
       },
-      body: init.body ? JSON.stringify(init.body) : undefined,
+      body: form ? (init.body as FormData) : init.body ? JSON.stringify(init.body) : undefined,
       cache: "no-store",
       credentials: "same-origin",
     });

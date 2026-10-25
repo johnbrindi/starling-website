@@ -70,6 +70,25 @@ describe("manual MTN MoMo payments", () => {
     expect(() => claimSchema.parse({ transactionId: "<script>" })).toThrow();
   });
 
+  it("accepts a screenshot instead of a Transaction ID, refuses reused screenshots and non-images", async () => {
+    const png = (seed: number) => new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, seed, 1, 2, 3]);
+    const a = await start(PHONES.success);
+    await expect(claimManualPayment(a.customer.id, a.payment.id, {})).rejects.toThrow(/Transaction ID or add a screenshot/);
+    await expect(claimManualPayment(a.customer.id, a.payment.id, { screenshot: new TextEncoder().encode("<html>not an image</html>") })).rejects.toThrow(/photo or screenshot/);
+    const claimed = await claimManualPayment(a.customer.id, a.payment.id, { screenshot: png(1) });
+    expect(claimed.claimedAt).not.toBeNull();
+    expect(claimed.providerReference).toBeNull();
+    const proof = await db.paymentProof.findUniqueOrThrow({ where: { paymentId: a.payment.id } });
+    expect(proof.mimeType).toBe("image/png");
+    expect(toPaymentDto({ ...claimed }).manual?.hasScreenshot).toBe(true);
+
+    const b = await start(PHONES.pending);
+    await expect(claimManualPayment(b.customer.id, b.payment.id, { screenshot: png(1) })).rejects.toThrow(/screenshot was already used/);
+    // Adding the Transaction ID later to the same payment is fine.
+    const both = await claimManualPayment(a.customer.id, a.payment.id, { transactionId: "TX998877" });
+    expect(both.providerReference).toBe("TX998877");
+  });
+
   it("rejected payments grant nothing; unclaimed ones expire; late approval still works", async () => {
     const s = await staff();
     const a = await start(PHONES.success);

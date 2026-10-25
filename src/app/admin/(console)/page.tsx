@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { StaffPushToggle } from "@/components/admin/staff-push";
+import { can } from "@/server/auth/rbac";
 import { requireStaffPage } from "@/server/admin/guard";
 import { db } from "@/server/db";
 import { getDashboard } from "@/server/admin/dashboard";
@@ -7,7 +9,7 @@ import { formatPhone } from "@/lib/phone";
 import { Alert, Badge, Card, CardHeader, Empty, PageHeader, Stat, Table, Td, Th } from "@/components/ui/primitives";
 
 export default async function DashboardPage(props: PageProps<"/admin">) {
-  await requireStaffPage("dashboard:view");
+  const { staff } = await requireStaffPage("dashboard:view");
   const sp = await props.searchParams;
   const d = await getDashboard();
   const toConfirm = await db.payment.count({ where: { provider: "MANUAL", status: "PENDING", claimedAt: { not: null } } });
@@ -15,6 +17,7 @@ export default async function DashboardPage(props: PageProps<"/admin">) {
   return (
     <>
       <PageHeader title="Dashboard" description="Live figures from the database. Revenue excludes simulated payments." />
+      {can(staff.role, "payments:approve") ? <div className="mb-4"><StaffPushToggle /></div> : null}
       {toConfirm > 0 ? (
         <div className="mb-4">
           <Alert tone="warn" title={`${toConfirm} MoMo payment(s) waiting for you`}>

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/primitives";
 import { StaffLoginForm } from "@/components/admin/auth-forms";
 import { ShieldIcon } from "@/components/ui/icons";
 
-export const metadata: Metadata = { title: "Staff sign in", robots: { index: false } };
+export const metadata: Metadata = { title: "Staff sign in", robots: { index: false }, manifest: "/admin.webmanifest", appleWebApp: { capable: true, title: "JL Admin", statusBarStyle: "default" } };
 
 export default async function StaffLoginPage() {
   if (await getStaff()) redirect("/admin");

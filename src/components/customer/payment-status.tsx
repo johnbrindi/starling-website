@@ -51,6 +51,8 @@ export function PaymentStatus({ initial, devSimulator }: { initial: PaymentDto; 
   }, [payment.status, router]);
 
   const [txn, setTxn] = useState("");
+  const [shot, setShot] = useState<{ blob: Blob; url: string } | null>(null);
+  const [preparing, setPreparing] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -58,15 +60,35 @@ export function PaymentStatus({ initial, devSimulator }: { initial: PaymentDto; 
   async function claim(e: React.FormEvent) {
     e.preventDefault();
     setClaimError(null);
-    if (txn.replace(/\s/g, "").length < 6) return setClaimError("Type the Transaction ID from the MTN SMS.");
+    const id = txn.replace(/\s/g, "");
+    if (!shot && id.length < 6) return setClaimError("Type the Transaction ID from the MTN SMS, or add a screenshot of the payment.");
     setClaiming(true);
     try {
-      const res = await api<{ payment: PaymentDto }>(`/api/payments/${payment.id}/claim`, { body: { transactionId: txn } });
+      const body = new FormData();
+      if (id) body.set("transactionId", id);
+      if (shot) body.set("screenshot", shot.blob, "payment.jpg");
+      const res = await api<{ payment: PaymentDto }>(`/api/payments/${payment.id}/claim`, { body });
       setPayment(res.payment);
     } catch (err) {
       setClaimError(err instanceof ApiError ? err.message : "Could not send the Transaction ID. Try again.");
     } finally {
       setClaiming(false);
+    }
+  }
+
+  async function pickScreenshot(file: File | undefined) {
+    setClaimError(null);
+    if (!file) return;
+    setPreparing(true);
+    try {
+      const blob = await shrinkImage(file);
+      if (blob.size > 2_000_000) throw new Error("too big");
+      if (shot) URL.revokeObjectURL(shot.url);
+      setShot({ blob, url: URL.createObjectURL(blob) });
+    } catch {
+      setClaimError("Could not use this picture. Choose a screenshot (JPG or PNG) under 2 MB.");
+    } finally {
+      setPreparing(false);
     }
   }
 
@@ -121,10 +143,27 @@ export function PaymentStatus({ initial, devSimulator }: { initial: PaymentDto; 
             </li>
             <li>
               <form onSubmit={claim} noValidate>
-                <Field label="2. Type the Transaction ID from the MTN SMS" htmlFor="txn" error={claimError ?? undefined} hint="MTN sends an SMS after the payment, with “Transaction ID” or “ID:”.">
-                  <Input id="txn" value={txn} onChange={(e) => setTxn(e.target.value)} inputMode="text" autoCapitalize="characters" autoComplete="off" placeholder="e.g. 9876543210" />
-                </Field>
-                <Button type="submit" size="lg" className="mt-3 w-full" loading={claiming}>
+                <p className="text-sm font-medium text-ink">2. Show us your payment (one of these is enough)</p>
+                <div className="mt-2 space-y-3 rounded-md border border-line p-3">
+                  <Field label="Transaction ID from the MTN SMS" htmlFor="txn" hint="MTN sends an SMS after the payment, with “Transaction ID” or “ID:”.">
+                    <Input id="txn" value={txn} onChange={(e) => setTxn(e.target.value)} inputMode="text" autoCapitalize="characters" autoComplete="off" placeholder="e.g. 9876543210" />
+                  </Field>
+                  <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-muted">
+                    <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
+                  </div>
+                  <div>
+                    <label htmlFor="shot" className="flex h-11 cursor-pointer items-center justify-center rounded-md border border-dashed border-brand-600 text-sm font-semibold text-brand-700">
+                      {preparing ? "Preparing…" : shot ? "Change screenshot" : "Add a screenshot of the payment"}
+                    </label>
+                    <input id="shot" type="file" accept="image/*" className="sr-only" onChange={(e) => pickScreenshot(e.target.files?.[0])} />
+                    {shot ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- local preview of the customer's own file
+                      <img src={shot.url} alt="Your payment screenshot" className="mt-2 max-h-48 w-full rounded-md border border-line object-contain" />
+                    ) : null}
+                  </div>
+                </div>
+                {claimError ? <p className="mt-2 text-sm text-bad">{claimError}</p> : null}
+                <Button type="submit" size="lg" className="mt-3 w-full" loading={claiming} disabled={preparing}>
                   I have paid, confirm my payment
                 </Button>
               </form>
@@ -138,8 +177,8 @@ export function PaymentStatus({ initial, devSimulator }: { initial: PaymentDto; 
           </span>
           <h1 className="mt-4 text-lg font-semibold">Checking your payment</h1>
           <p className="mt-2 text-sm text-muted">
-            Juthelink is confirming your MoMo payment of <strong className="text-ink">{formatXaf(payment.amountXaf)}</strong> (Transaction ID{" "}
-            <span className="font-mono text-ink">{payment.manual.transactionId}</span>). This usually takes a few minutes.
+            Juthelink is confirming your MoMo payment of <strong className="text-ink">{formatXaf(payment.amountXaf)}</strong>
+            {payment.manual.transactionId ? <> (Transaction ID <span className="font-mono text-ink">{payment.manual.transactionId}</span>)</> : payment.manual.hasScreenshot ? " (screenshot received)" : null}. This usually takes a few minutes.
           </p>
           <p className="mt-3 rounded-md bg-surface px-3 py-2 text-sm text-ink-soft">Keep this page open. As soon as it is confirmed, this phone is connected automatically.</p>
           <p className="mt-5 inline-flex items-center gap-2 text-sm text-muted">
@@ -202,4 +241,27 @@ export function PaymentStatus({ initial, devSimulator }: { initial: PaymentDto; 
       <p className="mt-6 text-center text-xs text-muted">Reference {payment.reference}</p>
     </Card>
   );
+}
+
+/** Downscales a photo/screenshot to at most 1600 px and re-encodes it as JPEG (keeps uploads small on slow Wi-Fi). */
+async function shrinkImage(file: File): Promise<Blob> {
+  if (!file.type.startsWith("image/")) throw new Error("not an image");
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = url;
+    });
+    const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.8));
+    return blob ?? file;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }

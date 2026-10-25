@@ -14,7 +14,7 @@ import { provisionNow } from "@/server/jobs/tick";
 export const GET = handler(async (_req, ctx: RouteContext<"/api/payments/[id]">) => {
   const { id } = await ctx.params;
   const { customer } = await requireCustomer();
-  let payment = await db.payment.findUnique({ where: { id }, include: { package: true } });
+  let payment = await db.payment.findUnique({ where: { id }, include: { package: true, proof: { select: { id: true } } } });
   if (!payment || payment.customerId !== customer.id) throw new AppError("NOT_FOUND", "Payment not found.");
   // Providers rate-limit status checks (Fapshi: 6/min per payment): check the provider at most every 10 s.
   const stale = !payment.lastCheckedAt || Date.now() - payment.lastCheckedAt.getTime() > 10_000;
@@ -24,7 +24,7 @@ export const GET = handler(async (_req, ctx: RouteContext<"/api/payments/[id]">)
     } catch (err) {
       log.warn("Status check failed; will retry", { paymentId: payment.id, error: (err as Error).message });
     }
-    payment = await db.payment.findUniqueOrThrow({ where: { id }, include: { package: true } });
+    payment = await db.payment.findUniqueOrThrow({ where: { id }, include: { package: true, proof: { select: { id: true } } } });
   }
   if (payment.status === "SUCCEEDED") await provisionNow(customer.id);
   return json({ payment: toPaymentDto(payment) });

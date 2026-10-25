@@ -5,7 +5,7 @@
  * Offline mode can never fabricate a payment or grant network access.
  * Bump VERSION when this file changes; the page offers "Update" when a new worker is waiting.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `starling-static-${VERSION}`;
 const PRECACHE = ["/offline", "/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"];
 
@@ -57,7 +57,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Starling Wi-Fi", body: "", url: "/account" };
+  let data = { title: "Juthelink", body: "", url: "/account" };
   try {
     data = { ...data, ...event.data.json() };
   } catch (_) {
@@ -68,8 +68,12 @@ self.addEventListener("push", (event) => {
       body: data.body,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
-      tag: data.type || "starling",
+      tag: data.tag || data.type || "starling",
       renotify: true,
+      // Staff alerts (new payment to confirm) stay on screen until tapped and vibrate like a chat message.
+      requireInteraction: Boolean(data.sticky),
+      vibrate: data.sticky ? [300, 120, 300, 120, 600] : [200],
+      timestamp: Date.now(),
       data: { url: data.url },
     }),
   );
@@ -78,10 +82,14 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = (event.notification.data && event.notification.data.url) || "/account";
+  // Reuse an open window of the same area (/admin or the customer app) and bring it to the target page.
+  const area = target.startsWith("/admin") ? "/admin" : "/account";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
       for (const w of wins) {
-        if (new URL(w.url).pathname.startsWith("/account") && "focus" in w) return w.focus();
+        if (new URL(w.url).pathname.startsWith(area) && "focus" in w) {
+          return w.focus().then((c) => (c && "navigate" in c ? c.navigate(target) : c));
+        }
       }
       return self.clients.openWindow(target);
     }),

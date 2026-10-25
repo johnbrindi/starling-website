@@ -37,6 +37,7 @@ model StaffUser {
 
   sessions       Session[]
   resetTokens    PasswordResetToken[]
+  pushSubscriptions StaffPushSubscription[]
 }
 
 model PasswordResetToken {
@@ -223,10 +224,24 @@ model Payment {
   updatedAt         DateTime        @updatedAt
 
   subscription Subscription?
+  proof        PaymentProof?
 
   @@unique([provider, providerReference])
   @@index([customerId, createdAt])
   @@index([status, createdAt])
+}
+
+/// Screenshot of a manual MoMo payment uploaded by the customer (shown to staff only).
+model PaymentProof {
+  id        String   @id @default(cuid())
+  paymentId String   @unique
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  mimeType  String
+  data      Bytes
+  /// SHA-256 of the image: the same screenshot cannot be reused for another purchase.
+  sha256    String   @unique
+  size      Int
+  createdAt DateTime @default(now())
 }
 
 model WebhookEvent {
@@ -457,6 +472,21 @@ model PushSubscription {
   failures   Int      @default(0)
 
   @@index([customerId])
+}
+
+/// Staff devices that receive "new MoMo payment to confirm" notifications.
+model StaffPushSubscription {
+  id        String    @id @default(cuid())
+  staffId   String
+  staff     StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  endpoint  String    @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime  @default(now())
+  failures  Int       @default(0)
+
+  @@index([staffId])
 }
 
 // ───────────────────────────── Operations ─────────────────────────────

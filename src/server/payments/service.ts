@@ -43,35 +43,73 @@ function newReference() {
 const MANUAL_UNCLAIMED_MINUTES = 30;
 const MANUAL_CLAIMED_HOURS = 48;
 
+export const transactionIdSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/\s+/g, "").toUpperCase())
+  .pipe(z.string().regex(/^[A-Z0-9.-]{6,30}$/, "Type the Transaction ID exactly as in the MTN SMS (letters and numbers)."));
+
 export const claimSchema = z.object({
-  transactionId: z
-    .string()
-    .trim()
-    .transform((v) => v.replace(/\s+/g, "").toUpperCase())
-    .pipe(z.string().regex(/^[A-Z0-9.-]{6,30}$/, "Type the Transaction ID exactly as in the MTN SMS (letters and numbers).")),
+  transactionId: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), transactionIdSchema.optional()),
 });
 
-/** Customer submits the MTN MoMo transaction ID of a manual payment. Grants nothing by itself. */
-export async function claimManualPayment(customerId: string, paymentId: string, input: z.infer<typeof claimSchema>) {
-  const payment = await db.payment.findUnique({ where: { id: paymentId } });
+export const MAX_PROOF_BYTES = 2_000_000;
+
+/** Accepts JPEG, PNG or WebP screenshots only (checked by content, not by file name). */
+export function detectImage(bytes: Uint8Array): "image/jpeg" | "image/png" | "image/webp" | null {
+  if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.length > 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "image/png";
+  if (bytes.length > 12 && Buffer.from(bytes.subarray(0, 4)).toString("latin1") === "RIFF" && Buffer.from(bytes.subarray(8, 12)).toString("latin1") === "WEBP") return "image/webp";
+  return null;
+}
+
+/**
+ * Customer proves a manual MoMo payment with the MTN transaction ID, a screenshot, or both.
+ * Grants nothing by itself: staff check their MoMo SMS and approve. Can be called again while
+ * pending to add the missing piece.
+ */
+export async function claimManualPayment(customerId: string, paymentId: string, input: { transactionId?: string; screenshot?: Uint8Array }) {
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { proof: { select: { id: true } } } });
   if (!payment || payment.customerId !== customerId) throw new AppError("NOT_FOUND", "Payment not found.");
-  if (payment.provider !== "MANUAL") throw new AppError("CONFLICT", "This payment does not need a transaction ID.");
+  if (payment.provider !== "MANUAL") throw new AppError("CONFLICT", "This payment does not need a confirmation.");
   if (payment.status !== "PENDING") throw new AppError("CONFLICT", `This payment is already ${payment.status.toLowerCase()}.`);
+  if (!input.transactionId && !input.screenshot) {
+    throw new AppError("VALIDATION_FAILED", "Type the Transaction ID or add a screenshot of the payment.", [{ path: "transactionId", message: "Required (or add a screenshot)." }]);
+  }
+  let image: { mimeType: string; sha256: string; data: Uint8Array<ArrayBuffer> } | null = null;
+  if (input.screenshot) {
+    if (input.screenshot.length > MAX_PROOF_BYTES) throw new AppError("VALIDATION_FAILED", "The screenshot is too large (max 2 MB).", [{ path: "screenshot", message: "Too large." }]);
+    const mimeType = detectImage(input.screenshot);
+    if (!mimeType) throw new AppError("VALIDATION_FAILED", "Upload a photo or screenshot (JPG, PNG or WebP).", [{ path: "screenshot", message: "Not an image." }]);
+    image = { mimeType, sha256: createHash("sha256").update(input.screenshot).digest("hex"), data: new Uint8Array(input.screenshot) };
+  }
+  const txn = input.transactionId && !payment.providerReference ? input.transactionId : undefined;
   try {
-    const moved = await db.payment.updateMany({
-      where: { id: payment.id, status: "PENDING" },
-      data: { providerReference: input.transactionId, claimedAt: new Date(), expiresAt: new Date(Date.now() + MANUAL_CLAIMED_HOURS * 3600_000) },
+    await db.$transaction(async (tx) => {
+      const moved = await tx.payment.updateMany({
+        where: { id: payment.id, status: "PENDING" },
+        data: { ...(txn ? { providerReference: txn } : {}), claimedAt: new Date(), expiresAt: new Date(Date.now() + MANUAL_CLAIMED_HOURS * 3600_000) },
+      });
+      if (moved.count === 0) throw new AppError("CONFLICT", "This payment was just updated. Please reload the page.");
+      if (image) {
+        await tx.paymentProof.upsert({
+          where: { paymentId: payment.id },
+          create: { paymentId: payment.id, mimeType: image.mimeType, data: image.data, sha256: image.sha256, size: image.data.length },
+          update: { mimeType: image.mimeType, data: image.data, sha256: image.sha256, size: image.data.length, createdAt: new Date() },
+        });
+      }
     });
-    if (moved.count === 0) throw new AppError("CONFLICT", "This payment was just updated. Please reload the page.");
   } catch (err) {
-    // (provider, providerReference) is unique: one MoMo transaction can pay for one pass only.
     if ((err as { code?: string }).code === "P2002") {
+      // (provider, providerReference) and the screenshot hash are unique: one payment pays for one pass.
+      const target = String((err as { meta?: { target?: unknown } }).meta?.target ?? "") + String((err as Error).message);
+      if (/sha256/i.test(target)) throw new AppError("CONFLICT", "This screenshot was already used for another purchase.", [{ path: "screenshot", message: "Already used." }]);
       throw new AppError("CONFLICT", "This Transaction ID was already used for another purchase.", [{ path: "transactionId", message: "Already used." }]);
     }
     throw err;
   }
-  await audit({ actorType: "CUSTOMER", actorId: customerId, action: "payment.manual_claimed", targetType: "Payment", targetId: payment.id, metadata: { transactionId: input.transactionId } });
-  return (await db.payment.findUnique({ where: { id: paymentId }, include: { package: true } }))!;
+  await audit({ actorType: "CUSTOMER", actorId: customerId, action: "payment.manual_claimed", targetType: "Payment", targetId: payment.id, metadata: { transactionId: txn ?? payment.providerReference, screenshot: Boolean(image) } });
+  return (await db.payment.findUnique({ where: { id: paymentId }, include: { package: true, proof: { select: { id: true } } } }))!;
 }
 
 /** Staff confirm a manual MoMo payment after checking the MTN SMS. Creates the pass and login. */

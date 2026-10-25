@@ -13,7 +13,7 @@ export default async function PayPage(props: PageProps<"/pay/[id]">) {
   const { id } = await props.params;
   const ctx = await getCustomer();
   if (!ctx) redirect(`/login?next=/pay/${id}`);
-  const payment = await db.payment.findUnique({ where: { id }, include: { package: true } });
+  const payment = await db.payment.findUnique({ where: { id }, include: { package: true, proof: { select: { id: true } } } });
   if (!payment || payment.customerId !== ctx.customer.id) notFound();
   const e = env();
   return (

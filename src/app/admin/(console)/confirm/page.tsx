@@ -7,6 +7,7 @@ import { formatPhone } from "@/lib/phone";
 import { Alert, Badge, Card, Empty, PageHeader } from "@/components/ui/primitives";
 import { ActionButton } from "@/components/admin/admin-context";
 import { AutoRefresh } from "@/components/admin/auto-refresh";
+import { StaffPushToggle } from "@/components/admin/staff-push";
 
 /**
  * Manual MTN MoMo payments waiting for staff. Approve only after the MTN SMS on the business phone
@@ -22,7 +23,7 @@ export default async function ConfirmPaymentsPage() {
   const [waiting, recent] = await Promise.all([
     db.payment.findMany({
       where: { provider: "MANUAL", status: "PENDING" },
-      include: { package: { select: { name: true } }, customer: { select: { name: true } } },
+      include: { package: { select: { name: true } }, customer: { select: { name: true } }, proof: { select: { id: true } } },
       orderBy: [{ claimedAt: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
       take: 50,
     }),
@@ -42,6 +43,7 @@ export default async function ConfirmPaymentsPage() {
         title={`MoMo payments to confirm${claimed.length ? ` (${claimed.length})` : ""}`}
         description={`Check the MTN SMS on the business phone (${env().MANUAL_MOMO_NUMBER}). Approve only if the amount and Transaction ID match. The page refreshes by itself.`}
       />
+      <div className="mb-4"><StaffPushToggle /></div>
       {claimed.length === 0 ? (
         <Card><Empty>Nothing to confirm right now.</Empty></Card>
       ) : (
@@ -51,13 +53,24 @@ export default async function ConfirmPaymentsPage() {
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-xl font-semibold">{formatXaf(p.amountXaf)} <span className="text-base font-normal text-muted">· {p.package.name}</span></p>
-                  <p className="mt-1 text-sm">Transaction ID <span className="font-mono text-base font-semibold">{p.providerReference}</span></p>
+                  {p.providerReference ? (
+                    <p className="mt-1 text-sm">Transaction ID <span className="font-mono text-base font-semibold">{p.providerReference}</span></p>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">No Transaction ID: check the screenshot and your SMS.</p>
+                  )}
                   <p className="mt-1 text-sm text-muted">
                     From {formatPhone(p.payerPhone)} · {p.customer.name ?? "customer"} · sent {formatDateTime(p.claimedAt!)}
                   </p>
                 </div>
                 <Badge tone="warn">waiting</Badge>
               </div>
+              {p.proof ? (
+                <a href={`/api/admin/payments/${p.id}/proof`} target="_blank" rel="noopener" className="mt-3 block">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- private, staff-only image */}
+                  <img src={`/api/admin/payments/${p.id}/proof`} alt="Customer's payment screenshot" className="max-h-72 w-full rounded-md border border-line bg-surface object-contain" />
+                  <span className="mt-1 block text-xs text-brand-700">Screenshot from the customer: tap to open full size. Still check your own SMS.</span>
+                </a>
+              ) : null}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <ActionButton path={`/api/admin/payments/${p.id}/approve`} label="Approve" variant="primary" size="md" confirm={`Approve ${formatXaf(p.amountXaf)} from ${formatPhone(p.payerPhone)}? Only if the MTN SMS shows this payment.`} showResult />
                 <ActionButton path={`/api/admin/payments/${p.id}/reject`} label="Reject" variant="danger" size="md" askReason="Why? (e.g. no money received, wrong amount)" showResult />

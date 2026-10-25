@@ -9,7 +9,7 @@ import { AdminProvider } from "@/components/admin/admin-context";
 import { AdminNav } from "@/components/admin/nav";
 import { StaffSignOut } from "@/components/admin/auth-forms";
 
-export const metadata: Metadata = { title: { default: "Console", template: "%s · Console" }, robots: { index: false } };
+export const metadata: Metadata = { title: { default: "Console", template: "%s · Console" }, robots: { index: false }, manifest: "/admin.webmanifest", appleWebApp: { capable: true, title: "JL Admin", statusBarStyle: "default" } };
 
 export default async function ConsoleLayout({ children }: LayoutProps<"/admin">) {
   const ctx = await getStaff();

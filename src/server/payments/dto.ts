@@ -4,7 +4,7 @@ import type { PaymentDto } from "@/lib/types";
 import { momoUssd } from "./providers/manual";
 import { env } from "../env";
 
-export function toPaymentDto(p: Payment & { package: Package }): PaymentDto {
+export function toPaymentDto(p: Payment & { package: Package; proof?: { id: string } | null }): PaymentDto {
   return {
     id: p.id,
     reference: p.reference,
@@ -19,7 +19,7 @@ export function toPaymentDto(p: Payment & { package: Package }): PaymentDto {
     expiresAt: p.expiresAt.toISOString(),
     manual:
       p.provider === "MANUAL"
-        ? { momoNumber: env().MANUAL_MOMO_NUMBER, ussd: momoUssd(env().MANUAL_MOMO_NUMBER, p.amountXaf), transactionId: p.providerReference, claimedAt: p.claimedAt?.toISOString() ?? null }
+        ? { momoNumber: env().MANUAL_MOMO_NUMBER, ussd: momoUssd(env().MANUAL_MOMO_NUMBER, p.amountXaf), transactionId: p.providerReference, claimedAt: p.claimedAt?.toISOString() ?? null, hasScreenshot: Boolean(p.proof) }
         : null,
   };
 }

@@ -489,51 +489,47 @@
 
 <!-- ============================== PART 14 ============================== -->
 <section class="part">
-  <div class="part-head"><div class="part-num">Part 14</div><h2>Tenda outdoor access point</h2><p class="lead">The Tenda must only <b>broadcast the Wi-Fi</b> (“AP mode”). The MikroTik does everything else. If the Tenda acts as a router, all customers look like one phone and the hotspot cannot tell them apart.</p></div>
+  <div class="part-head"><div class="part-num">Part 14</div><h2>Tenda outdoor access point</h2><p class="lead">The Tenda only <b>broadcasts the Wi-Fi</b>; the MikroTik does the login, addresses and internet. Good news: this Tenda (OAP series, managed by the CloudFi app) is already in <b>AP mode</b> from the factory. You do <b>not</b> need the CloudFi app.</p></div>
 
-  <h3>14.1 Configure the Tenda on your desk first</h3>
-  <div class="step"><div class="n">1</div><div><b class="t">Wire it to your PC (not to the MikroTik yet)</b>
-    Tenda cable → <b>PoE</b> port of the Tenda injector. Injector <b>LAN</b> port → your PC. Injector power → socket. Wait 1–2 minutes for the Tenda to start.</div></div>
-  <div class="step"><div class="n">2</div><div><b class="t">Reset the Tenda</b>
-    With power on, press and hold its reset button (or the button on the unit) for about 8 seconds, until the lights flash. Wait 1 minute.</div></div>
-  <div class="step"><div class="n">3</div><div><b class="t">Give your PC an address in the Tenda's range</b>
-    Look at the label on the Tenda for the default address (often <code>192.168.2.1</code>, user <code>admin</code>, password <code>admin</code>). On Windows: Settings → Network → Ethernet → IP assignment → Edit → <b>Manual</b>, IPv4 on, IP address <code>192.168.2.100</code>, Subnet mask <code>255.255.255.0</code>, Gateway empty → Save.</div></div>
-  <div class="step"><div class="n">4</div><div><b class="t">Open the Tenda settings</b>
-    Browser → <code>http://192.168.2.1</code> (or the address on the label) → log in. Set a new admin password if asked (write it in Part 0).</div></div>
+  <div class="box warn"><b>Why you could not open it:</b> the label says <span class="mono">192.168.0.254</span>, but when the Tenda is plugged into a network that gives out addresses (your MikroTik), it automatically takes one, e.g. <span class="mono">10.5.50.37</span>, and stops answering on 192.168.0.254. We ask the MikroTik which address it gave.</div>
 
-  <div class="step"><div class="n">5</div><div><b class="t">Choose AP mode</b>
-    Find <b>Working Mode / Operation Mode / Quick Setup</b> → choose <b>AP</b> (Access Point). <b>Not</b> Router, WISP, Client+AP or Repeater.</div></div>
+  <h3>14.1 Wire it</h3>
+  <p>MikroTik <b>port 2</b> → short cable → injector <b>LAN</b>. Injector <b>PoE</b> → long cable → Tenda. Injector power → socket. Wait 2 minutes; the Tenda light becomes steady. Never plug the PoE port into the MikroTik or your PC.</p>
 
-  <div class="step"><div class="n">6</div><div><b class="t">Wi-Fi name and security</b>
-    Wireless / Wi-Fi settings: SSID <code>Starling Wi-Fi</code> (exactly the same as the MikroTik), Security <b>None / Open</b>, Country <b>Cameroon</b> (if listed), Channel <b>1, 6 or 11</b> (choose a different one from the hAP lite if you keep both), Channel width <b>20 MHz</b>. If there is <b>Client Isolation / AP Isolation</b>, turn it <b>on</b>.</div></div>
+  <h3>14.2 Find the Tenda's address</h3>
+  <div class="step"><div class="n">1</div><div><b class="t">Look in the MikroTik's address list</b>
+    Winbox → <span class="click">IP → DHCP Server → Leases</span>. Find the line whose <b>Host Name</b> contains <b>OAP</b> or <b>Tenda</b>, or whose <b>MAC Address</b> matches the MAC on the Tenda's label. Its <b>Address</b> (e.g. <span class="mono">10.5.50.37</span>) is the Tenda's address. Or in <span class="click">New Terminal</span>:
+    <pre>/ip dhcp-server lease print where host-name~"OAP|Tenda|tenda"</pre></div></div>
+  <div class="box ifnot">No line? Check the injector wiring and the light. Then <span class="click">IP → ARP</span> and look for the label's MAC. Still nothing: hold the Tenda's <b>Reset</b> button for about <b>8 seconds</b> until the light goes off, wait 2 minutes, and look again.</div>
 
-  <div class="step"><div class="n">7</div><div><b class="t">LAN address and DHCP</b>
-    LAN / Network settings: IP Address <code>10.5.50.2</code>, Subnet mask <code>255.255.255.0</code>, Gateway <code>10.5.50.1</code>, DNS <code>10.5.50.1</code>. <b>DHCP server: OFF</b> (if the option exists). Save. The Tenda reboots; your browser loses it. That is expected.</div></div>
+  <div class="step"><div class="n">2</div><div><b class="t">Keep that address forever</b>
+    In Leases, right-click the Tenda line → <span class="click">Make Static</span>. Then let the Tenda itself reach the internet (for its clock and updates) without the login page: <span class="click">IP → Hotspot → IP Bindings → +</span> → MAC Address = the Tenda's MAC, Type <b>bypassed</b>, Comment <code>Tenda AP</code> → OK. In the terminal:
+    <pre>/ip dhcp-server lease make-static [find where host-name~"OAP|Tenda|tenda"]
+/ip hotspot ip-binding add mac-address=TENDA-MAC type=bypassed comment="Tenda AP"</pre>
+    (Replace TENDA-MAC with the MAC from the lease, like <span class="mono">D8:32:14:AA:BB:CC</span>. This bypass is only for the Tenda box itself; customers connected through it still get the login page.)</div></div>
 
-  <div class="step"><div class="n">8</div><div><b class="t">Put your PC back to automatic</b>
-    Windows: Ethernet → IP assignment → Edit → <b>Automatic (DHCP)</b> → Save.</div></div>
-</section>
+  <h3>14.3 Configure the Tenda</h3>
+  <div class="step"><div class="n">1</div><div><b class="t">Open its settings</b>
+    On your PC (bypassed, Part 9) open <code>http://10.5.50.37</code> (your address from 14.2) → user <code>admin</code>, password <code>admin</code>. Set a new password when asked and write it in Part 0.</div></div>
+  <div class="box ifnot">The page does not open: make sure the PC is on the MikroTik (yellow cable, port 4) and bypassed. As a last resort, wire the injector's LAN port straight to the PC, set the PC to IP <span class="mono">192.168.0.10</span>, mask <span class="mono">255.255.255.0</span>, and open <code>http://192.168.0.254</code>. Afterwards set the PC back to automatic.</div>
+  <div class="step"><div class="n">2</div><div><b class="t">Quick Setup, 2.4 GHz</b>
+    <span class="click">Quick Setup</span> → Radio Band <b>2.4GHz</b> → Working Mode <b>AP</b> → SSID <code>Juthelink Wi-Fi</code> → Security Mode <b>None</b> → <span class="click">Save</span>. (No Wi-Fi password: the Juthelink login page is the lock.)</div></div>
+  <div class="step"><div class="n">3</div><div><b class="t">Quick Setup, 5 GHz</b>
+    Same page → Radio Band <b>5GHz</b> → same SSID <code>Juthelink Wi-Fi</code>, Security <b>None</b> → <span class="click">Save</span>. Phones pick the best band by themselves.</div></div>
+  <div class="step"><div class="n">4</div><div><b class="t">Customers must not see each other</b>
+    <span class="click">Wireless → SSID</span> → for each band, select the SSID → <b>Isolate Client: Enable</b>, Broadcast SSID: Enable, Guest: Disable → <span class="click">Save</span>.</div></div>
+  <div class="step"><div class="n">5</div><div><b class="t">Radio settings</b>
+    <span class="click">Wireless → RF Settings</span> → Country/Region <b>Cameroon</b> (or your region) → 2.4 GHz Channel <b>1</b>, <b>6</b> or <b>11</b> (a different one from the hAP lite's own Wi-Fi), Channel Bandwidth <b>20 MHz</b> → <span class="click">Save</span>.</div></div>
+  <div class="step"><div class="n">6</div><div><b class="t">Leave these as they are</b>
+    <span class="click">Internet Settings → LAN Setup</span>: IP Address Type <b>DHCP</b> (the MikroTik keeps its address fixed), DHCP Server <b>Disable</b>. Cloud / CloudFi management: leave <b>Local</b>.</div></div>
+  <div class="box tip">Want the MikroTik's own Wi-Fi to have the same name? Winbox → <span class="click">Wireless → wlan1 → Wireless</span> → SSID <code>Juthelink Wi-Fi</code> → OK. Same name on both is fine; phones move to the strongest.</div>
 
-<section class="part">
-  <h3>14.2 Connect the Tenda to the MikroTik</h3>
-  <div class="diagram">
-    <div class="flow"><span class="node">MikroTik port 2</span><span class="arrow">→ cable →</span><span class="node">Injector LAN</span><span class="arrow">  </span><span class="node">Injector PoE</span><span class="arrow">→ long outdoor cable →</span><span class="node">Tenda</span></div>
-    <p class="small" style="text-align:center">The injector also plugs into the power socket. Never plug the PoE port into the MikroTik or your PC.</p>
-  </div>
-  <div class="step"><div class="n">1</div><div><b class="t">Plug in</b>
-    Short cable from <b>MikroTik port 2</b> to the injector's <b>LAN</b> port. Keep the PoE port going to the Tenda.</div></div>
-  <div class="step"><div class="n">2</div><div><b class="t">Check the Tenda is visible to the MikroTik</b>
-    Winbox → <span class="click">New Terminal</span>:
-    <pre>/ping 10.5.50.2 count=4</pre></div></div>
-  <div class="box see">Four replies. From your PC (bypassed), <code>http://10.5.50.2</code> opens the Tenda settings.</div>
-  <div class="box ifnot">No reply: check the cable is in port 2 and the injector's LAN port; redo 14.1 step 7 (address 10.5.50.2, gateway 10.5.50.1).</div>
+  <h3>14.4 Test through the Tenda</h3>
+  <p>Stand near the Tenda (or switch off the hAP lite's Wi-Fi for the test: <span class="click">Wireless → wlan1 → ✗ Disable</span>). Phone (not bypassed) → <b>Juthelink Wi-Fi</b> → open <code>http://neverssl.com</code>.</p>
+  <div class="box see">The blue <b>Juthelink</b> login page. In <span class="click">IP → DHCP Server → Leases</span> your phone has its <b>own</b> MAC and a 10.5.50.x address.</div>
+  <div class="box ifnot">The phone gets a 192.168.x.x address, or no login page: the Tenda is not in AP mode or its DHCP Server is on (14.3 steps 2 and 6). All phones showing the same MAC in <span class="click">IP → Hotspot → Hosts</span> means the same thing.</div>
 
-  <div class="step"><div class="n">3</div><div><b class="t">Test through the Tenda</b>
-    Stand near the Tenda (or turn off the hAP lite Wi-Fi for the test: <span class="click">Wireless</span> → select wlan1 → <span class="click">✗ Disable</span>). Phone → Starling Wi-Fi → open <code>http://neverssl.com</code>.</div></div>
-  <div class="box see">The blue Starling login page. In Winbox, <span class="click">IP → DHCP Server → Leases</span> shows your phone's own MAC address and a 10.5.50.x address.</div>
-  <div class="box ifnot">The phone gets a 192.168.x.x address, or several phones show the same MAC in <span class="click">IP → Hotspot → Hosts</span>: the Tenda is still in router mode or its DHCP is on. Redo 14.1 steps 5 and 7.</div>
-
-  <h3>14.3 Mounting outdoors</h3>
+  <h3>14.5 Mounting outdoors</h3>
   <ul>
     <li>Mount it 3–6 m high on a pole or wall, facing where customers sit, antennas pointing up.</li>
     <li>Leave a “drip loop” (a U-shaped bend) in the cable below the Tenda so rain runs off, and close the cable cover tightly.</li>

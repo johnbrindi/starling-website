@@ -17,6 +17,7 @@ interface Pkg {
 }
 
 interface Sale {
+  credentialId: string;
   reference: string;
   packageName: string;
   amountXaf: number;
@@ -97,7 +98,9 @@ export function SellForm({ packages, networkName, simulatedRouter }: { packages:
         </div>
         {simulatedRouter ? <p className="mt-3 text-center text-xs text-warn">Test mode: the router is simulated, so this login only works on the fake router.</p> : null}
         <div className="mt-4 flex justify-center gap-2 print:hidden">
-          <Button onClick={() => window.print()}>Print slip</Button>
+          <a href={`/admin/receipt/${sale.credentialId}?print=1`} className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700">
+            Print receipt
+          </a>
           <Button variant="secondary" onClick={next}>
             New sale
           </Button>

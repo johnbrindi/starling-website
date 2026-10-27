@@ -11,11 +11,17 @@ PACKAGES = [  # (profile name, RouterOS interval, price note, devices)
     ("24hours", "1d", "210 FCFA", 1),
     ("1week", "7d", "1400 FCFA", 1),
     ("2weeks", "14d", "2600 FCFA", 1),
-    ("1month", "30d", "4650 FCFA", 2),
+    ("1month", "30d", "4650 FCFA", 1),
 ]
 
-ON_LOGIN = r''':local u $user
-:local n ("exp-" . $u)
+# One device per login: a new login disconnects the login's other devices and deletes their MAC
+# cookies (so they cannot log back in by themselves). The remaining time is not affected.
+KICK_OTHERS = r''':local u $user
+:local m $"mac-address"
+:foreach i in=[/ip hotspot active find where user=$u and mac-address!=$m] do={:do {/ip hotspot active remove $i} on-error={}}
+:do {/ip hotspot cookie remove [find where user=$u and mac-address!=$m]} on-error={}'''
+
+ON_LOGIN = KICK_OTHERS + "\n" + r''':local n ("exp-" . $u)
 :if ([:len [/system scheduler find where name=$n]] = 0) do={
 /system scheduler add name=$n interval=DURATION policy=read,write,test comment="Starling: ends this hotspot user's time" on-event=(":do {/ip hotspot active remove [find where user=\"" . $u . "\"]} on-error={}; :do {/ip hotspot cookie remove [find where user=\"" . $u . "\"]} on-error={}; :do {/ip hotspot user remove [find where name=\"" . $u . "\"]} on-error={}; /system scheduler remove [find where name=\"" . $n . "\"]")
 :delay 1s
@@ -53,9 +59,10 @@ def main():
     ]
     for name, interval, price, devices in PACKAGES:
         script = ON_LOGIN.replace("DURATION", interval)
+        # shared-users is one more than allowed so the new device is accepted; the script then removes the old one.
         out += upsert(
             name,
-            f"shared-users={devices} rate-limit={RATE} idle-timeout=none "
+            f"shared-users={devices + 1} rate-limit={RATE} idle-timeout=none "
             f"keepalive-timeout=3h status-autorefresh=1m add-mac-cookie=yes mac-cookie-timeout=3d "
             f"on-login={ros_quote(script)}",
         )

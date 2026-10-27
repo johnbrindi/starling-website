@@ -22,7 +22,7 @@ describe("router pull protocol", () => {
   it("sends new logins as plain-text add lines and marks them provisioned once the router confirms", async () => {
     const c = await cred("hbw4x4", "547210");
     const first = await routerPull([]);
-    expect(first.body).toMatch(/^a,hbw4x4,547210,1hour,6700\d{5}$/);
+    expect(first.body).toMatch(/^a,hbw4x4,547210,1hour,6700\d{5},0$/);
     expect((await db.accessCredential.findUniqueOrThrow({ where: { id: c.id } })).provisionState).toBe("PENDING");
     const second = await routerPull(["hbw4x4"]);
     expect(second.confirmed).toBe(1);

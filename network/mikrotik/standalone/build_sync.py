@@ -1,5 +1,6 @@
 """Generates juthelink-sync.rsc: the router polls the Juthelink website every 10 s and creates/removes
-the hotspot logins customers bought online (Fapshi). No VPN needed (works behind Starlink CGNAT).
+the hotspot logins customers bought online, runs staff commands (disconnect, pause, block, speed),
+reports online devices every 30 s, and blocks hotspot sharing. No VPN needed (works behind Starlink CGNAT).
 
 Usage:  python3 network/mikrotik/standalone/build_sync.py https://your-site.vercel.app YOUR_ROUTER_PULL_KEY
 Then upload juthelink-sync.rsc to the router (Files) and run:  /import file-name=juthelink-sync.rsc
@@ -16,6 +17,7 @@ SCRIPT = r''':local data ""
 } on-error={ :log warning "juthelink-sync: website not reachable" }
 :if ($got) do={
   :local done ""
+  :local cdone ""
   :while ([:len $data] > 0) do={
     :local nl [:find $data "\n"]
     :local line ""
@@ -40,19 +42,68 @@ SCRIPT = r''':local data ""
         :set rest [:pick $rest ($c3 + 1) [:len $rest]]
         :local c4 [:find $rest ","]
         :local prof [:pick $rest 0 $c4]
-        :local ph [:pick $rest ($c4 + 1) [:len $rest]]
+        :set rest [:pick $rest ($c4 + 1) [:len $rest]]
+        :local c5 [:find $rest ","]
+        :local ph [:pick $rest 0 $c5]
+        :local lim [:pick $rest ($c5 + 1) [:len $rest]]
         :do {
           :local id [/ip hotspot user find where name=$u]
-          :if ([:len $id] = 0) do={ /ip hotspot user add name=$u password=$p profile=$prof comment=$ph } else={ /ip hotspot user set $id password=$p profile=$prof }
+          :if ([:len $id] = 0) do={ /ip hotspot user add name=$u password=$p profile=$prof comment=$ph limit-bytes-total=$lim } else={ /ip hotspot user set $id password=$p profile=$prof limit-bytes-total=$lim }
           :set done ($done . $u . ".")
         } on-error={ :log warning ("juthelink-sync: could not add " . $u . " (profile " . $prof . ")") }
       }
+      :if ($cmd = "c") do={
+        :local c2 [:find $rest ","]
+        :local cid [:pick $rest 0 $c2]
+        :set rest [:pick $rest ($c2 + 1) [:len $rest]]
+        :local c3 [:find $rest ","]
+        :local act [:pick $rest 0 $c3]
+        :local arg [:pick $rest ($c3 + 1) [:len $rest]]
+        :do {
+          :if ($act = "k" || $act = "p") do={
+            :do { /ip hotspot active remove [find where user=$arg] } on-error={}
+            :do { /ip hotspot cookie remove [find where user=$arg] } on-error={}
+          }
+          :if ($act = "q") do={ :do { /ip hotspot active remove [find where user=$arg] } on-error={} }
+          :if ($act = "p") do={
+            :do { /ip hotspot user disable [find where name=$arg] } on-error={}
+            :do { /system scheduler remove [find where name=("exp-" . $arg)] } on-error={}
+          }
+          :if ($act = "r") do={ :do { /ip hotspot user enable [find where name=$arg] } on-error={} }
+          :if ($act = "b") do={
+            :if ([:len [/ip hotspot ip-binding find where mac-address=$arg]] = 0) do={ /ip hotspot ip-binding add mac-address=$arg type=blocked comment="Juthelink: blocked device" } else={ /ip hotspot ip-binding set [find where mac-address=$arg] type=blocked }
+            :do { /ip hotspot active remove [find where mac-address=$arg] } on-error={}
+            :do { /ip hotspot host remove [find where mac-address=$arg] } on-error={}
+          }
+          :if ($act = "u") do={ :do { /ip hotspot ip-binding remove [find where mac-address=$arg and type=blocked] } on-error={} }
+          :set cdone ($cdone . $cid . ".")
+        } on-error={ :log warning ("juthelink-sync: command failed " . $act . " " . $arg) }
+      }
     }
   }
-  :if ([:len $done] > 0) do={
-    :do { /tool fetch url=("PULLURL&ok=" . $done) output=user as-value check-certificate=no } on-error={ :log warning "juthelink-sync: could not confirm" }
+  :if ([:len ($done . $cdone)] > 0) do={
+    :do { /tool fetch url=("PULLURL&ok=" . $done . "&c=" . $cdone) output=user as-value check-certificate=no } on-error={ :log warning "juthelink-sync: could not confirm" }
   }
 }'''
+
+# Every ~30 s: the list of logged-in devices for the admin "Online now" page.
+REPORT = r''':local out ""
+:foreach i in=[/ip hotspot active find] do={
+  :do {
+    :set out ($out . $i . "," . [/ip hotspot active get $i user] . "," . [/ip hotspot active get $i mac-address] . "," . [/ip hotspot active get $i address] . "," . [/ip hotspot active get $i uptime] . "," . [/ip hotspot active get $i bytes-in] . "," . [/ip hotspot active get $i bytes-out] . "\n")
+  } on-error={}
+}
+:if ([:len $out] = 0) do={ :set out "none" }
+:do { /tool fetch url="REPORTURL" http-method=post http-data=$out output=none check-certificate=no } on-error={ :log warning "juthelink-report: website not reachable" }'''
+
+# Speed tiers staff can give one login (must match SPEED_TIERS in src/server/network/commands.ts).
+SPEED_TIERS = [("slow", "1M/2M"), ("normal", "2M/5M"), ("fast", "4M/10M"), ("max", "8M/20M")]
+
+# Same one-device rule as the plan profiles (see build_profiles.py).
+KICK_OTHERS = r''':local u $user
+:local m $"mac-address"
+:foreach i in=[/ip hotspot active find where user=$u and mac-address!=$m] do={:do {/ip hotspot active remove $i} on-error={}}
+:do {/ip hotspot cookie remove [find where user=$u and mac-address!=$m]} on-error={}'''
 
 
 def ros_quote(s: str) -> str:
@@ -69,14 +120,30 @@ def main():
         sys.exit("The key must be the ROUTER_PULL_KEY (24+ letters/numbers)")
     host = re.sub(r"^https?://", "", base).split(":")[0]
     source = SCRIPT.replace("PULLURL", f"{base}/api/router/pull?key={key}")
+    report = REPORT.replace("REPORTURL", f"{base}/api/router/report?key={key}")
     out = [
-        "# Juthelink - automatic logins from the website (generated by build_sync.py). Safe to import again.",
+        "# Juthelink - automatic logins, device report, speed tiers and no-sharing rule (generated by build_sync.py). Safe to import again.",
         ':do { /system scheduler remove [find where name="juthelink-sync"] } on-error={}',
         ':do { /system script remove [find where name="juthelink-sync"] } on-error={}',
         f"/system script add name=juthelink-sync policy=read,write,test source={ros_quote(source)}",
-        '/system scheduler add name=juthelink-sync interval=10s on-event="/system script run juthelink-sync" policy=read,write,test comment="Juthelink: fetch new logins"',
+        '/system scheduler add name=juthelink-sync interval=10s on-event="/system script run juthelink-sync" policy=read,write,test comment="Juthelink: fetch new logins and commands"',
+        ':do { /system scheduler remove [find where name="juthelink-report"] } on-error={}',
+        ':do { /system script remove [find where name="juthelink-report"] } on-error={}',
+        f"/system script add name=juthelink-report policy=read,write,test source={ros_quote(report)}",
+        '/system scheduler add name=juthelink-report interval=30s on-event="/system script run juthelink-report" policy=read,write,test comment="Juthelink: report online devices"',
         f':if ([:len [/ip hotspot walled-garden ip find where dst-host="{host}"]] = 0) do={{ /ip hotspot walled-garden ip add action=accept dst-host="{host}" comment="Juthelink website (before login)" }}',
-        ':put "Juthelink sync installed: the router now checks the website every 10 seconds"',
+    ]
+    for tier, rate in SPEED_TIERS:
+        name = f"jl-{tier}"
+        out += [
+            f':if ([:len [/ip hotspot user profile find where name="{name}"]] = 0) do={{ /ip hotspot user profile add name="{name}" }}',
+            f'/ip hotspot user profile set [find where name="{name}"] shared-users=2 rate-limit={rate} idle-timeout=none keepalive-timeout=3h '
+            f"status-autorefresh=1m add-mac-cookie=yes mac-cookie-timeout=3d on-login={ros_quote(KICK_OTHERS)}",
+        ]
+    # No hotspot sharing: packets to customers leave with TTL 1, so a phone cannot pass the connection on.
+    out += [
+        ':do { :local hif [/ip hotspot get [:pick [/ip hotspot find] 0] interface]; :if ([:len [/ip firewall mangle find where comment="Juthelink: no hotspot sharing"]] = 0) do={ /ip firewall mangle add chain=postrouting out-interface=$hif action=change-ttl new-ttl=set:1 passthrough=yes comment="Juthelink: no hotspot sharing" } } on-error={ :put "Could not add the no-sharing rule: is the hotspot set up?" }',
+        ':put "Juthelink sync installed: logins every 10 s, device report every 30 s, speed tiers, no hotspot sharing"',
         "",
     ]
     path = Path(__file__).with_name("juthelink-sync.rsc")

@@ -61,12 +61,15 @@ export default async function CustomerPage(props: PageProps<"/admin/customers/[i
               <div key={cr.id} className="px-4 py-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono">{maskCode(cr.username)}</span>
-                  <Badge tone={isEntitled(cr) ? "ok" : cr.status === "REVOKED" ? "bad" : "neutral"}>{isEntitled(cr) ? "entitled" : cr.status.toLowerCase()}</Badge>
+                  <Badge tone={cr.pausedAt ? "warn" : isEntitled(cr) ? "ok" : cr.status === "REVOKED" ? "bad" : "neutral"}>{cr.pausedAt ? "paused" : isEntitled(cr) ? "entitled" : cr.status.toLowerCase()}</Badge>
                   <Badge tone={cr.provisionState === "PROVISIONED" ? "ok" : cr.provisionState === "FAILED" ? "bad" : "neutral"}>router: {cr.provisionState.toLowerCase().replace("_", " ")}</Badge>
                   <span className="text-muted">
                     {formatDateTime(cr.validFrom)} → {formatDateTime(cr.validUntil)} · {cr.maxDevices} device(s) · used {formatBytes(cr.bytesIn + cr.bytesOut)}
                   </span>
                   <span className="ml-auto flex gap-2">
+                    <a href={`/admin/receipt/${cr.id}?print=1`} className="inline-flex h-8 items-center rounded-md border border-line px-3 text-sm text-ink hover:bg-surface">Receipt</a>
+                    {canRevoke && cr.status === "ACTIVE" && !cr.pausedAt ? <ActionButton path={`/api/admin/credentials/${cr.id}/pause`} label="Pause" confirm="Pause this login? Remaining time is kept." /> : null}
+                    {canRevoke && cr.pausedAt ? <ActionButton path={`/api/admin/credentials/${cr.id}/resume`} label="Resume" variant="primary" /> : null}
                     {canNet ? <ActionButton path={`/api/admin/credentials/${cr.id}/resync`} label="Re-sync router" /> : null}
                     {canRevoke && cr.status === "ACTIVE" ? (
                       <ActionButton path={`/api/admin/credentials/${cr.id}/revoke`} askReason="Reason for revoking this access" label="Revoke" variant="danger" />

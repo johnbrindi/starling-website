@@ -23,6 +23,7 @@ export async function getAccessStatus(customerId: string): Promise<AccessStatusD
   let sessions: { macAddress: string | null; ipAddress: string | null; startedAt: Date }[] = [];
   if (credential) {
     if (credential.status === "REVOKED") state = "REVOKED";
+    else if (credential.pausedAt && credential.status === "ACTIVE") state = "PAUSED";
     else if (!isEntitled(credential, now)) state = credential.validFrom > now ? "SCHEDULED" : "EXPIRED";
     else if (credential.provisionState !== "PROVISIONED") state = "PROVISIONING";
     else {

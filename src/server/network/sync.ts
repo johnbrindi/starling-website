@@ -1,5 +1,5 @@
 import "server-only";
-import type { Prisma } from "@/generated/prisma/client";
+import type { AccessCredential, Prisma } from "@/generated/prisma/client";
 import { db } from "../db";
 import { env } from "../env";
 import { enqueue } from "../jobs/queue";
@@ -7,6 +7,7 @@ import { errorMessage, log } from "../logger";
 import { isEntitled } from "../subscriptions/service";
 import { activateTicketsOnFirstLogin } from "../tickets";
 import { getNetworkAdapter } from "./index";
+import type { ActiveSession } from "./types";
 
 async function recordStatus(ok: boolean, detail: Record<string, unknown>, error?: string) {
   const adapter = getNetworkAdapter();
@@ -28,7 +29,7 @@ export async function checkNetworkHealth() {
  */
 export async function syncSessions(now = new Date()) {
   const adapter = getNetworkAdapter();
-  if (adapter.deferred) return { active: 0, kicked: 0 }; // the router enforces sessions itself in pull mode
+  if (adapter.deferred) return { active: 0, kicked: 0 }; // pull mode: the router reports sessions itself (/api/router/report)
   let sessions;
   try {
     sessions = await adapter.listActiveSessions();
@@ -36,6 +37,31 @@ export async function syncSessions(now = new Date()) {
     await recordStatus(false, {}, errorMessage(err));
     throw err;
   }
+  const { kicked } = await applyActiveSessions(sessions, now, {
+    onUnentitled: async (cred) => {
+      const n = await adapter.disconnectUser(cred.username).catch(() => 0);
+      await enqueue("DEPROVISION_CREDENTIAL", { credentialId: cred.id }, { dedupeKey: `deprovision:${cred.id}`, maxAttempts: 30 });
+      return n;
+    },
+    alignTimeLeft: adapter.alignTimeLeft?.bind(adapter),
+  });
+  await recordStatus(true, { activeSessions: sessions.length, kicked, adapter: adapter.kind, simulated: adapter.simulated });
+  return { active: sessions.length, kicked };
+}
+
+/**
+ * Records the router's list of logged-in devices: opens/updates NetworkSession rows, closes the ones
+ * that disappeared, starts printed tickets on their first login, and totals usage per credential.
+ * Used by the RouterOS adapter (polled) and by router-pull mode (the router posts its list).
+ */
+export async function applyActiveSessions(
+  sessions: ActiveSession[],
+  now: Date,
+  opts: {
+    onUnentitled: (cred: AccessCredential) => Promise<number>;
+    alignTimeLeft?: (users: { username: string; validUntil: Date }[]) => Promise<unknown>;
+  },
+) {
   const usernames = [...new Set(sessions.map((s) => s.username))];
   let creds = await db.accessCredential.findMany({ where: { username: { in: usernames } } });
   // Printed tickets start their clock at the first login seen on the router.
@@ -50,6 +76,7 @@ export async function syncSessions(now = new Date()) {
   }
   const byName = new Map(creds.map((c) => [c.username, c]));
   let kicked = 0;
+  const unentitled = new Set<string>();
 
   for (const s of sessions) {
     const cred = byName.get(s.username);
@@ -75,10 +102,10 @@ export async function syncSessions(now = new Date()) {
         },
       });
     }
-    if (cred && !isEntitled(cred, now)) {
-      kicked += await adapter.disconnectUser(cred.username).catch(() => 0);
-      await enqueue("DEPROVISION_CREDENTIAL", { credentialId: cred.id }, { dedupeKey: `deprovision:${cred.id}`, maxAttempts: 30 });
-      log.warn("Disconnected session without entitlement", { credentialId: cred.id, status: cred.status });
+    if (cred && (!isEntitled(cred, now) || cred.pausedAt) && !unentitled.has(cred.id)) {
+      unentitled.add(cred.id);
+      kicked += await opts.onUnentitled(cred);
+      log.warn("Session without entitlement", { credentialId: cred.id, status: cred.status, paused: Boolean(cred.pausedAt) });
     }
   }
 
@@ -92,9 +119,9 @@ export async function syncSessions(now = new Date()) {
   }
 
   // Keep the router's own countdown (hotspot status page) equal to the real expiry.
-  if (adapter.alignTimeLeft) {
+  if (opts.alignTimeLeft) {
     const live = creds.filter((c) => isEntitled(c, now) && !(c.startsOnFirstLogin && !c.firstLoginAt)).map((c) => ({ username: c.username, validUntil: c.validUntil }));
-    await adapter.alignTimeLeft(live).catch((err) => log.warn("Could not align router time-left", { error: errorMessage(err) }));
+    await opts.alignTimeLeft(live).catch((err) => log.warn("Could not align router time-left", { error: errorMessage(err) }));
   }
 
   // Usage accounting per credential (sum over its sessions).
@@ -105,8 +132,7 @@ export async function syncSessions(now = new Date()) {
       data: { bytesIn: agg._sum.bytesIn ?? 0n, bytesOut: agg._sum.bytesOut ?? 0n, lastUsageAt: now },
     });
   }
-  await recordStatus(true, { activeSessions: sessions.length, kicked, adapter: adapter.kind, simulated: adapter.simulated });
-  return { active: sessions.length, kicked };
+  return { kicked };
 }
 
 /**

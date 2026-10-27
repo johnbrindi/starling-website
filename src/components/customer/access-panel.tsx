@@ -237,6 +237,9 @@ export function AccessPanel({ initial, networkSimulated }: Props) {
             </LinkButton>
           </div>
         ) : null}
+        {status.state === "PAUSED" ? (
+          <div className="px-4 py-6 text-center text-sm text-muted sm:px-5">Your Wi-Fi access is paused by Juthelink. Your remaining time is kept and continues when it is resumed.</div>
+        ) : null}
         {status.state === "REVOKED" ? (
           <div className="px-4 py-6 text-center text-sm text-muted sm:px-5">Your access was ended by our support team. Please contact us for help.</div>
         ) : null}
@@ -262,6 +265,7 @@ function StateBadge({ state }: { state: AccessStatusDto["state"] }) {
     SCHEDULED: ["Scheduled", "neutral"],
     EXPIRED: ["Expired", "bad"],
     REVOKED: ["Revoked", "bad"],
+    PAUSED: ["Paused", "warn"],
     NONE: ["No pass", "neutral"],
   };
   const [label, tone] = map[state];

@@ -11,7 +11,7 @@ import { Alert, Card, Field, Input } from "@/components/ui/primitives";
 import { Button, LinkButton, Spinner } from "@/components/ui/button";
 import { CheckIcon, PhoneIcon } from "@/components/ui/icons";
 
-export function PaymentStatus({ initial, devSimulator }: { initial: PaymentDto; devSimulator: boolean }) {
+export function PaymentStatus({ initial, devSimulator, support = "" }: { initial: PaymentDto; devSimulator: boolean; support?: string }) {
   const router = useRouter();
   const [payment, setPayment] = useState(initial);
   const [error, setError] = useState<string | null>(null);
@@ -181,6 +181,7 @@ export function PaymentStatus({ initial, devSimulator }: { initial: PaymentDto; 
             {payment.manual.transactionId ? <> (Transaction ID <span className="font-mono text-ink">{payment.manual.transactionId}</span>)</> : payment.manual.hasScreenshot ? " (screenshot received)" : null}. This usually takes a few minutes.
           </p>
           <p className="mt-3 rounded-md bg-surface px-3 py-2 text-sm text-ink-soft">Keep this page open. As soon as it is confirmed, this phone is connected automatically.</p>
+          <WhatsAppApproval payment={payment} support={support} />
           <p className="mt-5 inline-flex items-center gap-2 text-sm text-muted">
             <Spinner /> Waiting for confirmation…
           </p>
@@ -264,4 +265,51 @@ async function shrinkImage(file: File): Promise<Blob> {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/**
+ * Until payments are automatic: ask the customer to message us on WhatsApp so we approve quickly.
+ * Before login only this website is reachable, so the WhatsApp app link (it can use mobile data),
+ * a copyable message and a call link are offered.
+ */
+function WhatsAppApproval({ payment, support }: { payment: PaymentDto; support: string }) {
+  const [copied, setCopied] = useState(false);
+  const digits = support.replace(/\D/g, "");
+  if (digits.length < 8 || !payment.manual) return null;
+  const lines = [
+    "Hello Juthelink, please approve my Wi-Fi payment.",
+    `Plan: ${payment.packageName} (${formatXaf(payment.amountXaf)})`,
+    `MoMo number: ${formatPhone(payment.payerPhone)}`,
+    payment.manual.transactionId ? `Transaction ID: ${payment.manual.transactionId}` : "I sent a screenshot of the payment.",
+    `Reference: ${payment.reference}`,
+  ];
+  const text = lines.join("\n");
+  const pretty = `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`.trim();
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard blocked: the message is shown
+    }
+  }
+  return (
+    <div className="mt-4 rounded-md border-2 border-[#25D366] p-3 text-left">
+      <p className="text-sm font-semibold text-ink">Get approved faster: send us a WhatsApp message</p>
+      <p className="mt-1 text-xs text-muted">Send this message to {pretty}. WhatsApp uses your mobile data until you are connected.</p>
+      <pre className="mt-2 whitespace-pre-wrap rounded bg-surface p-2 text-xs text-ink-soft">{text}</pre>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <a href={`whatsapp://send?phone=${digits}&text=${encodeURIComponent(text)}`} className="col-span-2 inline-flex h-11 items-center justify-center rounded-md bg-[#25D366] text-sm font-semibold text-white">
+          Send on WhatsApp
+        </a>
+        <button type="button" onClick={copy} className="inline-flex h-10 items-center justify-center rounded-md border border-line text-sm font-medium text-ink">
+          {copied ? "Message copied" : "Copy message"}
+        </button>
+        <a href={`tel:+${digits}`} className="inline-flex h-10 items-center justify-center rounded-md border border-line text-sm font-medium text-ink">
+          Call us
+        </a>
+      </div>
+    </div>
+  );
 }

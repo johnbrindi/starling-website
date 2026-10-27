@@ -360,7 +360,8 @@ export async function expireDue(now = new Date()): Promise<number> {
   await db.subscription.updateMany({ where: { status: "SCHEDULED", startsAt: { lte: now } }, data: { status: "ACTIVE" } });
 
   const due = await db.accessCredential.findMany({
-    where: { status: "ACTIVE", validUntil: { lte: now } },
+    // Paused logins keep their remaining time; they cannot expire until resumed.
+    where: { status: "ACTIVE", validUntil: { lte: now }, pausedAt: null },
     select: { id: true, customerId: true, username: true },
     take: 200,
   });
@@ -368,7 +369,7 @@ export async function expireDue(now = new Date()): Promise<number> {
   for (const c of due) {
     const changed = await db.$transaction(async (tx) => {
       const moved = await tx.accessCredential.updateMany({
-        where: { id: c.id, status: "ACTIVE", validUntil: { lte: now } },
+        where: { id: c.id, status: "ACTIVE", validUntil: { lte: now }, pausedAt: null },
         data: { status: "EXPIRED", provisionState: "DEPROVISION_PENDING" },
       });
       if (moved.count === 0) return false;
@@ -400,7 +401,7 @@ export async function revokeCredential(credentialId: string, staffId: string, re
     const cred = await tx.accessCredential.findUnique({ where: { id: credentialId } });
     if (!cred) throw new AppError("NOT_FOUND", "Credential not found");
     if (cred.status === "REVOKED") return cred;
-    await tx.accessCredential.update({ where: { id: cred.id }, data: { status: "REVOKED", provisionState: "DEPROVISION_PENDING" } });
+    await tx.accessCredential.update({ where: { id: cred.id }, data: { status: "REVOKED", provisionState: "DEPROVISION_PENDING", pausedAt: null } });
     await tx.subscription.updateMany({
       where: { credentialId: cred.id, status: { in: ["ACTIVE", "SCHEDULED"] } },
       data: { status: "REVOKED", revokedAt: new Date(), revokedReason: reason },

@@ -16,7 +16,7 @@ const PACKAGES = [
   { slug: "24-hours", name: "24 Hours", priceXaf: 210, durationMinutes: 24 * 60, description: "A full day of internet.", sortOrder: 30, isFeatured: true },
   { slug: "1-week", name: "1 Week", priceXaf: 1400, durationMinutes: 7 * 24 * 60, description: "Seven days of internet.", sortOrder: 40 },
   { slug: "2-weeks", name: "2 Weeks", priceXaf: 2600, durationMinutes: 14 * 24 * 60, description: "Fourteen days of internet.", sortOrder: 50 },
-  { slug: "1-month", name: "1 Month", priceXaf: 4650, durationMinutes: 30 * 24 * 60, description: "Thirty days of internet. Best value.", sortOrder: 60, maxDevices: 2 },
+  { slug: "1-month", name: "1 Month", priceXaf: 4650, durationMinutes: 30 * 24 * 60, description: "Thirty days of internet. Best value.", sortOrder: 60, maxDevices: 1 },
 ];
 
 const POLICY = "Fair use: very heavy downloads may be slowed at busy times so everyone gets a good connection.";

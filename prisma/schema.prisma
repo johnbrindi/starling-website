@@ -374,6 +374,8 @@ model AccessCredential {
   rateLimit         String?
   maxDevices        Int              @default(1)
   networkProfileName String?
+  /// Set while staff have paused this login: no access, and the clock is frozen (added back on resume).
+  pausedAt          DateTime?
   provisionState    ProvisionState   @default(PENDING)
   provisionedAt     DateTime?
   provisionedUntil  DateTime?
@@ -395,6 +397,31 @@ model AccessCredential {
 }
 
 /// A device session actually seen on the router (/ip hotspot active) or in RADIUS accounting.
+/// One-off command for the router (router-pull mode), re-sent until the router confirms it.
+/// Actions: k = disconnect user, q = reconnect user (apply new speed), p = pause user, r = resume user,
+/// b = block device (MAC), u = unblock device (MAC).
+model NetworkCommand {
+  id           String    @id @default(cuid())
+  action       String
+  target       String
+  credentialId String?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  sentAt       DateTime?
+  doneAt       DateTime?
+
+  @@index([doneAt, createdAt])
+}
+
+/// Devices blocked by staff (MikroTik ip-binding type=blocked).
+model DeviceBlock {
+  id          String   @id @default(cuid())
+  macAddress  String   @unique
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+}
+
 model NetworkSession {
   id              String           @id @default(cuid())
   credentialId    String?

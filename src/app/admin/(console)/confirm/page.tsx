@@ -29,7 +29,7 @@ export default async function ConfirmPaymentsPage() {
     }),
     db.payment.findMany({
       where: { provider: "MANUAL", status: { in: ["SUCCEEDED", "FAILED", "EXPIRED"] }, updatedAt: { gt: since } },
-      include: { package: { select: { name: true } } },
+      include: { package: { select: { name: true } }, subscription: { select: { credentialId: true } } },
       orderBy: { updatedAt: "desc" },
       take: 20,
     }),
@@ -103,7 +103,10 @@ export default async function ConfirmPaymentsPage() {
             {recent.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                 <span>{formatXaf(p.amountXaf)} · {p.package.name} · {formatPhone(p.payerPhone)} {p.providerReference ? <span className="font-mono text-xs">· {p.providerReference}</span> : null}</span>
-                <Badge tone={p.status === "SUCCEEDED" ? "ok" : p.status === "FAILED" ? "bad" : "neutral"}>{p.status === "SUCCEEDED" ? "approved" : p.status === "FAILED" ? "rejected" : "expired"}</Badge>
+                <span className="flex items-center gap-2">
+                  {p.subscription ? <Link href={`/admin/receipt/${p.subscription.credentialId}?print=1`} className="text-xs text-brand-700 underline">Receipt</Link> : null}
+                  <Badge tone={p.status === "SUCCEEDED" ? "ok" : p.status === "FAILED" ? "bad" : "neutral"}>{p.status === "SUCCEEDED" ? "approved" : p.status === "FAILED" ? "rejected" : "expired"}</Badge>
+                </span>
               </li>
             ))}
           </ul>

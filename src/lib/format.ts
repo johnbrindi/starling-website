@@ -57,7 +57,8 @@ export function formatBytes(bytes: number | bigint | null | undefined): string {
 }
 
 export function formatDateTime(iso: string | Date): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  // Cameroon time everywhere (the server runs in UTC).
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Douala" }).format(new Date(iso));
 }
 
 /** "ABCDEFGH" -> "ABCD-EFGH" for readability. */

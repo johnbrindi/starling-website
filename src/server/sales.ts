@@ -62,6 +62,7 @@ export async function createCashSale(input: z.infer<typeof cashSaleSchema>, staf
   const password = credentialPassword(cred);
   return {
     paymentId: payment.id,
+    credentialId: cred.id,
     customerId: payment.customerId,
     reference: payment.reference,
     packageName: pkg.name,

@@ -8,7 +8,7 @@ import { tick } from "@/server/jobs/tick";
 import { log, errorMessage } from "@/server/logger";
 
 /**
- * GET /api/router/pull?key=ROUTER_PULL_KEY&ok=user1.user2
+ * GET /api/router/pull?key=ROUTER_PULL_KEY&ok=user1.user2&c=commandId1.commandId2
  * Called by the MikroTik scheduler (network/mikrotik/standalone/juthelink-sync.rsc) every ~10 s.
  * Returns plain text: "a,user,password,profile,phone" or "d,user" per line. Also drives the
  * background maintenance (expiry, payment reconciliation) so no separate cron is needed.
@@ -23,8 +23,9 @@ export async function GET(req: Request) {
     }
     await rateLimit(`router-pull:${clientIp(req)}`, 60, 60);
     const ok = (url.searchParams.get("ok") ?? "").split(".").filter(Boolean);
-    const res = await routerPull(ok);
-    await recordRouterCheckIn({ confirmed: res.confirmed, adds: res.adds, deletes: res.deletes, ip: clientIp(req) });
+    const done = (url.searchParams.get("c") ?? "").split(".").filter(Boolean);
+    const res = await routerPull(ok, new Date(), done);
+    await recordRouterCheckIn({ confirmed: res.confirmed, adds: res.adds, deletes: res.deletes, commands: res.commands, ip: clientIp(req) });
     after(async () => {
       try {
         await tick();

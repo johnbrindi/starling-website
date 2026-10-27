@@ -37,7 +37,7 @@ export interface PaymentDto {
   manual: { momoNumber: string; ussd: string; transactionId: string | null; claimedAt: string | null; hasScreenshot: boolean } | null;
 }
 
-export type AccessState = "NONE" | "PROVISIONING" | "READY" | "ONLINE" | "SCHEDULED" | "EXPIRED" | "REVOKED";
+export type AccessState = "NONE" | "PROVISIONING" | "READY" | "ONLINE" | "SCHEDULED" | "EXPIRED" | "REVOKED" | "PAUSED";
 
 export interface AccessStatusDto {
   serverTime: string;

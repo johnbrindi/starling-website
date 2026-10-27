@@ -461,6 +461,25 @@
   <div class="box warn">Approve only what you see on your own MoMo SMS. A customer's screenshot is not proof. Each Transaction ID can be used for <b>one</b> purchase only; the system refuses it a second time.</div>
   <div class="box tip"><b>Later, automatic payments:</b> once Fapshi (or Campay live) approves your account, the website is switched to automatic payments by changing one setting. The router and these files stay the same.</div>
 
+  <h3>Rules on the Wi-Fi (automatic)</h3>
+  <ul>
+    <li><b>One device per login.</b> If the same username logs in on a second device, the first device is disconnected at once and cannot log back in by itself. The time keeps counting normally. (Family logins: 2 devices.)</li>
+    <li><b>No hotspot sharing.</b> A customer who turns on “mobile hotspot” to share the Wi-Fi: the other devices get no internet. The customer's own phone keeps working.</li>
+  </ul>
+  <div class="box tip">These rules come from <span class="mono">starling-profiles.rsc</span> and <span class="mono">juthelink-sync.rsc</span>. After any update of the kit, import both again (Part 12 step 4): <code>/import file-name=starling-profiles.rsc</code> then <code>/import file-name=juthelink-sync.rsc</code>.</div>
+
+  <h3>Online now: see and control every device</h3>
+  <p>Admin site → <b>Online now</b> lists every connected device (username, customer, plan, device MAC, time online, data used, time left), refreshed every 15 seconds. For each one:</p>
+  <table>
+    <tr><th style="width:28%">Button</th><th>What it does</th></tr>
+    <tr><td>Disconnect</td><td>Logs the device out now. The login still works if they log in again.</td></tr>
+    <tr><td>Pause / Resume</td><td>Stops the login without losing time: the remaining time is frozen and given back on Resume.</td></tr>
+    <tr><td>Block device</td><td>That phone/laptop can no longer use the Wi-Fi at all, with any login. Unblock it in “Blocked devices”.</td></tr>
+    <tr><td>Revoke login</td><td>Ends the login for good (asks for a reason).</td></tr>
+    <tr><td>Speed / Data limit</td><td>Give this login another speed (Slow 2, Normal 5, Fast 10, Very fast 20 Mbit/s) or a total data allowance in MB. Applied within about 10 seconds.</td></tr>
+    <tr><td>Receipt</td><td>Prints a small receipt: username, password, plan, activation and expiry date/time.</td></tr>
+  </table>
+
   <h3>Make a login yourself (cash, or a customer who calls you)</h3>
   <p>Admin site → <b>Sell a pass</b> → choose the plan → (optional) their phone → <b>Record cash sale</b>. You get a username and password to give them. It reaches the router automatically within about 10 seconds. This works from your phone anywhere.</p>
 
@@ -577,7 +596,8 @@
     <tr><td>See all family logins</td><td><span class="click">IP → Hotspot → Users → Find</span> → <code>FAMILY</code>.</td></tr>
     <tr><td>Find a customer's login (lost login)</td><td>The customer: Juthelink page → <b>My account</b>. You: <span class="click">IP → Hotspot → Users → Find</span> → their phone number.</td></tr>
     <tr><td>Check automatic logins are working</td><td><span class="click">System → Scheduler</span> → <b>juthelink-sync</b> Run Count goes up every 10 s; <span class="click">Log</span> has no “website not reachable”.</td></tr>
-    <tr><td>See who is online now</td><td><span class="click">IP → Hotspot → Active</span> (user, address, uptime, data).</td></tr>
+    <tr><td>See who is online now</td><td>Admin site → <b>Online now</b> (or Winbox <span class="click">IP → Hotspot → Active</span>).</td></tr>
+    <tr><td>Print a customer receipt</td><td>Admin → Sell a pass → <b>Print receipt</b>; or the <b>Receipt</b> button in Online now, Confirm MoMo (last 48 hours) or the customer's page.</td></tr>
     <tr><td>See when a customer's time ends</td><td><span class="click">IP → Hotspot → Users</span> → Comment column (“Started … | ends …”), or <span class="click">System → Scheduler</span> → <span class="mono">exp-username</span> → Next Run.</td></tr>
     <tr><td>Disconnect a phone (e.g. customer changed phone)</td><td><span class="click">IP → Hotspot → Active</span> → select the line → <span class="click">−</span> (Remove). The customer can log in again on the new phone; their time keeps running.</td></tr>
     <tr><td>Stop a customer completely</td><td><span class="click">IP → Hotspot → Users</span> → select → <span class="click">✗ Disable</span>, then remove them from Active.</td></tr>

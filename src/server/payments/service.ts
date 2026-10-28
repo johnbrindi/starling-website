@@ -12,6 +12,7 @@ import { getSettings } from "../settings";
 import { env } from "../env";
 import { fulfilPayment } from "../subscriptions/service";
 import { notify } from "../notifications/service";
+import { notifyStaffOfPurchase } from "../notifications/staff";
 import { getActiveProvider, getProvider } from "./registry";
 import { ProviderError, type MobileMoneyChannel, type ProviderId, type StatusResult } from "./types";
 
@@ -242,7 +243,8 @@ export async function verifyPayment(paymentId: string): Promise<Payment> {
   const payment = await db.payment.findUnique({ where: { id: paymentId } });
   if (!payment) throw new AppError("NOT_FOUND", "Payment not found");
   if (payment.status === "SUCCEEDED") {
-    await fulfilPayment(payment.id); // idempotent: repairs a crash between verification and fulfilment
+    const repaired = await fulfilPayment(payment.id); // idempotent: repairs a crash between verification and fulfilment
+    if (repaired.created) await notifyStaffOfPurchase(payment.id);
     return (await db.payment.findUnique({ where: { id: paymentId } }))!;
   }
   if (payment.status !== "PENDING" || payment.provider === "CASH") return payment;
@@ -286,8 +288,10 @@ export async function verifyPayment(paymentId: string): Promise<Payment> {
       return (await db.payment.findUnique({ where: { id: paymentId } }))!;
     }
     await db.payment.update({ where: { id: payment.id }, data: base });
-    await fulfilPayment(payment.id);
+    const fulfilled = await fulfilPayment(payment.id);
     await audit({ actorType: "PROVIDER", action: "payment.succeeded", targetType: "Payment", targetId: payment.id, metadata: { provider: payment.provider } });
+    // Tell the admins once (only the call that actually created the pass sends it).
+    if (fulfilled.created) await notifyStaffOfPurchase(payment.id);
   } else if (result.status === "failed" || result.status === "cancelled" || result.status === "expired") {
     const status = result.status === "failed" ? "FAILED" : result.status === "cancelled" ? "CANCELLED" : "EXPIRED";
     const moved = await db.payment.updateMany({

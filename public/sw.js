@@ -5,7 +5,7 @@
  * Offline mode can never fabricate a payment or grant network access.
  * Bump VERSION when this file changes; the page offers "Update" when a new worker is waiting.
  */
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `starling-static-${VERSION}`;
 const PRECACHE = ["/offline", "/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"];
 
@@ -72,7 +72,7 @@ self.addEventListener("push", (event) => {
       renotify: true,
       // Staff alerts (new payment to confirm) stay on screen until tapped and vibrate like a chat message.
       requireInteraction: Boolean(data.sticky),
-      vibrate: data.sticky ? [300, 120, 300, 120, 600] : [200],
+      vibrate: data.sticky ? [300, 120, 300, 120, 600] : [250, 100, 250],
       timestamp: Date.now(),
       data: { url: data.url },
     }),

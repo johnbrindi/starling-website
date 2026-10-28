@@ -13,6 +13,8 @@ export interface StaffPush {
   /** Same tag replaces an older notification for the same thing. */
   tag: string;
   url: string;
+  /** Stays on screen until tapped (things the admin must act on). */
+  sticky?: boolean;
 }
 
 const APPROVER_ROLES = (Object.keys(ROLE_PERMISSIONS) as (keyof typeof ROLE_PERMISSIONS)[]).filter((r) => ROLE_PERMISSIONS[r].includes("payments:approve"));
@@ -27,7 +29,7 @@ export async function pushToStaff(msg: StaffPush, opts: { staffId?: string } = {
   const webpush = (await import("web-push")).default;
   const e = env();
   webpush.setVapidDetails(e.VAPID_SUBJECT, e.VAPID_PUBLIC_KEY!, e.VAPID_PRIVATE_KEY!);
-  const payload = JSON.stringify({ ...msg, type: msg.tag, sticky: true });
+  const payload = JSON.stringify({ ...msg, type: msg.tag, sticky: msg.sticky ?? true });
   const results = await Promise.allSettled(
     subs.map((s) =>
       webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 6 * 3600, urgency: "high", timeout: 8000 }),
@@ -64,5 +66,28 @@ export async function notifyStaffOfClaim(paymentId: string) {
     });
   } catch (err) {
     log.warn("Staff notification failed", { paymentId, error: (err as Error).message });
+  }
+}
+
+/** "New purchase" for every admin phone, sent once when an online payment is confirmed. Never throws. */
+export async function notifyStaffOfPurchase(paymentId: string) {
+  try {
+    const p = await db.payment.findUnique({
+      where: { id: paymentId },
+      include: { package: { select: { name: true } }, customer: { select: { name: true } }, subscription: { select: { credential: { select: { username: true } } } } },
+    });
+    if (!p || p.status !== "SUCCEEDED") return;
+    const via = p.provider === "FAPSHI" ? "MTN MoMo (Fapshi)" : p.provider === "MANUAL" ? "MTN MoMo" : p.provider.toLowerCase();
+    const who = p.customer.name ? `${p.customer.name} (${formatPhone(p.payerPhone)})` : formatPhone(p.payerPhone);
+    const login = p.subscription?.credential.username;
+    await pushToStaff({
+      title: `New purchase: ${formatXaf(p.amountXaf)} · ${p.package.name}`,
+      body: `${who} paid by ${via}.${login ? ` Login ${login} created and sent to the Wi-Fi.` : ""}`,
+      tag: `purchase-${p.id}`,
+      url: "/admin/online",
+      sticky: false,
+    });
+  } catch (err) {
+    log.warn("Purchase notification failed", { paymentId, error: (err as Error).message });
   }
 }

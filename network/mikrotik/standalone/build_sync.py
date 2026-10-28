@@ -2,7 +2,7 @@
 the hotspot logins customers bought online, runs staff commands (disconnect, pause, block, speed),
 reports online devices every 30 s, and blocks hotspot sharing. No VPN needed (works behind Starlink CGNAT).
 
-Usage:  python3 network/mikrotik/standalone/build_sync.py https://your-site.vercel.app YOUR_ROUTER_PULL_KEY
+Usage:  python3 network/mikrotik/standalone/build_sync.py https://www.juthelink.site YOUR_ROUTER_PULL_KEY
 Then upload juthelink-sync.rsc to the router (Files) and run:  /import file-name=juthelink-sync.rsc
 """
 import re
@@ -118,7 +118,7 @@ def main():
         sys.exit(__doc__)
     base, key = sys.argv[1].rstrip("/"), sys.argv[2]
     if not re.fullmatch(r"https?://[A-Za-z0-9.:-]+", base):
-        sys.exit("The website address must look like https://your-site.vercel.app (no path)")
+        sys.exit("The website address must look like https://www.juthelink.site (no path)")
     if not re.fullmatch(r"[A-Za-z0-9_-]{24,}", key):
         sys.exit("The key must be the ROUTER_PULL_KEY (24+ letters/numbers)")
     host = re.sub(r"^https?://", "", base).split(":")[0]
@@ -134,8 +134,11 @@ def main():
         ':do { /system script remove [find where name="juthelink-report"] } on-error={}',
         f"/system script add name=juthelink-report policy=read,write,test source={ros_quote(report)}",
         '/system scheduler add name=juthelink-report interval=30s on-event="/system script run juthelink-report" policy=read,write,test comment="Juthelink: report online devices"',
-        f':if ([:len [/ip hotspot walled-garden ip find where dst-host="{host}"]] = 0) do={{ /ip hotspot walled-garden ip add action=accept dst-host="{host}" comment="Juthelink website (before login)" }}',
     ]
+    # The website must open before login (with and without "www.", since one redirects to the other).
+    site_hosts = [host] + ([host[4:]] if host.startswith("www.") else [f"www.{host}"] if host.count(".") == 1 else [])
+    for h in site_hosts:
+        out.append(f':if ([:len [/ip hotspot walled-garden ip find where dst-host="{h}"]] = 0) do={{ /ip hotspot walled-garden ip add action=accept dst-host="{h}" comment="Juthelink website (before login)" }}')
     # The Fapshi payment page and its API must open before the customer is logged in.
     for pay_host in PAYMENT_HOSTS:
         out.append(f':if ([:len [/ip hotspot walled-garden ip find where dst-host="{pay_host}"]] = 0) do={{ /ip hotspot walled-garden ip add action=accept dst-host="{pay_host}" comment="Payment page (before login)" }}')

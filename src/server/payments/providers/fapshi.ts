@@ -7,6 +7,10 @@ export interface FapshiConfig {
   apiUser: string;
   apiKey: string;
   webhookSecret?: string;
+  /** Direct Pay (prompt on the phone) is activated by Fapshi on live accounts; until then the payment page is used. */
+  directPay?: boolean;
+  /** Email sent with payment pages so the customer only types their MoMo number. */
+  receiptEmail?: string;
   timeoutMs?: number;
 }
 
@@ -28,10 +32,13 @@ interface FapshiTransaction {
 }
 
 /**
- * Fapshi (https://docs.fapshi.com) "direct pay": the customer receives the MTN MoMo / Orange Money
- * prompt on their phone and approves with their PIN. Status: GET /payment-status/{transId}
- * (max 6 requests per minute per transaction). Webhook: POST with header x-wh-secret.
- * Note: direct pay must be activated by Fapshi on live accounts.
+ * Fapshi (https://docs.fapshi.com). Two ways to collect, same status/webhook handling:
+ * - Direct Pay: the customer gets the MTN MoMo prompt on their phone and approves with their PIN.
+ *   Disabled by default on live accounts until Fapshi support activates it (cfg.directPay).
+ * - Initiate Pay: Fapshi's hosted payment page (checkout.fapshi.com); the customer enters their
+ *   number there and is sent back to returnUrl. Works on any verified account.
+ * Status: GET /payment-status/{transId} (max 6 requests per minute per transaction).
+ * Webhook: POST with header x-wh-secret.
  */
 export class FapshiProvider implements PaymentProviderAdapter {
   readonly id = "FAPSHI" as const;
@@ -67,6 +74,7 @@ export class FapshiProvider implements PaymentProviderAdapter {
   }
 
   async initiate(input: InitiateInput): Promise<InitiateResult> {
+    if (!this.cfg.directPay) return this.initiatePage(input);
     const phone = input.phone.replace(/^\+237/, ""); // Fapshi expects 9 digits, e.g. 67XXXXXXX
     const res = await this.request<{ transId?: string; message?: string }>("POST", "/direct-pay", {
       amount: input.amountXaf,
@@ -84,6 +92,27 @@ export class FapshiProvider implements PaymentProviderAdapter {
         input.channel === "cm.orange"
           ? "Check your phone and approve the Orange Money request with your PIN. If no prompt appears, dial #150*50#."
           : "Check your phone and approve the MTN MoMo request with your PIN. If no prompt appears, dial *126#.",
+    };
+  }
+
+  /** Hosted payment page (Initiate Pay). */
+  private async initiatePage(input: InitiateInput): Promise<InitiateResult> {
+    const res = await this.request<{ link?: string; transId?: string }>("POST", "/initiate-pay", {
+      amount: input.amountXaf,
+      ...(this.cfg.receiptEmail ? { email: this.cfg.receiptEmail } : {}),
+      ...(input.returnUrl ? { redirectUrl: input.returnUrl } : {}),
+      externalId: input.reference,
+      userId: input.reference,
+      message: input.description.slice(0, 100),
+    });
+    if (!res.transId || !res.link || !/^https:\/\/checkout\.fapshi\.com\//.test(res.link)) {
+      throw new ProviderError("Fapshi did not return a payment page", true);
+    }
+    return {
+      providerReference: res.transId,
+      status: "pending",
+      checkoutUrl: res.link,
+      instructions: "On the Fapshi page, enter your MTN MoMo number, tap Pay, then approve the request on your phone with your PIN.",
     };
   }
 

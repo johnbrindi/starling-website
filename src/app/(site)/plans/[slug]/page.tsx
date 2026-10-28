@@ -1,3 +1,4 @@
+import { env } from "@/server/env";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -22,6 +23,7 @@ export default async function PlanPage(props: PageProps<"/plans/[slug]">) {
   const provider = getActiveProvider();
   const simulated = provider.simulated;
   const manual = provider.id === "MANUAL";
+  const paymentPage = provider.id === "FAPSHI" && !env().FAPSHI_DIRECT_PAY;
   const here = `/plans/${plan.slug}`;
   return (
     <div className="mx-auto max-w-3xl">
@@ -58,7 +60,7 @@ export default async function PlanPage(props: PageProps<"/plans/[slug]">) {
               <p className="mb-4 text-sm text-muted">
                 Buying as <span className="font-medium text-ink">{ctx.customer.name ?? ctx.customer.phone}</span>
               </p>
-              <CheckoutForm plan={plan} defaultPhone={ctx.customer.phone} simulated={simulated} manual={manual} />
+              <CheckoutForm plan={plan} defaultPhone={ctx.customer.phone} simulated={simulated} manual={manual} paymentPage={paymentPage} />
             </>
           ) : (
             <div className="py-2 text-center">

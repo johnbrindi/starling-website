@@ -186,6 +186,22 @@ export function PaymentStatus({ initial, devSimulator, support = "" }: { initial
             <Spinner /> Waiting for confirmation…
           </p>
         </div>
+      ) : payment.status === "PENDING" && payment.checkoutUrl ? (
+        <div className="text-center">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+            <PhoneIcon className="h-6 w-6" />
+          </span>
+          <h1 className="mt-4 text-lg font-semibold">Finish your payment</h1>
+          <p className="mt-2 text-sm text-muted">
+            Pay <strong className="text-ink">{formatXaf(payment.amountXaf)}</strong> on the secure Fapshi page: enter your MTN MoMo number, tap Pay, then approve on your phone.
+          </p>
+          <a href={payment.checkoutUrl} className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-md bg-[#ffcb05] font-semibold text-ink">
+            Open the payment page
+          </a>
+          <p className="mt-5 inline-flex items-center gap-2 text-sm text-muted">
+            <Spinner /> Waiting for confirmation… this page updates by itself.
+          </p>
+        </div>
       ) : payment.status === "PENDING" ? (
         <div className="text-center">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-700">

@@ -8,6 +8,8 @@ export type MobileMoneyChannel = "cm.mtn" | "cm.orange";
 
 export interface InitiateInput {
   reference: string;
+  /** Where a hosted payment page sends the customer back to. */
+  returnUrl?: string;
   amountXaf: number;
   phone: string; // E.164
   channel: MobileMoneyChannel;
@@ -21,6 +23,8 @@ export interface InitiateResult {
   status: ProviderStatus;
   /** Customer-facing instruction, e.g. "Approve the prompt on your phone". */
   instructions?: string;
+  /** Hosted payment page to send the customer to (payment-link providers). */
+  checkoutUrl?: string;
 }
 
 export interface StatusResult {

@@ -11,7 +11,7 @@ import { Alert, Field } from "@/components/ui/primitives";
 import { PhoneInput } from "@/components/ui/inputs";
 import { SubmitButton } from "@/components/ui/submit-button";
 
-export function CheckoutForm({ plan, defaultPhone, simulated, manual = false }: { plan: PackageDto; defaultPhone?: string; simulated: boolean; manual?: boolean }) {
+export function CheckoutForm({ plan, defaultPhone, simulated, manual = false, paymentPage = false }: { plan: PackageDto; defaultPhone?: string; simulated: boolean; manual?: boolean; paymentPage?: boolean }) {
   const router = useRouter();
   const [phone, setPhone] = useState(defaultPhone?.replace(/^\+237/, "") ?? "");
   const [busy, setBusy] = useState(false);
@@ -34,11 +34,13 @@ export function CheckoutForm({ plan, defaultPhone, simulated, manual = false }: 
     setBusy(true);
     try {
       const hs = loadHotspotContext();
-      const res = await api<{ payment: { id: string }; instructions: string | null }>("/api/checkout", {
+      const res = await api<{ payment: { id: string; checkoutUrl: string | null }; instructions: string | null }>("/api/checkout", {
         body: { packageId: plan.id, phone: normalized, channel: "cm.mtn", idempotencyKey, clientMac: hs?.mac, clientIp: hs?.ip },
       });
       if (res.instructions) sessionStorage.setItem(`pay:${res.payment.id}`, res.instructions);
-      router.push(`/pay/${res.payment.id}`);
+      // Payment page providers: go straight to the secure page; it sends the customer back to /pay/<id>.
+      if (res.payment.checkoutUrl) window.location.assign(res.payment.checkoutUrl);
+      else router.push(`/pay/${res.payment.id}`);
     } catch (err) {
       setErrors(fieldErrors(err));
       setError(err instanceof ApiError ? err.message : "Could not start the payment.");
@@ -66,6 +68,8 @@ export function CheckoutForm({ plan, defaultPhone, simulated, manual = false }: 
       <p className="text-center text-xs text-muted">
         {manual
           ? "Next you get the MTN MoMo code to dial. Enter your PIN only on your phone, never on this website."
+          : paymentPage
+            ? "Next: the secure Fapshi page opens. Enter your MTN number, tap Pay and approve on your phone. You come back here automatically."
           : "You will get a prompt on that phone. Enter your MTN MoMo PIN there, never on this website."}
       </p>
     </form>

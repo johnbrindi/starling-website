@@ -37,6 +37,10 @@ const schema = z
     FAPSHI_API_USER: optionalString,
     FAPSHI_API_KEY: optionalString,
     FAPSHI_WEBHOOK_SECRET: optionalString,
+    /** true once Fapshi has activated Direct Pay (prompt on the phone); otherwise the Fapshi payment page is used. */
+    FAPSHI_DIRECT_PAY: bool,
+    /** Email given to Fapshi with each payment page, so customers only type their MoMo number. */
+    FAPSHI_RECEIPT_EMAIL: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.email().optional()),
     ALLOW_SIMULATED_PAYMENTS: bool,
     NOTCHPAY_BASE_URL: z.url().default("https://api.notchpay.co"),
     NOTCHPAY_PUBLIC_KEY: optionalString,

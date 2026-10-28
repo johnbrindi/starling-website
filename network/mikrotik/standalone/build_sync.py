@@ -96,6 +96,9 @@ REPORT = r''':local out ""
 :if ([:len $out] = 0) do={ :set out "none" }
 :do { /tool fetch url="REPORTURL" http-method=post http-data=$out output=none check-certificate=no } on-error={ :log warning "juthelink-report: website not reachable" }'''
 
+# Payment provider hosts reachable before login (Fapshi payment page + its API).
+PAYMENT_HOSTS = ["checkout.fapshi.com", "live.fapshi.com"]
+
 # Speed tiers staff can give one login (must match SPEED_TIERS in src/server/network/commands.ts).
 SPEED_TIERS = [("slow", "1M/2M"), ("normal", "2M/5M"), ("fast", "4M/10M"), ("max", "8M/20M")]
 
@@ -133,6 +136,9 @@ def main():
         '/system scheduler add name=juthelink-report interval=30s on-event="/system script run juthelink-report" policy=read,write,test comment="Juthelink: report online devices"',
         f':if ([:len [/ip hotspot walled-garden ip find where dst-host="{host}"]] = 0) do={{ /ip hotspot walled-garden ip add action=accept dst-host="{host}" comment="Juthelink website (before login)" }}',
     ]
+    # The Fapshi payment page and its API must open before the customer is logged in.
+    for pay_host in PAYMENT_HOSTS:
+        out.append(f':if ([:len [/ip hotspot walled-garden ip find where dst-host="{pay_host}"]] = 0) do={{ /ip hotspot walled-garden ip add action=accept dst-host="{pay_host}" comment="Payment page (before login)" }}')
     for tier, rate in SPEED_TIERS:
         name = f"jl-{tier}"
         out += [

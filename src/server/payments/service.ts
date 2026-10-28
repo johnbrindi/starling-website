@@ -9,6 +9,7 @@ import { audit } from "../audit";
 import { AppError } from "../errors";
 import { errorMessage, log } from "../logger";
 import { getSettings } from "../settings";
+import { env } from "../env";
 import { fulfilPayment } from "../subscriptions/service";
 import { notify } from "../notifications/service";
 import { getActiveProvider, getProvider } from "./registry";
@@ -194,7 +195,8 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
         clientMac: input.clientMac?.toUpperCase().replace(/-/g, ":"),
         clientIp: input.clientIp,
         // Manual MoMo: time to dial the code and type the transaction ID (extended once it is submitted).
-        expiresAt: new Date(Date.now() + (provider.id === "MANUAL" ? MANUAL_UNCLAIMED_MINUTES : settings.paymentTimeoutMinutes) * 60_000),
+        // Payment pages get at least 20 minutes (the customer types their number there).
+        expiresAt: new Date(Date.now() + (provider.id === "MANUAL" ? MANUAL_UNCLAIMED_MINUTES : Math.max(settings.paymentTimeoutMinutes, 20)) * 60_000),
       },
     });
   } catch (err) {
@@ -207,13 +209,17 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
   try {
     const res = await provider.initiate({
       reference: payment.reference,
+      returnUrl: `${env().APP_URL}/pay/${payment.id}`,
       amountXaf: amount,
       phone,
       channel: input.channel as MobileMoneyChannel,
       description: `${settings.businessName}: ${pkg.name}`,
       customerName: customer.name,
     });
-    payment = await db.payment.update({ where: { id: payment.id }, data: { providerReference: res.providerReference, providerStatus: provider.simulated ? null : res.status } });
+    payment = await db.payment.update({
+      where: { id: payment.id },
+      data: { providerReference: res.providerReference, providerStatus: provider.simulated ? null : res.status, checkoutUrl: res.checkoutUrl ?? null },
+    });
     await audit({ actorType: "CUSTOMER", actorId: customer.id, action: "payment.initiated", targetType: "Payment", targetId: payment.id, metadata: { amount, provider: provider.id, packageId: pkg.id } });
     return { payment, instructions: res.instructions ?? null, reused: false };
   } catch (err) {

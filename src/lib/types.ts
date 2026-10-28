@@ -33,6 +33,8 @@ export interface PaymentDto {
   failureReason: string | null;
   createdAt: string;
   expiresAt: string;
+  /** Hosted payment page to finish the payment on (Fapshi payment page), while pending. */
+  checkoutUrl: string | null;
   /** Manual MTN MoMo payment: what to dial, and the transaction ID once the customer submitted it. */
   manual: { momoNumber: string; ussd: string; transactionId: string | null; claimedAt: string | null; hasScreenshot: boolean } | null;
 }

@@ -17,6 +17,7 @@ export function toPaymentDto(p: Payment & { package: Package; proof?: { id: stri
     failureReason: p.failureReason,
     createdAt: p.createdAt.toISOString(),
     expiresAt: p.expiresAt.toISOString(),
+    checkoutUrl: p.status === "PENDING" ? p.checkoutUrl : null,
     manual:
       p.provider === "MANUAL"
         ? { momoNumber: env().MANUAL_MOMO_NUMBER, ussd: momoUssd(env().MANUAL_MOMO_NUMBER, p.amountXaf), transactionId: p.providerReference, claimedAt: p.claimedAt?.toISOString() ?? null, hasScreenshot: Boolean(p.proof) }

@@ -215,6 +215,8 @@ model Payment {
   clientMac         String?
   clientIp          String?
   verifiedAt        DateTime?
+  /// Hosted payment page (e.g. Fapshi Initiate Pay) the customer completes the payment on.
+  checkoutUrl       String?
   /// MANUAL payments: when the customer submitted their MoMo transaction ID (stored in providerReference).
   claimedAt         DateTime?
   lastCheckedAt     DateTime?

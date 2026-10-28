@@ -30,7 +30,7 @@ export function getProvider(id: ProviderId): PaymentProviderAdapter {
     cache.set(id, new CampayProvider({ baseUrl: e.CAMPAY_BASE_URL, token: e.CAMPAY_TOKEN, username: e.CAMPAY_USERNAME, password: e.CAMPAY_PASSWORD, webhookKey: e.CAMPAY_WEBHOOK_KEY }));
   } else if (id === "FAPSHI" && !cache.has(id)) {
     if (!e.FAPSHI_API_USER || !e.FAPSHI_API_KEY) throw new Error("Fapshi is not configured");
-    cache.set(id, new FapshiProvider({ baseUrl: e.FAPSHI_BASE_URL, apiUser: e.FAPSHI_API_USER, apiKey: e.FAPSHI_API_KEY, webhookSecret: e.FAPSHI_WEBHOOK_SECRET }));
+    cache.set(id, new FapshiProvider({ baseUrl: e.FAPSHI_BASE_URL, apiUser: e.FAPSHI_API_USER, apiKey: e.FAPSHI_API_KEY, webhookSecret: e.FAPSHI_WEBHOOK_SECRET, directPay: e.FAPSHI_DIRECT_PAY, receiptEmail: e.FAPSHI_RECEIPT_EMAIL }));
   } else if (id === "NOTCHPAY" && !cache.has(id)) {
     if (!e.NOTCHPAY_PUBLIC_KEY || !e.NOTCHPAY_WEBHOOK_HASH) throw new Error("Notch Pay is not configured");
     cache.set(id, new NotchPayProvider({ baseUrl: e.NOTCHPAY_BASE_URL, publicKey: e.NOTCHPAY_PUBLIC_KEY, webhookHash: e.NOTCHPAY_WEBHOOK_HASH }));

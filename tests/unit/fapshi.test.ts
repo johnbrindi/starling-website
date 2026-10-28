@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FapshiProvider } from "@/server/payments/providers/fapshi";
 
-const cfg = { baseUrl: "https://sandbox.fapshi.com", apiUser: "user-1", apiKey: "FAK_TEST_x", webhookSecret: "wh-secret-123" };
+const cfg = { baseUrl: "https://sandbox.fapshi.com", apiUser: "user-1", apiKey: "FAK_TEST_x", webhookSecret: "wh-secret-123", directPay: true };
 
 describe("Fapshi provider", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -20,6 +20,24 @@ describe("Fapshi provider", () => {
     expect(h.apiuser).toBe("user-1");
     expect(h.apikey).toBe("FAK_TEST_x");
     expect(JSON.parse(String(calls[0]!.init.body))).toMatchObject({ amount: 100, phone: "670000000", medium: "mobile money", externalId: "SW-20261024-ABC" });
+  });
+
+  it("without Direct Pay, opens the Fapshi payment page with our reference, return URL and receipt email", async () => {
+    const calls: { url: string; init: RequestInit }[] = [];
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return new Response(JSON.stringify({ message: "Request successful", link: "https://checkout.fapshi.com/link/abc123", transId: "T9x8" }), { status: 200 });
+    });
+    const p = new FapshiProvider({ ...cfg, directPay: false, receiptEmail: "shop@example.com" });
+    const r = await p.initiate({ reference: "SW-20261028-XYZ", amountXaf: 105, phone: "+237670000000", channel: "cm.mtn", description: "Juthelink: 1 Hour", returnUrl: "https://site.test/pay/p1" });
+    expect(calls[0]!.url).toBe("https://sandbox.fapshi.com/initiate-pay");
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ amount: 105, email: "shop@example.com", redirectUrl: "https://site.test/pay/p1", externalId: "SW-20261028-XYZ", userId: "SW-20261028-XYZ", message: "Juthelink: 1 Hour" });
+    expect(r).toMatchObject({ providerReference: "T9x8", checkoutUrl: "https://checkout.fapshi.com/link/abc123", status: "pending" });
+  });
+
+  it("refuses a payment page that is not on checkout.fapshi.com", async () => {
+    vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ link: "https://evil.example/pay", transId: "T1" }), { status: 200 }));
+    await expect(new FapshiProvider({ ...cfg, directPay: false }).initiate({ reference: "SW-1", amountXaf: 105, phone: "+237670000000", channel: "cm.mtn", description: "x" })).rejects.toThrow(/payment page/);
   });
 
   it("maps payment-status values", async () => {

@@ -152,6 +152,10 @@ def main():
     # No hotspot sharing: packets to customers leave with TTL 1, so a phone cannot pass the connection on.
     out += [
         ':do { :local hif [/ip hotspot get [:pick [/ip hotspot find] 0] interface]; :if ([:len [/ip firewall mangle find where comment="Juthelink: no hotspot sharing"]] = 0) do={ /ip firewall mangle add chain=postrouting out-interface=$hif action=change-ttl new-ttl=set:1 passthrough=yes comment="Juthelink: no hotspot sharing" } } on-error={ :put "Could not add the no-sharing rule: is the hotspot set up?" }',
+        # Second lock against sharing: a device behind a customer's hotspot/laptop sends packets that arrive
+        # with TTL 63 or 127 (one hop more than a phone or PC connected directly, which sends 64 or 128).
+        # The raw table sees the original TTL (before the router lowers it), so those packets are dropped here.
+        ':do { :local hif [/ip hotspot get [:pick [/ip hotspot find] 0] interface]; :foreach t in={63;127} do={ :if ([:len [/ip firewall raw find where comment=("Juthelink: block shared devices ttl " . $t)]] = 0) do={ /ip firewall raw add chain=prerouting in-interface=$hif ttl=("equal:" . $t) action=drop comment=("Juthelink: block shared devices ttl " . $t) } } } on-error={ :put "Could not add the shared-device rule: is the hotspot set up?" }',
         ':put "Juthelink sync installed: logins every 10 s, device report every 30 s, speed tiers, no hotspot sharing"',
         "",
     ]

@@ -9,6 +9,7 @@ import { formatPhone } from "@/lib/phone";
 import { formatXaf } from "@/lib/format";
 import { Alert, Card, Field, Input } from "@/components/ui/primitives";
 import { Button, LinkButton, Spinner } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { CheckIcon, PhoneIcon } from "@/components/ui/icons";
 
 export function PaymentStatus({ initial, devSimulator, support = "" }: { initial: PaymentDto; devSimulator: boolean; support?: string }) {
@@ -163,9 +164,9 @@ export function PaymentStatus({ initial, devSimulator, support = "" }: { initial
                   </div>
                 </div>
                 {claimError ? <p className="mt-2 text-sm text-bad">{claimError}</p> : null}
-                <Button type="submit" size="lg" className="mt-3 w-full" loading={claiming} disabled={preparing}>
+                <SubmitButton size="lg" className="mt-3 w-full" loading={claiming} disabled={preparing}>
                   I have paid, confirm my payment
-                </Button>
+                </SubmitButton>
               </form>
             </li>
           </ol>

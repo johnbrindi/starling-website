@@ -61,11 +61,20 @@ async function main() {
   }
 
   // ── Development fixtures (clearly fake) ──
+  if (!(await db.setting.findUnique({ where: { key: "app" } }))) {
+    await db.setting.create({ data: { key: "app", value: { businessName: "Juthelink", supportWhatsapp: "+237 673 727 995", supportPhone: "+237 673 727 995" } } });
+  }
   const devEmail = "admin@starling.local";
   if (!(await db.staffUser.findUnique({ where: { email: devEmail } }))) {
     await db.staffUser.create({ data: { email: devEmail, name: "Dev Admin", role: "SUPER_ADMIN", passwordHash: await hashPassword("starling-dev-admin-1") } });
     await db.staffUser.create({ data: { email: "support@starling.local", name: "Dev Support", role: "SUPPORT", passwordHash: await hashPassword("starling-dev-support-1") } });
     console.log("Dev staff: admin@starling.local / starling-dev-admin-1 (SUPER_ADMIN), support@starling.local / starling-dev-support-1 (SUPPORT)");
+  }
+
+  const legacyPhone = "+237670000091";
+  if (!(await db.customer.findUnique({ where: { phone: legacyPhone } }))) {
+    // Created before emails were asked for (no email): used by the account recovery tests.
+    await db.customer.create({ data: { phone: legacyPhone, name: "Legacy Customer", passwordHash: await hashPassword("legacy-customer-1"), passwordChangedAt: new Date() } });
   }
 
   const demoPhone = "+237670000090";

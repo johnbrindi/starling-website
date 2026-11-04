@@ -1,4 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { warmUp } from "./warmup";
+
+test.beforeAll(async ({ browser }) => {
+  test.setTimeout(600_000);
+  await warmUp(browser, ["/admin/login", "/admin", "/admin/packages", "/admin/staff", "/admin/sell", "/admin/tickets", "/admin/customers", "/plans"]);
+});
 
 async function login(page: Page, email: string, password: string) {
   await page.goto("/admin/login");

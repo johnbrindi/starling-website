@@ -19,4 +19,23 @@ export default async function globalSetup() {
   await client.query(`TRUNCATE ${rows.map((r) => `"${r.tablename}"`).join(", ")} CASCADE`);
   await client.end();
   execSync("npm run db:seed", { stdio: "pipe", env });
+  // Local test mailbox for password reset emails (accepts any login, plain SMTP on 127.0.0.1 only).
+  try {
+    execSync("docker rm -f juthelink-e2e-mail", { stdio: "ignore" });
+  } catch {
+    // not running
+  }
+  execSync(
+    "docker run -d --name juthelink-e2e-mail -p 127.0.0.1:1025:1025 -p 127.0.0.1:8025:8025 axllent/mailpit --smtp-auth-accept-any --smtp-auth-allow-insecure",
+    { stdio: "ignore" },
+  );
+  for (let i = 0; i < 30; i++) {
+    try {
+      if ((await fetch("http://127.0.0.1:8025/api/v1/messages")).ok) return;
+    } catch {
+      // starting
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error("Test mailbox did not start");
 }

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ApiError } from "@/lib/api-client";
 import { Alert, Field, Input, Select } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useAdminApi } from "./admin-context";
 
 function useSubmit() {
@@ -72,7 +73,7 @@ export function ProfileForm({ initial, onDone }: { initial?: ProfileValue; onDon
       <Field label="Keepalive timeout" htmlFor={`pk-${v.id ?? "new"}`} hint="3h stops one login hopping between phones"><Input id={`pk-${v.id ?? "new"}`} value={v.keepaliveTimeout} onChange={(e) => set("keepaliveTimeout", e.target.value)} /></Field>
       <Field label="Status page refresh" htmlFor={`pa-${v.id ?? "new"}`}><Input id={`pa-${v.id ?? "new"}`} value={v.statusAutorefresh} onChange={(e) => set("statusAutorefresh", e.target.value)} /></Field>
       <div className="flex items-end gap-2">
-        <Button type="submit" loading={busy} className="w-full">{v.id ? "Save" : "Add profile"}</Button>
+        <SubmitButton loading={busy} className="w-full">{v.id ? "Save" : "Add profile"}</SubmitButton>
         {onDone && v.id ? <Button type="button" variant="secondary" onClick={onDone}>Cancel</Button> : null}
       </div>
       {error ? <div className="sm:col-span-4"><Alert tone="bad">{error}</Alert></div> : null}
@@ -113,7 +114,7 @@ export function StaffCreateForm() {
         </Select>
       </Field>
       <Field label="Temporary password" htmlFor="sp"><Input id="sp" type="password" autoComplete="new-password" value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} /></Field>
-      <div className="flex items-end"><Button type="submit" loading={busy} className="w-full">Create</Button></div>
+      <div className="flex items-end"><SubmitButton loading={busy} className="w-full">Create</SubmitButton></div>
       {error ? <div className="sm:col-span-5"><Alert tone="bad">{error}</Alert></div> : null}
       {ok ? <div className="sm:col-span-5"><Alert tone="ok">{ok}</Alert></div> : null}
     </form>
@@ -216,7 +217,7 @@ export function SettingsForm({ initial, readOnly }: { initial: SettingsValue; re
             cannot reach the router. Requires correct router clock (NTP).
           </span>
         </label>
-        {!readOnly ? <div className="sm:col-span-2"><Button type="submit" loading={busy}>Save settings</Button></div> : null}
+        {!readOnly ? <div className="sm:col-span-2"><SubmitButton loading={busy}>Save settings</SubmitButton></div> : null}
       </fieldset>
       {error ? <div className="sm:col-span-2"><Alert tone="bad">{error}</Alert></div> : null}
       {ok ? <div className="sm:col-span-2"><Alert tone="ok">{ok}</Alert></div> : null}

@@ -17,6 +17,8 @@ export async function sendMail(to: string, subject: string, text: string, html: 
     host: e.SMTP_HOST,
     port: e.SMTP_PORT,
     secure: e.SMTP_PORT === 465,
+    // Local test mailbox only (127.0.0.1): no TLS. Real servers (Gmail) always use TLS.
+    ...(e.SMTP_HOST === "127.0.0.1" ? { ignoreTLS: true } : {}),
     auth: { user: e.SMTP_USER, pass: e.SMTP_PASS },
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,

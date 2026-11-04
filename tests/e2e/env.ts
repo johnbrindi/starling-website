@@ -13,4 +13,12 @@ export const E2E_ENV = {
   ALLOW_SIMULATED_PAYMENTS: "true",
   NETWORK_ADAPTER: "fake",
   ALLOW_FAKE_NETWORK: "true",
+  // Local test mailbox (Mailpit, started by global-setup): reset emails are really sent and read back.
+  SMTP_HOST: "127.0.0.1",
+  SMTP_PORT: "1025",
+  SMTP_USER: "e2e",
+  SMTP_PASS: "e2e",
+  MAIL_FROM: "Juthelink <no-reply@juthelink.test>",
 } as const;
+
+export const MAILPIT_API = "http://127.0.0.1:8025/api/v1";

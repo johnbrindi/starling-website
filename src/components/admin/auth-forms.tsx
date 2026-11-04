@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api-client";
 import { Alert, Field, Input } from "@/components/ui/primitives";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export function StaffLoginForm() {
   const router = useRouter();
@@ -36,9 +36,9 @@ export function StaffLoginForm() {
         <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </Field>
       {error ? <Alert tone="bad">{error}</Alert> : null}
-      <Button type="submit" className="w-full" loading={busy}>
+      <SubmitButton className="w-full" loading={busy}>
         Sign in
-      </Button>
+      </SubmitButton>
     </form>
   );
 }
@@ -70,9 +70,9 @@ export function ResetPasswordForm({ token }: { token: string }) {
         <Input id="pw" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </Field>
       {error ? <Alert tone="bad">{error}</Alert> : null}
-      <Button type="submit" className="w-full" loading={busy}>
+      <SubmitButton className="w-full" loading={busy}>
         Set password
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

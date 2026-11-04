@@ -88,7 +88,7 @@ export function ProfileForm({ initialName }: { initialName: string }) {
 }
 
 /** The email that receives password reset codes. */
-export function EmailForm({ initialEmail }: { initialEmail: string }) {
+export function EmailForm({ initialEmail, next }: { initialEmail: string; next?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState(initialEmail);
   const [busy, setBusy] = useState(false);
@@ -104,6 +104,7 @@ export function EmailForm({ initialEmail }: { initialEmail: string }) {
         try {
           await api("/api/me/email", { method: "PUT", body: { email } });
           setMsg({ tone: "ok", text: "Email saved. If you forget your password, we send a code to this email." });
+          if (next) router.replace(next);
           router.refresh();
         } catch (err) {
           setMsg({ tone: "bad", text: err instanceof ApiError ? (fieldErrors(err).email ?? err.message) : "Could not save." });
@@ -126,6 +127,7 @@ export function EmailForm({ initialEmail }: { initialEmail: string }) {
 export function ChangePasswordForm() {
   const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<{ tone: "ok" | "bad"; text: string } | null>(null);
@@ -139,9 +141,10 @@ export function ChangePasswordForm() {
         setMsg(null);
         setErrors({});
         try {
-          await api("/api/me/password", { body: { current, password } });
+          await api("/api/me/password", { body: { current, password, confirmPassword } });
           setCurrent("");
           setPassword("");
+          setConfirmPassword("");
           setMsg({ tone: "ok", text: "Password changed. Other devices have been signed out." });
         } catch (err) {
           setErrors(fieldErrors(err));
@@ -157,8 +160,11 @@ export function ChangePasswordForm() {
       <Field label="New password" htmlFor="cp-new" error={errors.password} hint="At least 8 characters.">
         <PasswordInput id="cp-new" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
+      <Field label="Confirm new password" htmlFor="cp-confirm" error={errors.confirmPassword ?? (confirmPassword && confirmPassword !== password ? "Not the same as the new password." : undefined)}>
+        <PasswordInput id="cp-confirm" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+      </Field>
       {msg ? <Alert tone={msg.tone}>{msg.text}</Alert> : null}
-      <SubmitButton variant="secondary" loading={busy} disabled={!current || password.length < 8}>
+      <SubmitButton variant="secondary" loading={busy} disabled={!current || password.length < 8 || password !== confirmPassword}>
         Change password
       </SubmitButton>
     </form>

@@ -6,6 +6,7 @@ import { ApiError, fieldErrors } from "@/lib/api-client";
 import { formatDuration, formatXaf } from "@/lib/format";
 import { Alert, Field, Input, Select } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useAdminApi } from "./admin-context";
 
 interface Ticket {
@@ -130,9 +131,9 @@ export function TicketGenerator({ packages, networkName, whatsapp }: { packages:
         <Input id="t-days" type="number" min={1} max={365} value={days} onChange={(e) => setDays(Number(e.target.value))} />
       </Field>
       <div className="flex items-end">
-        <Button type="submit" loading={busy} className="w-full" disabled={!pkg}>
+        <SubmitButton loading={busy} className="w-full" disabled={!pkg}>
           Generate {count} ticket{count === 1 ? "" : "s"}
-        </Button>
+        </SubmitButton>
       </div>
       {error ? (
         <div className="sm:col-span-3">

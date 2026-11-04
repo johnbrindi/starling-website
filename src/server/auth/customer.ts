@@ -37,13 +37,19 @@ export const emailField = z
   .toLowerCase()
   .pipe(z.email("Enter a valid email, e.g. name@gmail.com.").max(120, "Email is too long."));
 
-export const registerSchema = z.object({
-  name: z.string().trim().min(2, "Enter your full name.").max(60, "Name is too long."),
-  phone: phoneField,
-  /** Only used to send a reset code if the password is forgotten. */
-  email: emailField,
-  password: customerPasswordSchema,
-});
+const samePasswords = (d: { password: string; confirmPassword: string }) => d.password === d.confirmPassword;
+const mismatch = { path: ["confirmPassword"], message: "The two passwords are not the same." };
+
+export const registerSchema = z
+  .object({
+    name: z.string().trim().min(2, "Enter your full name.").max(60, "Name is too long."),
+    phone: phoneField,
+    /** Only used to send a reset code if the password is forgotten. */
+    email: emailField,
+    password: customerPasswordSchema,
+    confirmPassword: z.string().max(128),
+  })
+  .refine(samePasswords, mismatch);
 
 /** Phone number or email, whichever the customer remembers. */
 const identifierField = z
@@ -67,9 +73,10 @@ export const resetRequestSchema = z.object({ identifier: identifierField });
 
 export const loginSchema = z.object({ phone: phoneField, password: z.string().min(1, "Enter your password.").max(128) });
 
-export const resetSchema = z.discriminatedUnion("method", [
+export const resetSchema = z
+  .discriminatedUnion("method", [
   /** 6-digit code sent by email or given by Juthelink support. */
-  z.object({ method: z.literal("code"), identifier: identifierField, code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."), password: customerPasswordSchema }),
+  z.object({ method: z.literal("code"), identifier: identifierField, code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."), password: customerPasswordSchema, confirmPassword: z.string().max(128) }),
   /** Username and password of any Wi-Fi login this customer bought. */
   z.object({
     method: z.literal("wifi"),
@@ -77,8 +84,10 @@ export const resetSchema = z.discriminatedUnion("method", [
     wifiUsername: z.string().trim().min(3, "Enter the Wi-Fi username.").max(40),
     wifiPassword: z.string().trim().min(3, "Enter the Wi-Fi password.").max(40),
     password: customerPasswordSchema,
+    confirmPassword: z.string().max(128),
   }),
-]);
+  ])
+  .refine(samePasswords, mismatch);
 
 async function findByIdentifier(id: { phone: string } | { email: string }) {
   return "phone" in id ? db.customer.findUnique({ where: { phone: id.phone } }) : db.customer.findUnique({ where: { email: id.email } });
@@ -227,6 +236,7 @@ export async function resetCustomerPassword(input: z.infer<typeof resetSchema>, 
   await db.session.deleteMany({ where: { customerId: customer.id } }); // sign out everywhere else
   await createSession("CUSTOMER", customer.id, { ipAddress: meta.ip, userAgent: meta.userAgent });
   await audit({ actorType: "CUSTOMER", actorId: customer.id, action: "customer.password_reset", ipAddress: meta.ip, metadata: { method: input.method } });
+  return customer;
 }
 
 /** Signed-in customer adds or changes the email used for password resets. */
@@ -237,7 +247,9 @@ export async function setCustomerEmail(customerId: string, email: string, ip: st
   await audit({ actorType: "CUSTOMER", actorId: customerId, action: "customer.email_set", ipAddress: ip });
 }
 
-export const changePasswordSchema = z.object({ current: z.string().min(1).max(128), password: customerPasswordSchema });
+export const changePasswordSchema = z
+  .object({ current: z.string().min(1).max(128), password: customerPasswordSchema, confirmPassword: z.string().max(128) })
+  .refine(samePasswords, mismatch);
 
 export async function changeCustomerPassword(customerId: string, input: z.infer<typeof changePasswordSchema>, sessionId: string, ip: string) {
   const customer = await db.customer.findUniqueOrThrow({ where: { id: customerId } });

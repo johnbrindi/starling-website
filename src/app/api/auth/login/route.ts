@@ -10,5 +10,6 @@ export const POST = handler(async (req) => {
   const input = await readJson(req, loginSchema);
   await rateLimit(`login:phone:${input.phone}`, 10, 900);
   const customer = await loginCustomer(input, { ip, userAgent: req.headers.get("user-agent") });
-  return json({ ok: true, name: customer.name });
+  // Accounts created before emails were asked for: the app then asks for one (for password resets).
+  return json({ ok: true, name: customer.name, needsEmail: !customer.email });
 });

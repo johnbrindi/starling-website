@@ -18,8 +18,9 @@ function useAuthSubmit(path: string, next: string) {
     setError(null);
     setErrors({});
     try {
-      await api(path, { body });
-      router.replace(next);
+      const res = await api<{ needsEmail?: boolean }>(path, { body });
+      // Older accounts without an email: ask for one first (it is how they recover a forgotten password).
+      router.replace(res?.needsEmail ? `/account/email?next=${encodeURIComponent(next)}` : next);
       router.refresh();
     } catch (err) {
       const fe = fieldErrors(err);
@@ -36,6 +37,7 @@ export function RegisterForm({ next }: { next: string }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [agree, setAgree] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const { submit, busy, error, errors } = useAuthSubmit("/api/auth/register", next);
@@ -45,9 +47,10 @@ export function RegisterForm({ next }: { next: string }) {
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
+        if (password !== confirmPassword) return setLocalError("The two passwords are not the same.");
         if (!agree) return setLocalError("Please accept the terms to create your account.");
         setLocalError(null);
-        submit({ name, phone, email, password });
+        submit({ name, phone, email, password, confirmPassword });
       }}
     >
       <Field label="Full name" htmlFor="name" error={errors.name}>
@@ -61,6 +64,9 @@ export function RegisterForm({ next }: { next: string }) {
       </Field>
       <Field label="Create a password" htmlFor="password" error={errors.password} hint="At least 8 characters.">
         <PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} invalid={!!errors.password} required />
+      </Field>
+      <Field label="Confirm password" htmlFor="confirmPassword" error={errors.confirmPassword ?? (confirmPassword && confirmPassword !== password ? "Not the same as the password." : undefined)}>
+        <PasswordInput id="confirmPassword" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} invalid={!!errors.confirmPassword} required />
       </Field>
       <label className="flex items-start gap-2.5 text-sm text-ink-soft">
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded accent-brand-600" />
@@ -135,6 +141,8 @@ export function ResetPasswordForm({ next, support = "" }: { next: string; suppor
   const [wifiUsername, setWifiUsername] = useState("");
   const [wifiPassword, setWifiPassword] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [mismatch, setMismatch] = useState(false);
   const { submit, busy, error, errors } = useAuthSubmit("/api/auth/reset", next);
   const digits = support.replace(/\D/g, "");
 
@@ -176,9 +184,14 @@ export function ResetPasswordForm({ next, support = "" }: { next: string; suppor
     </Field>
   );
   const newPassword = (
-    <Field label="New password" htmlFor="password" error={errors.password} hint="At least 8 characters.">
-      <PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} invalid={!!errors.password} required />
-    </Field>
+    <>
+      <Field label="New password" htmlFor="password" error={errors.password} hint="At least 8 characters.">
+        <PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} invalid={!!errors.password} required />
+      </Field>
+      <Field label="Confirm new password" htmlFor="confirmPassword" error={errors.confirmPassword ?? (mismatch || (confirmPassword && confirmPassword !== password) ? "Not the same as the new password." : undefined)}>
+        <PasswordInput id="confirmPassword" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} invalid={!!errors.confirmPassword} required />
+      </Field>
+    </>
   );
 
   return (
@@ -193,15 +206,17 @@ export function ResetPasswordForm({ next, support = "" }: { next: string; suppor
       {way === "support" ? (
         <div className="space-y-3 text-sm text-ink-soft">
           <p>Message Juthelink with your phone number. We check it is you and send you a 6-digit code. Then come back to <b>By email</b> → “I already have a code”.</p>
-          {digits ? (
-            <div className="grid grid-cols-2 gap-2">
-              <a href={`whatsapp://send?phone=${digits}&text=${encodeURIComponent(`Hello Juthelink, I forgot my account password. My phone number is ${identifier || "…"}.`)}`} className="col-span-2 inline-flex h-11 items-center justify-center rounded-md bg-[#25D366] font-semibold text-white">
-                WhatsApp Juthelink
-              </a>
-              <a href={`tel:+${digits}`} className="inline-flex h-10 items-center justify-center rounded-md border border-line font-medium text-ink">Call us</a>
-              <button type="button" onClick={() => setWay("email")} className="inline-flex h-10 items-center justify-center rounded-md border border-line font-medium text-ink">I have a code</button>
-            </div>
-          ) : null}
+          <div className="grid grid-cols-2 gap-2">
+            {digits ? (
+              <>
+                <a href={`whatsapp://send?phone=${digits}&text=${encodeURIComponent(`Hello Juthelink, I forgot my account password. My phone number is ${identifier || "…"}.`)}`} className="col-span-2 inline-flex h-11 items-center justify-center rounded-md bg-[#25D366] font-semibold text-white">
+                  WhatsApp Juthelink
+                </a>
+                <a href={`tel:+${digits}`} className="inline-flex h-10 items-center justify-center rounded-md border border-line font-medium text-ink">Call us</a>
+              </>
+            ) : null}
+            <button type="button" onClick={() => setWay("email")} className={`${digits ? "" : "col-span-2 "}inline-flex h-10 items-center justify-center rounded-md border border-line font-medium text-ink`}>I have a code</button>
+          </div>
         </div>
       ) : (
         <form
@@ -209,8 +224,10 @@ export function ResetPasswordForm({ next, support = "" }: { next: string; suppor
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (way === "email") submit({ method: "code", identifier, code, password });
-            else submit({ method: "wifi", identifier, wifiUsername, wifiPassword, password });
+            setMismatch(password !== confirmPassword);
+            if (password !== confirmPassword) return;
+            if (way === "email") submit({ method: "code", identifier, code, password, confirmPassword });
+            else submit({ method: "wifi", identifier, wifiUsername, wifiPassword, password, confirmPassword });
           }}
         >
           {identifierField}

@@ -25,8 +25,15 @@ const { getCustomer } = await import("@/server/auth/session");
 const { resetDb, resetOverrides, useFakeNetwork, makePackage, customerFor } = await import("../helpers/fixtures");
 
 const meta = { ip: "127.0.0.1", userAgent: "vitest" };
-const reg = (over: Partial<{ name: string; phone: string; email: string; password: string }> = {}) =>
-  auth.registerSchema.parse({ name: "Marie Ngono", phone: "6 70 11 22 33", email: `m${(over.phone ?? "670112233").replace(/\D/g, "")}@Mail.test`, password: "strong-pass-1", ...over });
+const reg = (over: Partial<{ name: string; phone: string; email: string; password: string; confirmPassword: string }> = {}) =>
+  auth.registerSchema.parse({
+    name: "Marie Ngono",
+    phone: "6 70 11 22 33",
+    email: `m${(over.phone ?? "670112233").replace(/\D/g, "")}@Mail.test`,
+    password: "strong-pass-1",
+    confirmPassword: over.password ?? "strong-pass-1",
+    ...over,
+  });
 
 describe("customer accounts", () => {
   beforeEach(async () => {
@@ -78,6 +85,11 @@ describe("customer accounts", () => {
     await expect(auth.loginCustomer(auth.loginSchema.parse({ phone: "699999999", password: "anything-1" }), meta)).rejects.toThrow(/Wrong phone number or password/);
   });
 
+  it("refuses sign-up and reset when the two passwords are not the same", async () => {
+    expect(() => reg({ password: "strong-pass-1", confirmPassword: "strong-pass-2" })).toThrow(/not the same/);
+    expect(() => auth.resetSchema.parse({ method: "code", identifier: "670112233", code: "123456", password: "abc-12345", confirmPassword: "abc-12346" })).toThrow(/not the same/);
+  });
+
   it("stores the email in lower case and refuses an email used by another account", async () => {
     const c = await auth.registerCustomer(reg(), meta);
     expect(c.email).toBe("m670112233@mail.test");
@@ -92,7 +104,7 @@ describe("customer accounts", () => {
     expect(mails[0]!.to).toBe("m670112233@mail.test");
     const code = mails[0]!.text.match(/\b(\d{6})\b/)![1]!;
     expect((await db.customer.findUniqueOrThrow({ where: { id: c.id } })).resetCodeHash).not.toContain(code);
-    const input = auth.resetSchema.parse({ method: "code", identifier: "M670112233@mail.test", code, password: "brand-new-pass" });
+    const input = auth.resetSchema.parse({ method: "code", identifier: "M670112233@mail.test", code, password: "brand-new-pass", confirmPassword: "brand-new-pass" });
     await auth.resetCustomerPassword(input, meta);
     jar.clear();
     expect((await auth.loginCustomer(auth.loginSchema.parse({ phone: "670112233", password: "brand-new-pass" }), meta)).id).toBe(c.id);
@@ -112,10 +124,10 @@ describe("customer accounts", () => {
     const code = mails[0]!.text.match(/\b(\d{6})\b/)![1]!;
     const wrong = code === "000000" ? "111111" : "000000";
     for (let i = 0; i < 4; i++) {
-      await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code: wrong, password: "x-pass-1234" }), meta)).rejects.toThrow(/not correct/);
+      await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code: wrong, password: "x-pass-1234", confirmPassword: "x-pass-1234" }), meta)).rejects.toThrow(/not correct/);
     }
-    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code: wrong, password: "x-pass-1234" }), meta)).rejects.toThrow(/Too many wrong codes/);
-    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code, password: "x-pass-1234" }), meta)).rejects.toThrow(); // even the right code is now dead
+    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code: wrong, password: "x-pass-1234", confirmPassword: "x-pass-1234" }), meta)).rejects.toThrow(/Too many wrong codes/);
+    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code, password: "x-pass-1234", confirmPassword: "x-pass-1234" }), meta)).rejects.toThrow(); // even the right code is now dead
     expect((await db.customer.findUniqueOrThrow({ where: { id: c.id } })).resetCodeHash).toBeNull();
   });
 
@@ -130,9 +142,9 @@ describe("customer accounts", () => {
     const cred = await db.accessCredential.findFirstOrThrow({ where: { customerId: owner.id } });
     const wifi = { wifiUsername: cred.username, wifiPassword: credentialPassword(cred) };
 
-    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "wifi", identifier: "690000000", ...wifi, password: "new-pass-123" }), meta)).rejects.toThrow(/do not match/);
-    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "wifi", identifier: "670000000", wifiUsername: cred.username, wifiPassword: "999999x", password: "new-pass-123" }), meta)).rejects.toThrow(/do not match/);
-    await auth.resetCustomerPassword(auth.resetSchema.parse({ method: "wifi", identifier: "670000000", ...wifi, password: "new-pass-123" }), meta);
+    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "wifi", identifier: "690000000", ...wifi, password: "new-pass-123", confirmPassword: "new-pass-123" }), meta)).rejects.toThrow(/do not match/);
+    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "wifi", identifier: "670000000", wifiUsername: cred.username, wifiPassword: "999999x", password: "new-pass-123", confirmPassword: "new-pass-123" }), meta)).rejects.toThrow(/do not match/);
+    await auth.resetCustomerPassword(auth.resetSchema.parse({ method: "wifi", identifier: "670000000", ...wifi, password: "new-pass-123", confirmPassword: "new-pass-123" }), meta);
     jar.clear();
     expect((await auth.loginCustomer(auth.loginSchema.parse({ phone: "670000000", password: "new-pass-123" }), meta)).id).toBe(owner.id);
   });
@@ -142,20 +154,20 @@ describe("customer accounts", () => {
     const staff = await db.staffUser.create({ data: { email: "s@x.cm", name: "S", passwordHash: "x", role: "SUPPORT" } });
     const code = await auth.issueCustomerResetCode(c.id, staff.id);
     expect(code).toMatch(/^\d{6}$/);
-    const input = auth.resetSchema.parse({ method: "code", identifier: "670112233", code, password: "brand-new-pass" });
+    const input = auth.resetSchema.parse({ method: "code", identifier: "670112233", code, password: "brand-new-pass", confirmPassword: "brand-new-pass" });
     await auth.resetCustomerPassword(input, meta);
     await expect(auth.resetCustomerPassword(input, meta)).rejects.toThrow(); // single use
     const code2 = await auth.issueCustomerResetCode(c.id, staff.id);
     await db.customer.update({ where: { id: c.id }, data: { resetCodeExpiresAt: new Date(Date.now() - 1000) } });
-    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code: code2, password: "another-pass-1" }), meta)).rejects.toThrow();
+    await expect(auth.resetCustomerPassword(auth.resetSchema.parse({ method: "code", identifier: "670112233", code: code2, password: "another-pass-1", confirmPassword: "another-pass-1" }), meta)).rejects.toThrow();
   });
 
   it("changing the password requires the current one and signs out other devices", async () => {
     const c = await auth.registerCustomer(reg(), meta);
     const s1 = (await getCustomer())!.sessionId;
     await db.session.create({ data: { tokenHash: "other-device", kind: "CUSTOMER", customerId: c.id, csrfToken: "x", expiresAt: new Date(Date.now() + 1e6) } });
-    await expect(auth.changeCustomerPassword(c.id, { current: "nope", password: "next-pass-123" }, s1, "ip")).rejects.toThrow(/not correct/);
-    await auth.changeCustomerPassword(c.id, { current: "strong-pass-1", password: "next-pass-123" }, s1, "ip");
+    await expect(auth.changeCustomerPassword(c.id, { current: "nope", password: "next-pass-123", confirmPassword: "next-pass-123" }, s1, "ip")).rejects.toThrow(/not correct/);
+    await auth.changeCustomerPassword(c.id, { current: "strong-pass-1", password: "next-pass-123", confirmPassword: "next-pass-123" }, s1, "ip");
     expect(await db.session.count({ where: { customerId: c.id } })).toBe(1);
   });
 });

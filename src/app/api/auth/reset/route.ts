@@ -13,6 +13,6 @@ export const POST = handler(async (req) => {
   await rateLimit(`reset:ip:${ip}`, 15, 900);
   const input = await readJson(req, resetSchema);
   await rateLimit(`reset:id:${"phone" in input.identifier ? input.identifier.phone : input.identifier.email}`, 8, 900);
-  await resetCustomerPassword(input, { ip, userAgent: req.headers.get("user-agent") });
-  return json({ ok: true });
+  const customer = await resetCustomerPassword(input, { ip, userAgent: req.headers.get("user-agent") });
+  return json({ ok: true, needsEmail: !customer.email });
 });

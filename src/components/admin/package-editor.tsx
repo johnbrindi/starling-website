@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/api-client";
 import { formatDuration } from "@/lib/format";
 import { Alert, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useAdminApi } from "./admin-context";
 
 export interface PackageFormValue {
@@ -148,9 +149,9 @@ export function PackageEditor({ initial, profiles, onDone }: { initial: PackageF
         </div>
       ) : null}
       <div className="flex gap-2 sm:col-span-2">
-        <Button type="submit" loading={busy}>
+        <SubmitButton loading={busy}>
           {v.id ? "Save changes" : "Create package"}
-        </Button>
+        </SubmitButton>
         {onDone ? (
           <Button type="button" variant="secondary" onClick={onDone}>
             Cancel

@@ -1,15 +1,22 @@
 import { expect, test, type Page } from "@playwright/test";
+import { warmUp } from "./warmup";
 
 async function register(page: Page, name: string, phone: string, password = "e2e-password-1") {
   await page.getByLabel("Full name").fill(name);
   await page.getByLabel("Phone number").fill(phone);
   await page.getByLabel("Email").fill(`e2e${phone.replace(/\D/g, "")}@example.com`);
   await page.getByLabel("Create a password").fill(password);
+  await page.getByLabel("Confirm password").fill(password);
   await page.getByText("I accept the").click();
   await page.getByRole("button", { name: "Create account" }).click();
 }
 
 test.describe("customer journey (simulated payment, fake router)", () => {
+  test.beforeAll(async ({ browser }) => {
+    test.setTimeout(600_000);
+    await warmUp(browser, ["/", "/plans/1-hour", "/register", "/login", "/account", "/account/email", "/forgot-password", "/portal"]);
+  });
+
   test("create account → choose pass → pay → code → connect → countdown", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: /Fast Wi-Fi from 105 FCFA/ })).toBeVisible();
@@ -66,6 +73,9 @@ test.describe("customer journey (simulated payment, fake router)", () => {
     await expect(page.getByText("Wrong phone number or password.")).toBeVisible();
     await page.getByLabel("Password", { exact: true }).fill("demo-customer-1");
     await page.getByRole("button", { name: "Sign in" }).click();
+    // Account created before emails were asked for: one quick step, which can be skipped.
+    await expect(page.getByRole("heading", { name: "Add your email" })).toBeVisible();
+    await page.getByRole("link", { name: "Skip for now" }).click();
     await expect(page.getByRole("heading", { name: "Hi, Demo" })).toBeVisible();
     await expect(page.getByText("DEMO-2345").first()).toBeVisible();
   });
@@ -77,10 +87,13 @@ test.describe("customer journey (simulated payment, fake router)", () => {
     await expect(page.getByText(/no email yet/)).toBeVisible(); // switches to the Wi-Fi login way
     await page.getByLabel("Wi-Fi username").fill("DEMO2345");
     await page.getByLabel("Wi-Fi password").fill("DEMO2345");
-    await page.getByLabel("New password").fill("brand-new-pass-1");
+    await page.getByLabel("New password", { exact: true }).fill("brand-new-pass-1");
+    await page.getByLabel("Confirm new password").fill("brand-new-pass-1");
     await page.getByRole("button", { name: /Set new password/ }).click();
+    await expect(page.getByRole("heading", { name: "Add your email" })).toBeVisible();
+    await page.getByRole("link", { name: "Skip for now" }).click();
     await expect(page.getByRole("heading", { name: "Hi, Demo" })).toBeVisible();
-    await expect(page.getByText("Add your email")).toBeVisible();
+    await expect(page.getByText("Add your email")).toBeVisible(); // reminder stays until they add one
   });
 
   test("an existing number cannot register a second account", async ({ page }) => {

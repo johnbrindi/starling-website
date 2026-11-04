@@ -7,6 +7,7 @@ import { formatAccessCode, formatDateTime, formatDuration, formatXaf } from "@/l
 import { Alert, Field, Input, Select } from "@/components/ui/primitives";
 import { PhoneInput } from "@/components/ui/inputs";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useAdminApi } from "./admin-context";
 
 interface Pkg {
@@ -146,9 +147,9 @@ export function SellForm({ packages, networkName, simulatedRouter }: { packages:
         </div>
       ) : null}
       <div className="sm:col-span-2">
-        <Button type="submit" size="lg" loading={busy} disabled={!pkg}>
+        <SubmitButton size="lg" loading={busy} disabled={!pkg}>
           Record cash sale {pkg ? `· ${formatXaf(pkg.priceXaf)}` : ""}
-        </Button>
+        </SubmitButton>
       </div>
     </form>
   );

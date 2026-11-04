@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ApiError } from "@/lib/api-client";
 import { Alert, Field, Input, Select } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useAdminApi } from "./admin-context";
 
 export function VoucherGenerator({ packages }: { packages: { id: string; name: string }[] }) {
@@ -67,7 +68,7 @@ export function VoucherGenerator({ packages }: { packages: { id: string; name: s
         <Input id="vb" value={batch} onChange={(e) => setBatch(e.target.value)} />
       </Field>
       <div className="flex items-end">
-        <Button type="submit" loading={busy} className="w-full">Generate</Button>
+        <SubmitButton loading={busy} className="w-full">Generate</SubmitButton>
       </div>
       {error ? <div className="sm:col-span-4"><Alert tone="bad">{error}</Alert></div> : null}
     </form>

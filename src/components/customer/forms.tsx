@@ -87,6 +87,42 @@ export function ProfileForm({ initialName }: { initialName: string }) {
   );
 }
 
+/** The email that receives password reset codes. */
+export function EmailForm({ initialEmail }: { initialEmail: string }) {
+  const router = useRouter();
+  const [email, setEmail] = useState(initialEmail);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ tone: "ok" | "bad"; text: string } | null>(null);
+  return (
+    <form
+      className="space-y-4"
+      noValidate
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        setMsg(null);
+        try {
+          await api("/api/me/email", { method: "PUT", body: { email } });
+          setMsg({ tone: "ok", text: "Email saved. If you forget your password, we send a code to this email." });
+          router.refresh();
+        } catch (err) {
+          setMsg({ tone: "bad", text: err instanceof ApiError ? (fieldErrors(err).email ?? err.message) : "Could not save." });
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Field label="Email" htmlFor="pf-email" hint="Only used to send you a code if you forget your password.">
+        <Input id="pf-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="e.g. marie@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </Field>
+      {msg ? <Alert tone={msg.tone}>{msg.text}</Alert> : null}
+      <SubmitButton variant="secondary" loading={busy} disabled={email.trim().toLowerCase() === initialEmail || email.trim().length < 5}>
+        Save email
+      </SubmitButton>
+    </form>
+  );
+}
+
 export function ChangePasswordForm() {
   const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");

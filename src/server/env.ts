@@ -65,6 +65,12 @@ const schema = z
     RADIUS_COA_PORT: z.coerce.number().int().positive().default(3799),
     RADIUS_SECRET: optionalString,
 
+    /** SMTP for password reset emails (e.g. Gmail: smtp.gmail.com, port 465, an app password). */
+    SMTP_HOST: optionalString,
+    SMTP_PORT: z.coerce.number().int().positive().default(465),
+    SMTP_USER: optionalString,
+    SMTP_PASS: optionalString,
+    MAIL_FROM: optionalString,
     VAPID_PUBLIC_KEY: optionalString,
     VAPID_PRIVATE_KEY: optionalString,
     VAPID_SUBJECT: z.string().default("mailto:admin@example.com"),

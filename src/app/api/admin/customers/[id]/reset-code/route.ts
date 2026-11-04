@@ -9,5 +9,5 @@ import { issueCustomerResetCode } from "@/server/auth/customer";
 export const POST = staffRoute("customers:revoke", async (_req, staff, ctx: RouteContext<"/api/admin/customers/[id]/reset-code">) => {
   const { id } = await ctx.params;
   const code = await issueCustomerResetCode(id, staff.staff.id, staff.ip);
-  return json({ result: { code, validMinutes: 30 } });
+  return json({ result: `Reset code: ${code}\nValid 30 minutes. Give it only to the account owner. They enter it on Forgot password → By email → 6-digit code.` });
 });

@@ -55,7 +55,7 @@ export function ActionButton({
     setMsg(null);
     try {
       const res = await call<Record<string, unknown>>(path, { method, body: payload });
-      if (showResult) setMsg(JSON.stringify(res.result ?? res, null, 2));
+      if (showResult) setMsg(typeof res.result === "string" ? res.result : typeof res.message === "string" ? res.message : JSON.stringify(res.result ?? res, null, 2));
       router.refresh();
     } catch (err) {
       setMsg(err instanceof ApiError ? err.message : "Request failed");

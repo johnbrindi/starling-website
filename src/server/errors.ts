@@ -10,6 +10,7 @@ export type ErrorCode =
   | "RATE_LIMITED"
   | "PAYMENT_PROVIDER_ERROR"
   | "NETWORK_ERROR"
+  | "SERVICE_UNAVAILABLE"
   | "INTERNAL";
 
 const STATUS: Record<ErrorCode, number> = {
@@ -22,6 +23,7 @@ const STATUS: Record<ErrorCode, number> = {
   RATE_LIMITED: 429,
   PAYMENT_PROVIDER_ERROR: 502,
   NETWORK_ERROR: 502,
+  SERVICE_UNAVAILABLE: 503,
   INTERNAL: 500,
 };
 

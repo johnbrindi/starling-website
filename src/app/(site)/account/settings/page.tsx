@@ -5,7 +5,7 @@ import { getCustomer } from "@/server/auth/session";
 import { formatPhone } from "@/lib/phone";
 import { formatDateTime } from "@/lib/format";
 import { Card, CardHeader } from "@/components/ui/primitives";
-import { ChangePasswordForm, ProfileForm, SignOutButton } from "@/components/customer/forms";
+import { ChangePasswordForm, EmailForm, ProfileForm, SignOutButton } from "@/components/customer/forms";
 
 export const metadata: Metadata = { title: "Account settings" };
 
@@ -21,6 +21,12 @@ export default async function AccountSettingsPage() {
         <CardHeader title="Profile" description={`Phone ${formatPhone(c.phone)} · member since ${formatDateTime(c.createdAt)}`} />
         <div className="p-4 sm:p-5">
           <ProfileForm initialName={c.name ?? ""} />
+        </div>
+      </Card>
+      <Card className="rounded-xl" id="email">
+        <CardHeader title="Email for password reset" description={c.email ? undefined : "Add one now: it is the easiest way back in if you forget your password."} />
+        <div className="p-4 sm:p-5">
+          <EmailForm initialEmail={c.email ?? ""} />
         </div>
       </Card>
       {c.passwordHash ? (

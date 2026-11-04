@@ -14,18 +14,14 @@ export default async function ForgotPasswordPage(props: PageProps<"/forgot-passw
   return (
     <AuthCard
       title="Reset your password"
-      subtitle="Prove the number is yours with a code, then choose a new password."
+      subtitle="Choose the easiest way to prove it is you, then pick a new password."
       footer={
         <>
-          No code? Call support on{" "}
-          <a className="font-semibold text-brand-700" href={`tel:${s.supportPhone.replace(/\s/g, "")}`}>
-            {s.supportPhone}
-          </a>{" "}
-          for a 6-digit reset code. · <Link href="/login" className="font-semibold text-brand-700">Back to sign in</Link>
+          Remembered it? <Link href="/login" className="font-semibold text-brand-700">Back to sign in</Link>
         </>
       }
     >
-      <ResetPasswordForm next={next} />
+      <ResetPasswordForm next={next} support={s.supportWhatsapp} />
     </AuthCard>
   );
 }

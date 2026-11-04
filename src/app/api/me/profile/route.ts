@@ -6,7 +6,7 @@ import { assertSameOrigin, handler, json, readJson } from "@/server/http";
 /** GET /api/me/profile — the signed-in customer's profile. */
 export const GET = handler(async () => {
   const { customer } = await requireCustomer();
-  return json({ name: customer.name, phone: customer.phone, createdAt: customer.createdAt });
+  return json({ name: customer.name, phone: customer.phone, email: customer.email, createdAt: customer.createdAt });
 });
 
 /** PATCH /api/me/profile — { name }. The phone number is the account identifier and cannot be changed here. */

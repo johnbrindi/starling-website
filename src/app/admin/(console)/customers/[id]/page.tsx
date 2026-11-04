@@ -30,7 +30,7 @@ export default async function CustomerPage(props: PageProps<"/admin/customers/[i
       <Link href="/admin/customers" className="text-sm text-muted hover:text-ink">← Customers</Link>
       <PageHeader
         title={formatPhone(c.phone)}
-        description={`${c.name ?? "No name"} · customer since ${formatDateTime(c.createdAt)} · ${c.passwordHash ? "account with password" : "no password set"}${c.lockedUntil && c.lockedUntil > new Date() ? " · LOCKED (too many attempts)" : ""}${c.notificationConsent ? " · push reminders on" : ""}`}
+        description={`${c.name ?? "No name"} · ${c.email ?? "no email"} · customer since ${formatDateTime(c.createdAt)} · ${c.passwordHash ? "account with password" : "no password set"}${c.lockedUntil && c.lockedUntil > new Date() ? " · LOCKED (too many attempts)" : ""}${c.notificationConsent ? " · push reminders on" : ""}`}
         action={
           canRevoke ? (
             <span className="flex flex-wrap items-start gap-2">

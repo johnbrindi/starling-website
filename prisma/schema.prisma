@@ -59,14 +59,18 @@ model Customer {
   /// E.164 phone number, e.g. +237670000000. The account identifier (sign-in with phone + password).
   phone               String    @unique
   name                String?
+  /// Lower-case email, used only to send password reset codes.
+  email               String?   @unique
   /// Argon2id hash. Null for legacy customers created before accounts existed (they set one via reset).
   passwordHash        String?
   passwordChangedAt   DateTime?
   failedLoginCount    Int       @default(0)
   lockedUntil         DateTime?
-  /// One-time reset code issued by staff (hash only), for customers who forgot their password.
+  /// One-time 6-digit reset code (hash only): sent by email or issued by staff.
   resetCodeHash       String?
   resetCodeExpiresAt  DateTime?
+  /// Wrong reset codes since the last code was issued (the code is cancelled after 5).
+  resetAttempts       Int       @default(0)
   notificationConsent Boolean   @default(false)
   isBlocked           Boolean   @default(false)
   createdAt           DateTime  @default(now())

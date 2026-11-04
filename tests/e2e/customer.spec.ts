@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 async function register(page: Page, name: string, phone: string, password = "e2e-password-1") {
   await page.getByLabel("Full name").fill(name);
   await page.getByLabel("Phone number").fill(phone);
+  await page.getByLabel("Email").fill(`e2e${phone.replace(/\D/g, "")}@example.com`);
   await page.getByLabel("Create a password").fill(password);
   await page.getByText("I accept the").click();
   await page.getByRole("button", { name: "Create account" }).click();
@@ -23,7 +24,7 @@ test.describe("customer journey (simulated payment, fake router)", () => {
     // Back on the plan, signed in, payer number prefilled from the account.
     await expect(page).toHaveURL(/\/plans\/1-hour/);
     await expect(page.getByText("Buying as")).toContainText("Awa Bello");
-    await expect(page.getByLabel("Mobile Money number")).toHaveValue("670000000");
+    await expect(page.getByLabel("MTN MoMo number")).toHaveValue("670000000");
     await page.getByRole("button", { name: /Pay .*105.*FCFA/ }).click();
 
     await expect(page).toHaveURL(/\/pay\//);
@@ -69,13 +70,17 @@ test.describe("customer journey (simulated payment, fake router)", () => {
     await expect(page.getByText("DEMO-2345").first()).toBeVisible();
   });
 
-  test("forgot password: prove ownership with an access code, set a new password", async ({ page }) => {
+  test("forgot password: no email on the account, so the Wi-Fi login proves ownership", async ({ page }) => {
     await page.goto("/forgot-password");
-    await page.getByLabel("Phone number").fill("670000090");
-    await page.getByLabel("Verification code").fill("DEMO-2345");
+    await page.getByLabel("Phone number or email").fill("670000090");
+    await page.getByRole("button", { name: "Send me a code by email" }).click();
+    await expect(page.getByText(/no email yet/)).toBeVisible(); // switches to the Wi-Fi login way
+    await page.getByLabel("Wi-Fi username").fill("DEMO2345");
+    await page.getByLabel("Wi-Fi password").fill("DEMO2345");
     await page.getByLabel("New password").fill("brand-new-pass-1");
     await page.getByRole("button", { name: /Set new password/ }).click();
     await expect(page.getByRole("heading", { name: "Hi, Demo" })).toBeVisible();
+    await expect(page.getByText("Add your email")).toBeVisible();
   });
 
   test("an existing number cannot register a second account", async ({ page }) => {

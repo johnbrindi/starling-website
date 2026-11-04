@@ -49,6 +49,11 @@ export default async function AccountPage(props: PageProps<"/account">) {
       </div>
       {sp.paid ? <Alert tone="ok" title="Payment confirmed">Your access code is ready. Tap “Connect this device” to go online.</Alert> : null}
       {sp.redeemed ? <Alert tone="ok" title="Voucher redeemed">Your access code is ready. Tap “Connect this device” to go online.</Alert> : null}
+      {ctx.customer.passwordHash && !ctx.customer.email ? (
+        <Alert tone="warn" title="Add your email">
+          If you ever forget your password, we send you a code by email. <Link href="/account/settings#email" className="font-semibold underline">Add email</Link>
+        </Alert>
+      ) : null}
       {!ctx.customer.passwordHash ? (
         <Alert tone="warn" title="Protect your account">
           Set a password so you can sign in on any device. <Link href="/forgot-password" className="font-semibold underline">Set password</Link>

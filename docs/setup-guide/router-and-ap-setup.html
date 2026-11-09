@@ -371,13 +371,13 @@
 
   <table>
     <tr><th>Profile</th><th>Length</th><th>Price</th><th>Phones</th><th>Speed (up/down)</th></tr>
-    <tr><td class="v">1hour</td><td>1 hour</td><td>105 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">12hours</td><td>12 hours</td><td>155 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">24hours</td><td>24 hours</td><td>210 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">1week</td><td>7 days</td><td>1 400 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">2weeks</td><td>14 days</td><td>2 600 FCFA</td><td>1</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">1month</td><td>30 days</td><td>4 650 FCFA</td><td>2</td><td>2 / 5 Mbit/s</td></tr>
-    <tr><td class="v">family</td><td>never expires</td><td>free</td><td>2</td><td>5 / 10 Mbit/s</td></tr>
+    <tr><td class="v">1hour</td><td>1 hour</td><td>105 FCFA</td><td>1</td><td>20 / 20 Mbit/s</td></tr>
+    <tr><td class="v">12hours</td><td>12 hours</td><td>155 FCFA</td><td>1</td><td>20 / 20 Mbit/s</td></tr>
+    <tr><td class="v">24hours</td><td>24 hours</td><td>210 FCFA</td><td>1</td><td>20 / 20 Mbit/s</td></tr>
+    <tr><td class="v">1week</td><td>7 days</td><td>1 400 FCFA</td><td>1</td><td>30 / 30 Mbit/s</td></tr>
+    <tr><td class="v">2weeks</td><td>14 days</td><td>2 600 FCFA</td><td>1</td><td>30 / 30 Mbit/s</td></tr>
+    <tr><td class="v">1month</td><td>30 days</td><td>4 650 FCFA</td><td>1</td><td>50 / 50 Mbit/s</td></tr>
+    <tr><td class="v">family</td><td>never expires</td><td>free</td><td>2</td><td>No limit</td></tr>
   </table>
   <div class="box tip"><b>family</b> is only for the family members who contributed to the Starlink (Part 13). Public customers can never get it unless you create a family login for them.</div>
 
@@ -388,21 +388,21 @@
   <div class="step"><div class="n">2</div><div><b class="t">Import it</b>
     <span class="click">New Terminal</span> → type:
     <pre>/import file-name=starling-profiles.rsc</pre></div></div>
-  <div class="box see">Seven lines like “Profile 1hour (1h, 105 FCFA, 1 device(s)) ready” and “Profile family (free, never expires…) ready” and “Script file loaded and executed successfully”. <span class="click">IP → Hotspot → User Profiles</span> lists the six profiles.</div>
+  <div class="box see">Seven lines like “Profile 1hour (1h, 105 FCFA, 1 device(s), 20M/20M) ready” and “Profile family (free, never expires…) ready” and “Script file loaded and executed successfully”. <span class="click">IP → Hotspot → User Profiles</span> lists the six profiles.</div>
   <div class="box ifnot">“no such file”: the file is not at the top level or the name is different; check <span class="click">Files</span>. To try again, simply run the import again: it replaces the profiles.</div>
   <div class="box tip">Already imported an older version of this file? Upload the new one (replace) and run the import again. It updates the profiles in place and adds <b>family</b>; customers who are online keep working.</div>
 
   <h3>What each profile does (you do not need to change anything)</h3>
   <table>
     <tr><th style="width:30%">Setting</th><th>Value and meaning</th></tr>
-    <tr><td>Shared Users</td><td><b>1</b>: one phone at a time per username (2 for 1month).</td></tr>
-    <tr><td>Rate Limit</td><td><b>2M/5M</b>: 2 Mbit/s upload, 5 Mbit/s download per customer, so one person downloading a film does not slow everyone.</td></tr>
+    <tr><td>Shared Users</td><td>One device at a time per login. The setting shows <b>2</b> so a new device is accepted; the login script then disconnects the old one. (family: 2 devices.)</td></tr>
+    <tr><td>Rate Limit</td><td>Per customer, upload/download: <b>20M/20M</b> for 24 hours and below, <b>30M/30M</b> for 1 and 2 weeks, <b>50M/50M</b> for 1 month. All customers still share the router and the Starlink connection. A customer already online gets a new speed at their next login.</td></tr>
     <tr><td>Idle Timeout</td><td><b>none</b>: a customer is not logged out just for being idle.</td></tr>
     <tr><td>Keepalive Timeout</td><td><b>3h</b>: if a phone switches Wi-Fi off, it keeps its place for 3 hours, so the same username cannot be passed to a friend's phone.</td></tr>
     <tr><td>Status Autorefresh</td><td><b>1m</b>: the “time left” page refreshes every minute.</td></tr>
     <tr><td>Scripts → On Login</td><td>At the first login: creates a timer (in <span class="click">System → Scheduler</span>, named <span class="mono">exp-username</span>) and writes the start and end time in the user's Comment. When the timer ends: disconnects the phone and deletes the user.</td></tr>
   </table>
-  <div class="box tip">To change a speed later: <span class="click">IP → Hotspot → User Profiles</span> → double-click the profile → Rate Limit (e.g. <code>3M/8M</code>) → OK. To change a duration, edit the number after <code>interval=</code> in the profile's <b>Scripts → On Login</b> box (e.g. <code>1h</code>, <code>2d</code>, <code>7d</code>).</div>
+  <div class="box tip">To change a speed later: <span class="click">IP → Hotspot → User Profiles</span> → double-click the profile → Rate Limit (e.g. <code>20M/20M</code>) → OK. To change a duration, edit the number after <code>interval=</code> in the profile's <b>Scripts → On Login</b> box (e.g. <code>1h</code>, <code>2d</code>, <code>7d</code>).</div>
 </section>
 
 <!-- ============================== PART 12 ============================== -->
@@ -497,7 +497,7 @@
   <p>For family members who contributed to buying the Starlink: open <b>ticket-maker.html</b> → Plan: <b>Family member (free)</b> → type their name (and phone) → <b>Make ticket</b> → paste the command into Winbox <span class="click">New Terminal</span> → send them the message. Example:</p>
   <pre>/ip hotspot user add name=marie766 password=261043 profile=family comment="FAMILY: Marie Ngono, 677123456"</pre>
   <ul>
-    <li>Free, never expires, up to <b>2 of their own devices</b>, faster speed (5/10 Mbit/s).</li>
+    <li>Free, never expires, up to <b>2 of their own devices</b>, no speed limit.</li>
     <li>In <span class="click">IP → Hotspot → Users</span> family logins have profile <b>family</b> and a comment starting with <b>FAMILY:</b>. <span class="click">Find</span> → <code>FAMILY</code> lists them all.</li>
     <li>If a family login is shared with the public, change its password or click <span class="click">✗ Disable</span>.</li>
   </ul>

@@ -1,17 +1,16 @@
 """Generates starling-profiles.rsc: hotspot user profiles (packages) with an on-login script that
 removes the user when its paid time ends (time starts at the FIRST login, like printed tickets).
 Run:  python3 network/mikrotik/standalone/build_profiles.py
-Edit PACKAGES / RATE below, re-run, then import the .rsc on the router."""
+Edit PACKAGES below, re-run, then import the .rsc on the router."""
 from pathlib import Path
 
-RATE = '""'  # no speed limit on any plan; for a cap use upload/download, e.g. "5M/20M"
-PACKAGES = [  # (profile name, RouterOS interval, price note, devices)
-    ("1hour", "1h", "105 FCFA", 1),
-    ("12hours", "12h", "155 FCFA", 1),
-    ("24hours", "1d", "210 FCFA", 1),
-    ("1week", "7d", "1400 FCFA", 1),
-    ("2weeks", "14d", "2600 FCFA", 1),
-    ("1month", "30d", "4650 FCFA", 1),
+PACKAGES = [  # (profile name, RouterOS interval, price note, devices, speed per customer as upload/download)
+    ("1hour", "1h", "105 FCFA", 1, "20M/20M"),
+    ("12hours", "12h", "155 FCFA", 1, "20M/20M"),
+    ("24hours", "1d", "210 FCFA", 1, "20M/20M"),
+    ("1week", "7d", "1400 FCFA", 1, "30M/30M"),
+    ("2weeks", "14d", "2600 FCFA", 1, "30M/30M"),
+    ("1month", "30d", "4650 FCFA", 1, "50M/50M"),
 ]
 
 # One device per login: a new login disconnects the login's other devices and deletes their MAC
@@ -37,7 +36,7 @@ def ros_quote(s: str) -> str:
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("\n", "\\r\\n") + '"'
 
 
-# Free access for the family members who contributed to the Starlink: never expires, faster, 2 devices.
+# Free access for the family members who contributed to the Starlink: never expires, no speed limit, 2 devices.
 FAMILY = ("family", '""', 2)
 
 
@@ -57,16 +56,16 @@ def main():
         "# Safe to import again, even with customers online: existing profiles are updated in place.",
         "",
     ]
-    for name, interval, price, devices in PACKAGES:
+    for name, interval, price, devices, rate in PACKAGES:
         script = ON_LOGIN.replace("DURATION", interval)
         # shared-users is one more than allowed so the new device is accepted; the script then removes the old one.
         out += upsert(
             name,
-            f"shared-users={devices + 1} rate-limit={RATE} idle-timeout=none "
+            f"shared-users={devices + 1} rate-limit={rate} idle-timeout=none "
             f"keepalive-timeout=3h status-autorefresh=1m add-mac-cookie=yes mac-cookie-timeout=3d "
             f"on-login={ros_quote(script)}",
         )
-        out.append(f':put "Profile {name} ({interval}, {price}, {devices} device(s)) ready"')
+        out.append(f':put "Profile {name} ({interval}, {price}, {devices} device(s), {rate}) ready"')
     fname, frate, fdev = FAMILY
     out += upsert(
         fname,

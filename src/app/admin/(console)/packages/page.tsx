@@ -66,7 +66,7 @@ export default async function PackagesPage() {
               <span className="w-28 font-medium">{formatXaf(p.priceXaf)}{p.promoPriceXaf !== null ? <span className="block text-xs text-brand-700">promo {formatXaf(p.promoPriceXaf)}</span> : null}</span>
               <span className="w-24 text-ink-soft">{formatDuration(p.durationMinutes)}</span>
               <span className="w-40 text-xs text-muted">
-                {p.maxDevices} device(s) · {p.dataLimitMb ? `${p.dataLimitMb} MB` : "no cap"} · {p.rateLimit ?? p.networkProfile?.routerName ?? "default speed"}
+                {p.maxDevices} device(s) · {p.dataLimitMb ? `${p.dataLimitMb} MB` : "no cap"} · {p.rateLimit ?? p.networkProfile?.rateLimit ?? "no speed limit"}
               </span>
               <Badge tone={p.status === "ACTIVE" ? "ok" : p.status === "ARCHIVED" ? "neutral" : "warn"}>{p.status.toLowerCase()}</Badge>
               {canEdit && p.status !== "ARCHIVED" ? <PackageRowEditor value={toForm(p)} profiles={profiles} label="Edit" /> : null}

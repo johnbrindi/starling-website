@@ -4,7 +4,7 @@ Run:  python3 network/mikrotik/standalone/build_profiles.py
 Edit PACKAGES / RATE below, re-run, then import the .rsc on the router."""
 from pathlib import Path
 
-RATE = "2M/5M"  # upload/download per customer (router view: rx/tx)
+RATE = "5M/20M"  # upload/download per customer (router view: rx/tx)
 PACKAGES = [  # (profile name, RouterOS interval, price note, devices)
     ("1hour", "1h", "105 FCFA", 1),
     ("12hours", "12h", "155 FCFA", 1),
@@ -38,7 +38,7 @@ def ros_quote(s: str) -> str:
 
 
 # Free access for the family members who contributed to the Starlink: never expires, faster, 2 devices.
-FAMILY = ("family", "5M/10M", 2)
+FAMILY = ("family", "8M/30M", 2)
 
 
 def upsert(name: str, attrs: str) -> list[str]:

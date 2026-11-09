@@ -48,7 +48,7 @@ async function main() {
   for (const [slug, routerName] of Object.entries(ROUTER_PROFILE)) {
     const prof = await db.networkProfile.upsert({
       where: { routerName },
-      create: { routerName, description: `Router profile ${routerName} (expiry timer + speed on the router)`, rateLimit: "2M/5M", sharedUsers: routerName === "1month" ? 2 : 1, idleTimeout: "none", keepaliveTimeout: "3h", statusAutorefresh: "1m" },
+      create: { routerName, description: `Router profile ${routerName} (expiry timer + speed on the router)`, rateLimit: "5M/20M", sharedUsers: routerName === "1month" ? 2 : 1, idleTimeout: "none", keepaliveTimeout: "3h", statusAutorefresh: "1m" },
       update: {},
     });
     await db.package.updateMany({ where: { slug }, data: { networkProfileId: prof.id } });

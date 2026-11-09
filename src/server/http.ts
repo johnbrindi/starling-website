@@ -65,18 +65,27 @@ export function clientIp(req: Request): string {
   return "unknown";
 }
 
+/** Our own site: APP_URL, plus the same domain with/without "www." (one redirects to the other). */
+export function allowedOrigins(): Set<string> {
+  const u = new URL(env().APP_URL);
+  const twin = u.hostname.startsWith("www.") ? u.hostname.slice(4) : u.hostname.split(".").length === 2 ? `www.${u.hostname}` : null;
+  const set = new Set([u.origin]);
+  if (twin) set.add(`${u.protocol}//${twin}${u.port ? `:${u.port}` : ""}`);
+  return set;
+}
+
 /**
  * CSRF defence for cookie-authenticated, state-changing requests:
- * the Origin (or Referer) must match APP_URL. Browsers always send Origin on cross-site POSTs.
+ * the Origin (or Referer) must be our own site. Browsers always send Origin on cross-site POSTs.
  */
 export function assertSameOrigin(req: Request) {
-  const expected = new URL(env().APP_URL).origin;
+  const allowed = allowedOrigins();
   const origin = req.headers.get("origin");
   if (origin) {
-    if (origin !== expected) throw new AppError("FORBIDDEN", "Cross-site request blocked.");
+    if (!allowed.has(origin)) throw new AppError("FORBIDDEN", "Please open the site at its official address and try again.");
     return;
   }
   const referer = req.headers.get("referer");
-  if (referer && new URL(referer).origin === expected) return;
+  if (referer && allowed.has(new URL(referer).origin)) return;
   throw new AppError("FORBIDDEN", "Missing request origin.");
 }

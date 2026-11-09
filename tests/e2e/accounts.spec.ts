@@ -33,13 +33,12 @@ test.describe("accounts: sign-up and password recovery", () => {
   });
   test.beforeEach(() => test.setTimeout(180_000));
 
-  test("sign-up needs email and matching passwords; forgot password by email works end to end", async ({ page }) => {
-    const phone = "6770" + String(Date.now()).slice(-5);
-    const email = `client${phone}@example.com`;
+  test("sign-up is email + matching passwords (no phone); forgot password by email code works end to end", async ({ page }) => {
+    const email = `client${Date.now()}@example.com`;
     await page.goto("/register");
     await ready(page);
+    await expect(page.getByLabel("Phone number")).toHaveCount(0);
     await page.getByLabel("Full name").fill("Aline Test");
-    await page.getByLabel("Phone number").fill(phone);
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create a password").fill("first-pass-123");
     await page.getByLabel("Confirm password").fill("first-pass-999");
@@ -54,11 +53,13 @@ test.describe("accounts: sign-up and password recovery", () => {
 
     await signOut(page);
     await page.goto("/login");
-    await page.getByRole("link", { name: "Forgot password?" }).click();
     await ready(page);
-    await page.getByLabel("Phone number or email").fill(phone);
-    await page.getByRole("button", { name: "Send me a code by email" }).click();
-    await expect(page.getByText(/We sent a 6-digit code to c\*+\d@example\.com/)).toBeVisible();
+    await page.getByRole("link", { name: /Forgot password\? Get a code by email/ }).click();
+    await expect(page.getByRole("heading", { name: "Reset your password" })).toBeVisible();
+    await ready(page);
+    await page.getByLabel("Email").fill(email.toUpperCase());
+    await page.getByRole("button", { name: "Send me a code" }).click();
+    await expect(page.getByText(/Code sent to c\*+\d@example\.com/)).toBeVisible();
     const code = await codeFromEmail(email);
     await page.getByLabel("6-digit code").fill(code);
     await page.getByLabel("New password", { exact: true }).fill("second-pass-456");
@@ -70,10 +71,10 @@ test.describe("accounts: sign-up and password recovery", () => {
     await signOut(page);
     await page.goto("/login");
     await ready(page);
-    await page.getByLabel("Phone number").fill(phone);
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password", { exact: true }).fill("first-pass-123");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByText("Wrong phone number or password.")).toBeVisible();
+    await expect(page.getByText("Wrong email or password.")).toBeVisible();
     await page.getByLabel("Password", { exact: true }).fill("second-pass-456");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByRole("heading", { name: "Hi, Aline" })).toBeVisible();
@@ -82,7 +83,7 @@ test.describe("accounts: sign-up and password recovery", () => {
   test("an older account without email is asked for one right after signing in", async ({ page }) => {
     await page.goto("/login?next=/account");
     await ready(page);
-    await page.getByLabel("Phone number").fill("670000091"); // legacy customer, created without email
+    await page.getByLabel("Email").fill("670000091"); // older customer: created with a phone number, no email
     await page.getByLabel("Password", { exact: true }).fill("legacy-customer-1");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByRole("heading", { name: "Add your email" })).toBeVisible();
@@ -94,9 +95,9 @@ test.describe("accounts: sign-up and password recovery", () => {
     await signOut(page);
     await page.goto("/forgot-password");
     await ready(page);
-    await page.getByLabel("Phone number or email").fill("legacy.customer@example.com");
-    await page.getByRole("button", { name: "Send me a code by email" }).click();
-    await expect(page.getByText(/We sent a 6-digit code to l\*+r@example\.com/)).toBeVisible();
+    await page.getByLabel("Email").fill("legacy.customer@example.com");
+    await page.getByRole("button", { name: "Send me a code" }).click();
+    await expect(page.getByText(/Code sent to l\*+r@example\.com/)).toBeVisible();
     expect(await codeFromEmail("legacy.customer@example.com")).toMatch(/^\d{6}$/);
   });
 
@@ -119,10 +120,7 @@ test.describe("accounts: sign-up and password recovery", () => {
     const page = await (await browser.newContext()).newPage();
     await page.goto("/forgot-password");
     await ready(page);
-    await page.getByRole("button", { name: "Ask us" }).click();
-    await expect(page.getByRole("link", { name: "WhatsApp Juthelink" })).toHaveAttribute("href", /^whatsapp:\/\/send\?phone=\d+/);
-    await page.getByRole("button", { name: "I have a code" }).click();
-    await page.getByLabel("Phone number or email").fill("670000091");
+    await page.getByLabel("Email").fill("670000091");
     await page.getByLabel("6-digit code").fill(code);
     await page.getByLabel("New password", { exact: true }).fill("support-pass-789");
     await page.getByLabel("Confirm new password").fill("support-pass-789");

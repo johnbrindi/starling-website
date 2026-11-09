@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireStaffPage } from "@/server/admin/guard";
 import { db } from "@/server/db";
 import { formatDateTime } from "@/lib/format";
-import { formatPhone } from "@/lib/phone";
+import { formatContact } from "@/lib/phone";
 import { Badge, Card, Empty, Input, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +17,7 @@ export default async function CustomersPage(props: PageProps<"/admin/customers">
           OR: [
             ...(digits.length >= 3 ? [{ phone: { contains: digits } }] : []),
             { name: { contains: q, mode: "insensitive" as const } },
+            { email: { contains: q, mode: "insensitive" as const } },
             { credentials: { some: { username: q.toUpperCase().replace(/[^A-Z0-9]/g, "") } } },
           ],
         }
@@ -55,7 +56,7 @@ export default async function CustomersPage(props: PageProps<"/admin/customers">
                 <tr key={c.id}>
                   <Td>
                     <Link href={`/admin/customers/${c.id}`} className="font-medium text-brand-700 hover:underline">
-                      {formatPhone(c.phone)}
+                      {formatContact(c)}
                     </Link>
                   </Td>
                   <Td>{c.name ?? "—"}</Td>

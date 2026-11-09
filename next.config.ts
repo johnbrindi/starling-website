@@ -31,6 +31,20 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Old hosting addresses (*.vercel.app) send visitors to the official address, where sign-in works.
+  // API routes are left alone so nothing that calls them (router, payment provider) breaks.
+  async redirects() {
+    const app = process.env.APP_URL;
+    if (!app || !app.startsWith("https://") || app.includes(".vercel.app")) return [];
+    return [
+      {
+        source: "/:path((?!api/).*)",
+        has: [{ type: "host" as const, value: "(?<oldhost>.+\\.vercel\\.app)" }],
+        destination: `${app}/:path`,
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -33,3 +33,8 @@ export function formatPhone(e164: string): string {
   const local = e164.replace(/^\+237/, "");
   return `+237 ${local.slice(0, 1)} ${local.slice(1, 3)} ${local.slice(3, 5)} ${local.slice(5, 7)} ${local.slice(7, 9)}`;
 }
+
+/** How to show a customer: phone for older accounts, email for new ones (never empty). */
+export function formatContact(c: { phone?: string | null; email?: string | null }): string {
+  return c.phone ? formatPhone(c.phone) : (c.email ?? "no contact");
+}

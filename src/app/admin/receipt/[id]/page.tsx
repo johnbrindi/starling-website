@@ -5,7 +5,7 @@ import { db } from "@/server/db";
 import { getSettings } from "@/server/settings";
 import { credentialPassword } from "@/server/subscriptions/service";
 import { formatDuration, formatXaf } from "@/lib/format";
-import { formatPhone } from "@/lib/phone";
+import { formatContact } from "@/lib/phone";
 import { PrintNow } from "@/components/admin/print-now";
 
 export const metadata: Metadata = { title: "Receipt", robots: { index: false } };
@@ -24,7 +24,7 @@ export default async function ReceiptPage(props: PageProps<"/admin/receipt/[id]"
   const cred = await db.accessCredential.findUnique({
     where: { id },
     include: {
-      customer: { select: { name: true, phone: true } },
+      customer: { select: { name: true, phone: true, email: true } },
       package: { select: { name: true, durationMinutes: true, priceXaf: true } },
       subscriptions: { orderBy: { createdAt: "desc" }, take: 1, include: { package: { select: { name: true, durationMinutes: true } }, payment: { select: { reference: true, amountXaf: true, provider: true, createdAt: true } } } },
     },
@@ -71,7 +71,7 @@ export default async function ReceiptPage(props: PageProps<"/admin/receipt/[id]"
         <div className="row"><span>Activated</span><b>{waitingFirstLogin ? "At first login" : fmt(cred.validFrom)}</b></div>
         <div className="row"><span>Expires</span><b>{waitingFirstLogin ? (minutes ? `${formatDuration(minutes)} after first login` : "—") : fmt(cred.validUntil)}</b></div>
         <div className="row"><span>Devices</span><b>{cred.maxDevices}</b></div>
-        {cred.customer ? <div className="row"><span>Customer</span><b>{cred.customer.name ?? formatPhone(cred.customer.phone)}</b></div> : null}
+        {cred.customer ? <div className="row"><span>Customer</span><b>{cred.customer.name ?? formatContact(cred.customer)}</b></div> : null}
         {sub?.payment ? <div className="row"><span>Ref</span><b style={{ fontSize: 10 }}>{sub.payment.reference}</b></div> : null}
         <div className="row"><span>Printed</span><b>{fmt(new Date())}</b></div>
         <hr />

@@ -170,7 +170,11 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
   const settings = await getSettings();
   const provider = getActiveProvider();
 
-  const customer = await db.customer.update({ where: { id: customerId }, data: { lastSeenAt: new Date() } });
+  let customer = await db.customer.update({ where: { id: customerId }, data: { lastSeenAt: new Date() } });
+  // Email accounts: remember the MTN number they pay with (shown to staff, router comments).
+  if (!customer.phone) {
+    customer = await db.customer.update({ where: { id: customerId }, data: { phone } }).catch(() => customer); // number already on another account: keep it there
+  }
   if (customer.isBlocked) throw new AppError("FORBIDDEN", "This number cannot make purchases. Please contact support.");
 
   const pending = await db.payment.count({

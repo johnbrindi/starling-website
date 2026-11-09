@@ -2,7 +2,7 @@ import { registerCustomer, registerSchema } from "@/server/auth/customer";
 import { assertSameOrigin, clientIp, handler, json, readJson } from "@/server/http";
 import { rateLimit } from "@/server/rate-limit";
 
-/** POST /api/auth/register — { name, phone, password }. Creates the account and signs it in. */
+/** POST /api/auth/register — { name, email, password, confirmPassword }. Creates the account and signs it in. */
 export const POST = handler(async (req) => {
   assertSameOrigin(req);
   const ip = clientIp(req);

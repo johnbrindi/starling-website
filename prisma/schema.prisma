@@ -56,10 +56,11 @@ model PasswordResetToken {
 
 model Customer {
   id                  String    @id @default(cuid())
-  /// E.164 phone number, e.g. +237670000000. The account identifier (sign-in with phone + password).
-  phone               String    @unique
+  /// E.164 phone number, e.g. +237670000000. Older accounts signed in with it; new accounts use email
+  /// and get the MTN number they pay with saved here at their first checkout.
+  phone               String?   @unique
   name                String?
-  /// Lower-case email, used only to send password reset codes.
+  /// Lower-case email: the sign-in identifier and where password reset codes are sent.
   email               String?   @unique
   /// Argon2id hash. Null for legacy customers created before accounts existed (they set one via reset).
   passwordHash        String?

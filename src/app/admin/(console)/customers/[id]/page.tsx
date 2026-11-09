@@ -5,7 +5,7 @@ import { can } from "@/server/auth/rbac";
 import { db } from "@/server/db";
 import { isEntitled } from "@/server/subscriptions/service";
 import { formatBytes, formatDateTime, formatXaf, maskCode } from "@/lib/format";
-import { formatPhone } from "@/lib/phone";
+import { formatContact } from "@/lib/phone";
 import { Badge, Card, CardHeader, Empty, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { ActionButton } from "@/components/admin/admin-context";
 
@@ -29,7 +29,7 @@ export default async function CustomerPage(props: PageProps<"/admin/customers/[i
     <>
       <Link href="/admin/customers" className="text-sm text-muted hover:text-ink">← Customers</Link>
       <PageHeader
-        title={formatPhone(c.phone)}
+        title={c.name ? `${c.name} · ${formatContact(c)}` : formatContact(c)}
         description={`${c.name ?? "No name"} · ${c.email ?? "no email"} · customer since ${formatDateTime(c.createdAt)} · ${c.passwordHash ? "account with password" : "no password set"}${c.lockedUntil && c.lockedUntil > new Date() ? " · LOCKED (too many attempts)" : ""}${c.notificationConsent ? " · push reminders on" : ""}`}
         action={
           canRevoke ? (

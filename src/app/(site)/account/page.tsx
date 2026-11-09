@@ -7,7 +7,7 @@ import { provisionNow } from "@/server/jobs/tick";
 import { getNetworkAdapter } from "@/server/network";
 import { getSettings } from "@/server/settings";
 import { db } from "@/server/db";
-import { formatPhone } from "@/lib/phone";
+import { formatContact } from "@/lib/phone";
 import { formatDateTime } from "@/lib/format";
 import { AccessPanel } from "@/components/customer/access-panel";
 import { HowToUse } from "@/components/customer/how-to-use";
@@ -45,7 +45,7 @@ export default async function AccountPage(props: PageProps<"/account">) {
       {sp.paid || sp.redeemed ? <PurchaseSteps current={4} /> : null}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{firstName ? `Hi, ${firstName}` : "My Wi-Fi"}</h1>
-        <p className="mt-1 text-sm text-muted">{formatPhone(ctx.customer.phone)}</p>
+        <p className="mt-1 text-sm text-muted">{ctx.customer.email ?? formatContact(ctx.customer)}</p>
       </div>
       {sp.paid ? <Alert tone="ok" title="Payment confirmed">Your access code is ready. Tap “Connect this device” to go online.</Alert> : null}
       {sp.redeemed ? <Alert tone="ok" title="Voucher redeemed">Your access code is ready. Tap “Connect this device” to go online.</Alert> : null}

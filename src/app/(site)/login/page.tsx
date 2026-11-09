@@ -15,7 +15,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
   return (
     <AuthCard
       title="Welcome back"
-      subtitle="Sign in with your phone number and password."
+      subtitle="Sign in with your email and password."
       footer={
         <>
           New here?{" "}

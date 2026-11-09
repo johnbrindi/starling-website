@@ -14,7 +14,7 @@ export default async function ForgotPasswordPage(props: PageProps<"/forgot-passw
   return (
     <AuthCard
       title="Reset your password"
-      subtitle="Choose the easiest way to prove it is you, then pick a new password."
+      subtitle="We email you a 6-digit code. Enter it with your new password."
       footer={
         <>
           Remembered it? <Link href="/login" className="font-semibold text-brand-700">Back to sign in</Link>

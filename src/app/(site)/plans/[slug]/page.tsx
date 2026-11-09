@@ -58,9 +58,9 @@ export default async function PlanPage(props: PageProps<"/plans/[slug]">) {
           {ctx ? (
             <>
               <p className="mb-4 text-sm text-muted">
-                Buying as <span className="font-medium text-ink">{ctx.customer.name ?? ctx.customer.phone}</span>
+                Buying as <span className="font-medium text-ink">{ctx.customer.name ?? ctx.customer.email ?? ctx.customer.phone}</span>
               </p>
-              <CheckoutForm plan={plan} defaultPhone={ctx.customer.phone} simulated={simulated} manual={manual} paymentPage={paymentPage} />
+              <CheckoutForm plan={plan} defaultPhone={ctx.customer.phone ?? undefined} simulated={simulated} manual={manual} paymentPage={paymentPage} />
             </>
           ) : (
             <div className="py-2 text-center">

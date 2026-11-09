@@ -5,7 +5,7 @@ import { requireStaffPage } from "@/server/admin/guard";
 import { db } from "@/server/db";
 import { getDashboard } from "@/server/admin/dashboard";
 import { formatDateTime, formatXaf } from "@/lib/format";
-import { formatPhone } from "@/lib/phone";
+import { formatContact } from "@/lib/phone";
 import { Alert, Badge, Card, CardHeader, Empty, PageHeader, Stat, Table, Td, Th } from "@/components/ui/primitives";
 
 export default async function DashboardPage(props: PageProps<"/admin">) {
@@ -73,7 +73,7 @@ export default async function DashboardPage(props: PageProps<"/admin">) {
             <ul className="divide-y divide-line text-sm">
               {d.expiringSoon.map((c) => (
                 <li key={c.id} className="flex justify-between px-4 py-2.5">
-                  <span>{c.customer ? formatPhone(c.customer.phone) : `Ticket ${c.username}`}</span>
+                  <span>{c.customer ? formatContact(c.customer) : `Ticket ${c.username}`}</span>
                   <span className="text-muted">{formatDateTime(c.validUntil)}</span>
                 </li>
               ))}

@@ -25,7 +25,7 @@ export async function getDashboard() {
         where: { status: "ACTIVE", validUntil: { gt: now, lte: soon } },
         orderBy: { validUntil: "asc" },
         take: 10,
-        include: { customer: { select: { phone: true } } },
+        include: { customer: { select: { phone: true, email: true } } },
       }),
       db.job.count({ where: { status: "DEAD" } }),
       db.accessCredential.count({ where: { provisionState: "FAILED" } }),

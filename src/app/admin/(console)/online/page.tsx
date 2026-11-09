@@ -4,7 +4,7 @@ import { can } from "@/server/auth/rbac";
 import { db } from "@/server/db";
 import { SPEED_TIERS, isSpeedTier } from "@/server/network/commands";
 import { formatBytes, formatDateTime, formatRemaining } from "@/lib/format";
-import { formatPhone } from "@/lib/phone";
+import { formatContact } from "@/lib/phone";
 import { Alert, Badge, Card, Empty, PageHeader } from "@/components/ui/primitives";
 import { ActionButton } from "@/components/admin/admin-context";
 import { AutoRefresh } from "@/components/admin/auto-refresh";
@@ -34,7 +34,7 @@ export default async function OnlinePage() {
       include: {
         credential: {
           include: {
-            customer: { select: { id: true, name: true, phone: true } },
+            customer: { select: { id: true, name: true, phone: true, email: true } },
             subscriptions: { orderBy: { createdAt: "desc" }, take: 1, select: { package: { select: { name: true } } } },
           },
         },
@@ -42,7 +42,7 @@ export default async function OnlinePage() {
       orderBy: { startedAt: "desc" },
       take: 200,
     }),
-    db.accessCredential.findMany({ where: { pausedAt: { not: null }, status: "ACTIVE" }, include: { customer: { select: { name: true, phone: true } } }, take: 100 }),
+    db.accessCredential.findMany({ where: { pausedAt: { not: null }, status: "ACTIVE" }, include: { customer: { select: { name: true, phone: true, email: true } } }, take: 100 }),
     db.deviceBlock.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
     db.integrationStatus.findUnique({ where: { key: "router-report" } }),
     db.networkCommand.count({ where: { doneAt: null, createdAt: { gt: since(24 * 60) } } }),
@@ -78,7 +78,7 @@ export default async function OnlinePage() {
                     <p className="font-mono text-lg font-semibold">{s.username}</p>
                     <p className="text-sm text-ink-soft">
                       {c?.customer ? (
-                        <Link href={`/admin/customers/${c.customer.id}`} className="text-brand-700 hover:underline">{c.customer.name ?? formatPhone(c.customer.phone)}</Link>
+                        <Link href={`/admin/customers/${c.customer.id}`} className="text-brand-700 hover:underline">{c.customer.name ?? formatContact(c.customer)}</Link>
                       ) : c ? "Ticket / counter sale" : "Router-only login (family or ticket maker)"}
                       {c?.subscriptions[0] ? ` · ${c.subscriptions[0].package.name}` : ""}
                     </p>
@@ -120,7 +120,7 @@ export default async function OnlinePage() {
           <ul className="divide-y divide-line text-sm">
             {paused.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                <span><span className="font-mono">{c.username}</span> · {c.customer ? (c.customer.name ?? formatPhone(c.customer.phone)) : "ticket"} · paused {formatDateTime(c.pausedAt!)} · {formatRemaining(Math.max(0, c.validUntil.getTime() - c.pausedAt!.getTime()))} kept</span>
+                <span><span className="font-mono">{c.username}</span> · {c.customer ? (c.customer.name ?? formatContact(c.customer)) : "ticket"} · paused {formatDateTime(c.pausedAt!)} · {formatRemaining(Math.max(0, c.validUntil.getTime() - c.pausedAt!.getTime()))} kept</span>
                 {canAct ? <ActionButton path={`/api/admin/credentials/${c.id}/resume`} label="Resume" variant="primary" /> : null}
               </li>
             ))}

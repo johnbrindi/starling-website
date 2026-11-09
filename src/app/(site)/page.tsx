@@ -7,7 +7,7 @@ import { LinkButton } from "@/components/ui/button";
 import { PhoneIcon, ShieldIcon, TicketIcon, WifiIcon } from "@/components/ui/icons";
 
 const STEPS = [
-  { icon: ShieldIcon, title: "Create your account", text: "Your name, phone number and a password. Free, 30 seconds." },
+  { icon: ShieldIcon, title: "Create your account", text: "Your name, email and a password. Free, 30 seconds." },
   { icon: TicketIcon, title: "Choose a pass", text: "From 1 hour to 1 month. Prices in FCFA." },
   { icon: PhoneIcon, title: "Pay with Mobile Money", text: "Approve the MTN MoMo prompt on your phone." },
   { icon: WifiIcon, title: "Connect with your code", text: "Tap Connect. Your personal code logs your device in." },

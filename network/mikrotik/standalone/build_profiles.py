@@ -4,7 +4,7 @@ Run:  python3 network/mikrotik/standalone/build_profiles.py
 Edit PACKAGES / RATE below, re-run, then import the .rsc on the router."""
 from pathlib import Path
 
-RATE = "5M/20M"  # upload/download per customer (router view: rx/tx)
+RATE = '""'  # no speed limit on any plan; for a cap use upload/download, e.g. "5M/20M"
 PACKAGES = [  # (profile name, RouterOS interval, price note, devices)
     ("1hour", "1h", "105 FCFA", 1),
     ("12hours", "12h", "155 FCFA", 1),
@@ -38,7 +38,7 @@ def ros_quote(s: str) -> str:
 
 
 # Free access for the family members who contributed to the Starlink: never expires, faster, 2 devices.
-FAMILY = ("family", "8M/30M", 2)
+FAMILY = ("family", '""', 2)
 
 
 def upsert(name: str, attrs: str) -> list[str]:
@@ -73,7 +73,7 @@ def main():
         f"shared-users={fdev} rate-limit={frate} idle-timeout=none keepalive-timeout=3h "
         f'status-autorefresh=1m add-mac-cookie=yes mac-cookie-timeout=30d on-login=""',
     )
-    out.append(f':put "Profile {fname} (free, never expires, {fdev} device(s), {frate}) ready"')
+    out.append(f':put "Profile {fname} (free, never expires, {fdev} device(s)) ready"')
     out.append("")
     path = Path(__file__).with_name("starling-profiles.rsc")
     path.write_text("\n".join(out), encoding="ascii")
